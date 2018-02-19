@@ -3,7 +3,6 @@ type Flag = bool;
 type ProgramCounter = u8;
 type StackPointer = u8;
 
-#[allow(dead_code)]
 pub struct CPU {
     // Main registers
     a: Register,  // Accumulator
@@ -27,7 +26,7 @@ pub struct CPU {
 }
 
 impl CPU {
-    fn new_nes_cpu() -> CPU {
+    pub fn new_nes_cpu() -> CPU {
         CPU {
             a: 0,
             x: 0,
