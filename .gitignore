@@ -1,5 +1,5 @@
 # Ignore any emulator docs I may have
-*.pdf
+doc/
 
 # Ignore Rust's build directory
 target/
