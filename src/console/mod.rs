@@ -117,3 +117,13 @@ impl Console {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_insert_cartridge() {
+        // TODO change all the asserts to returning errors, and start testing
+    }
+}

@@ -67,6 +67,7 @@ mod tests {
         assert_eq!(mem.read(0x1000), Ok(5));
 
         // ROM
+        mem.load_rom(&vec![0; 0x8000]);
         assert_eq!(mem.read(0x8000), Ok(0));
         assert_eq!(mem.read(0x8001), Ok(0));
         assert_eq!(mem.read(0xffff), Ok(0));
@@ -77,9 +78,10 @@ mod tests {
     #[test]
     fn test_load_rom() {
         let mut mem = Memory::new_nes_mem();
+        mem.load_rom(&vec![0; 0x8000]);
         assert_eq!(mem.read(0x8000), Ok(0));
         assert_eq!(mem.read(0xffff), Ok(0));
-        mem.load_rom(vec![1; 0x8000]);
+        mem.load_rom(&vec![1; 0x8000]);
         assert_eq!(mem.read(0x8000), Ok(1));
         assert_eq!(mem.read(0xffff), Ok(1));
     }
