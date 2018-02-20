@@ -1,5 +1,8 @@
 # Ignore any emulator docs I may have
 doc/
 
+# Ignore any roms I'm using for testing
+roms/
+
 # Ignore Rust's build directory
 target/
