@@ -1,9 +1,22 @@
+mod mem;
+
+use self::mem::Memory;
+
+// A, X, and Y are 8-bit registers
 type Register = u8;
+
+// Status flags
 type Flag = bool;
-type ProgramCounter = u8;
-type StackPointer = u8;
+
+// 16-bit register
+type ProgramCounter = usize;
+
+// 8-bit register
+type StackPointer = usize;
 
 pub struct CPU {
+    pub mem: Memory,
+
     // Main registers
     a: Register,  // Accumulator
     x: Register,  // X Index
@@ -28,6 +41,8 @@ pub struct CPU {
 impl CPU {
     pub fn new_nes_cpu() -> CPU {
         CPU {
+            mem: Memory::new_nes_mem(),
+
             a: 0,
             x: 0,
             y: 0,
@@ -40,9 +55,23 @@ impl CPU {
             v: false,
             s: false,
 
-            pc: 0,
+            pc: 0xc000,
 
-            sp: 0,
+            sp: 0xfd,
+        }
+    }
+
+    pub fn step(&self) {
+        if let Ok(opcode) = self.mem.read(self.pc) {
+            println!("{:?}", opcode);
+            // get addressing mode based on opcode
+
+            // get operands via addressing mode
+
+            // exec instruction
+        }
+        else {
+            panic!("out of bounds pc: {}", self.pc);
         }
     }
 }

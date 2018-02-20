@@ -3,6 +3,8 @@ mod console;
 use console::Console;
 
 fn main() {
-    let _console = Console::new_nes_console();
-    println!("Hello, world!");
+    let mut console = Console::new_nes_console();
+
+    console.insert_cartridge("roms/nestest.nes")
+        .expect("could not insert nestest");
 }
