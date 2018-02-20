@@ -18,6 +18,10 @@ impl Console {
         }
     }
 
+    pub fn disassemble(&self) {
+        self.cpu.step();
+    }
+
     // TODO move iNES parsing into a separate module?
     pub fn insert_cartridge(&mut self, filename: &str) -> Result<(), &str> {
         println!("loading {}", filename);
@@ -92,19 +96,23 @@ impl Console {
         assert_eq!(bytes, 6);
         assert_eq!(zeroes, [0, 0, 0, 0, 0, 0]);
 
-        // Read the banks of ROM data
-        let mut rom = vec![0; n_rom_banks as usize * 16 * 1024];
-        let bytes = fh.read(&mut rom)
-            .expect("cannot read ROM data");
-        println!("read {} banks ({} bytes) of 16KB ROM data", n_rom_banks, bytes);
+        if n_rom_banks > 0 {
+            // Read the banks of ROM data
+            let mut rom = vec![0; n_rom_banks as usize * 16 * 1024];
+            let bytes = fh.read(&mut rom)
+                .expect("cannot read ROM banks");
+            println!("read {} banks ({} bytes) of 16KB ROM data", n_rom_banks, bytes);
 
-        // Read the banks of VROM data
-        let mut vrom = vec![0; n_vrom_banks as usize * 8 * 1024];
-        let bytes = fh.read(&mut vrom)
-            .expect("cannot read VROM data");
-        println!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
+            self.cpu.mem.load_rom(&rom);
+        }
 
-        self.cpu.mem.load_rom(&rom);
+        if n_vrom_banks > 0 {
+            // Read the banks of VROM data
+            let mut vrom = vec![0; n_vrom_banks as usize * 8 * 1024];
+            let bytes = fh.read(&mut vrom)
+                .expect("cannot read VROM banks");
+            println!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
+        }
 
         Ok(())
     }

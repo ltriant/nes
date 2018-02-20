@@ -7,4 +7,6 @@ fn main() {
 
     console.insert_cartridge("roms/nestest.nes")
         .expect("could not insert nestest");
+
+    console.disassemble();
 }

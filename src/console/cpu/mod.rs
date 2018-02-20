@@ -61,18 +61,27 @@ impl CPU {
         }
     }
 
+    pub fn debug(&self, opcode: u8) {
+        println!("{:4x}: {:2x}  a:{:02x}  x:{:02x}  y:{:02x}  sp:{:02x}",
+                 self.pc,
+                 opcode,
+                 self.a,
+                 self.x,
+                 self.y,
+                 self.sp);
+    }
+
     pub fn step(&self) {
-        if let Ok(opcode) = self.mem.read(self.pc) {
-            println!("{:?}", opcode);
-            // get addressing mode based on opcode
+        let opcode = self.mem.read(self.pc)
+            .expect("unable to get next opcode");
 
-            // get operands via addressing mode
+        self.debug(opcode);
 
-            // exec instruction
-        }
-        else {
-            panic!("out of bounds pc: {}", self.pc);
-        }
+        // get addressing mode based on opcode
+
+        // get operands via addressing mode
+
+        // exec instruction
     }
 }
 

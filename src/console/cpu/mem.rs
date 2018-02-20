@@ -32,7 +32,7 @@ impl Memory {
 
             // PRG-ROM
             // TODO this will depend on which mapper is being used
-            0x8000 ... 0xffff => Ok(self.rom[address % 0x8000]),
+            0x8000 ... 0xffff => Ok(self.rom[address % self.rom.len()]),
 
             _ => Err("out of bounds"),
         }
