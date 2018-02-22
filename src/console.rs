@@ -1,6 +1,4 @@
-mod cpu;
-
-use self::cpu::CPU;
+use cpu::CPU;
 
 use std::fs::File;
 use std::io::Read;
@@ -18,7 +16,7 @@ impl Console {
         }
     }
 
-    pub fn disassemble(&self) {
+    pub fn disassemble(&mut self) {
         self.cpu.step();
     }
 

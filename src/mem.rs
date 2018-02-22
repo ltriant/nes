@@ -15,11 +15,11 @@ impl Memory {
         self.rom.clone_from(data)
     }
 
-    pub fn read(&self, address: usize) -> Result<u8, &str> {
+    pub fn read(&self, address: u16) -> Result<u8, &str> {
         match address {
             // The first 0x2000 bytes are RAM, but there's only 2KB (0x800) of
             // actual RAM, and the rest is just a mirror of the first 2KB.
-            0 ... 0x1fff => Ok(self.ram[address % 0x800]),
+            0 ... 0x1fff => Ok(self.ram[address as usize % 0x800]),
 
             // IO registers
             // 0x2000 ... 0x401f
@@ -32,7 +32,7 @@ impl Memory {
 
             // PRG-ROM
             // TODO this will depend on which mapper is being used
-            0x8000 ... 0xffff => Ok(self.rom[address % self.rom.len()]),
+            0x8000 ... 0xffff => Ok(self.rom[address as usize % self.rom.len()]),
 
             _ => Err("out of bounds"),
         }

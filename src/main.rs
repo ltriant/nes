@@ -1,4 +1,7 @@
 mod console;
+mod cpu;
+mod opcode;
+mod mem;
 
 use console::Console;
 

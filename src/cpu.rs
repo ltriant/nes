@@ -1,6 +1,9 @@
-mod mem;
+use mem::Memory;
+use opcode::Opcode;
 
-use self::mem::Memory;
+use std::collections::HashMap;
+
+const INST_JMP: u8 = 0x4c;
 
 // A, X, and Y are 8-bit registers
 type Register = u8;
@@ -9,13 +12,24 @@ type Register = u8;
 type Flag = bool;
 
 // 16-bit register
-type ProgramCounter = usize;
+type ProgramCounter = u16;
 
 // 8-bit register
-type StackPointer = usize;
+type StackPointer = u16;
+
+// The available CPU addressing modes
+enum AddressingMode {
+    ZeroPageIndexed,
+    AbsoluteIndexed,
+    IndirectIndexed,
+    IndexedIndirect,
+    Implied,
+}
 
 pub struct CPU {
     pub mem: Memory,
+
+    call_table: HashMap<u8, Opcode>,
 
     // Main registers
     a: Register,  // Accumulator
@@ -32,7 +46,7 @@ pub struct CPU {
     s: Flag,  // Sign
 
     // Program counter
-    pc: ProgramCounter,
+    pub pc: ProgramCounter,
 
     // Stack pointer
     sp: StackPointer,
@@ -40,8 +54,10 @@ pub struct CPU {
 
 impl CPU {
     pub fn new_nes_cpu() -> CPU {
-        CPU {
+        let mut cpu = CPU {
             mem: Memory::new_nes_mem(),
+
+            call_table: HashMap::new(),
 
             a: 0,
             x: 0,
@@ -58,30 +74,34 @@ impl CPU {
             pc: 0xc000,
 
             sp: 0xfd,
-        }
+        };
+
+        cpu.call_table.insert(0x4c, Opcode::Jump);
+        cpu
     }
 
-    pub fn debug(&self, opcode: u8) {
-        println!("{:4x}: {:2x}  a:{:02x}  x:{:02x}  y:{:02x}  sp:{:02x}",
+    fn debug(&self, o: &Opcode) {
+        let (code, name, _bytes, _cycles) = o.debug_data();
+        println!("{:4X}  {:02X}  {:32} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
                  self.pc,
-                 opcode,
+                 code,
+                 name,
                  self.a,
                  self.x,
                  self.y,
+                 0, // TODO status flags or'd together
                  self.sp);
     }
 
-    pub fn step(&self) {
+    pub fn step(&mut self) {
         let opcode = self.mem.read(self.pc)
-            .expect("unable to get next opcode");
+            .expect("unable to read next opcode");
 
-        self.debug(opcode);
+        let op = self.call_table.get(&opcode)
+            .expect("unsupported opcode");
 
-        // get addressing mode based on opcode
-
-        // get operands via addressing mode
-
-        // exec instruction
+        self.debug(&op);
+        op.execute(&self);
     }
 }
 
