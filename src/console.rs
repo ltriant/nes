@@ -17,7 +17,9 @@ impl Console {
     }
 
     pub fn disassemble(&mut self) {
-        self.cpu.step();
+        loop {
+            self.cpu.step();
+        }
     }
 
     // TODO move iNES parsing into a separate module?
