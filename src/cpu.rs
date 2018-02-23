@@ -1,9 +1,5 @@
 use mem::Memory;
-use opcode::Opcode;
-
-use std::collections::HashMap;
-
-const INST_JMP: u8 = 0x4c;
+use opcode::{Opcode, OPCODES};
 
 // A, X, and Y are 8-bit registers
 type Register = u8;
@@ -17,24 +13,13 @@ type ProgramCounter = u16;
 // 8-bit register
 type StackPointer = u16;
 
-// The available CPU addressing modes
-enum AddressingMode {
-    ZeroPageIndexed,
-    AbsoluteIndexed,
-    IndirectIndexed,
-    IndexedIndirect,
-    Implied,
-}
-
 pub struct CPU {
     pub mem: Memory,
 
-    call_table: HashMap<u8, Opcode>,
-
     // Main registers
-    a: Register,  // Accumulator
-    x: Register,  // X Index
-    y: Register,  // Y Index
+    pub a: Register,  // Accumulator
+    pub x: Register,  // X Index
+    pub y: Register,  // Y Index
 
     // Status register flags
     c: Flag,  // Carry
@@ -54,10 +39,8 @@ pub struct CPU {
 
 impl CPU {
     pub fn new_nes_cpu() -> CPU {
-        let mut cpu = CPU {
+        CPU {
             mem: Memory::new_nes_mem(),
-
-            call_table: HashMap::new(),
 
             a: 0,
             x: 0,
@@ -74,22 +57,36 @@ impl CPU {
             pc: 0xc000,
 
             sp: 0xfd,
-        };
-
-        cpu.call_table.insert(0x4c, Opcode::Jump);
-        cpu
+        }
     }
 
-    fn debug(&self, o: &Opcode) {
-        let (code, name, _bytes, _cycles) = o.debug_data();
-        println!("{:4X}  {:02X}  {:32} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
+    fn flags(&self) -> u8 {
+        self.c as u8
+            | ((self.z as u8) << 1)
+            | ((self.i as u8) << 2)
+            | ((self.d as u8) << 3)
+            | ((self.b as u8) << 4)
+            | (0 << 5)
+            | ((self.v as u8) << 6)
+            | ((self.s as u8) << 7)
+    }
+
+    fn debug(&self, op: &Opcode) {
+        let Opcode(ref inst, ref addr_mode, _, _) = *op;
+        let bytes = addr_mode.get_bytes(self)
+            .iter()
+            .map(|arg| String::from(format!("{:02X}", arg)))
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        println!("{:4X}  {:8}  {:02?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
                  self.pc,
-                 code,
-                 name,
+                 bytes,
+                 inst,
                  self.a,
                  self.x,
                  self.y,
-                 0, // TODO status flags or'd together
+                 self.flags(),
                  self.sp);
     }
 
@@ -97,11 +94,13 @@ impl CPU {
         let opcode = self.mem.read(self.pc)
             .expect("unable to read next opcode");
 
-        let op = self.call_table.get(&opcode)
-            .expect("unsupported opcode");
-
+        let op = &OPCODES[opcode as usize];
         self.debug(&op);
-        op.execute(&self);
+
+        let &Opcode(ref inst, ref addr_mode, ref bytes, ref _cycles) = op;
+        let operand = addr_mode.get_data(self);
+        self.pc += *bytes as u16;
+        inst.run(self, operand);
     }
 }
 

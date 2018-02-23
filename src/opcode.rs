@@ -1,27 +1,339 @@
 use cpu::CPU;
+use inst::Instruction;
 
 #[derive(Debug)]
-pub enum Opcode {
-    Jump
+pub enum AddressingMode {
+    None,
+    Immediate,
+    ZeroPageAbsolute,
+    Absolute,
+    Implied,
+    Accumulator,
+    Indexed,
+    ZeroPageIndexed,
+    ZeroPageIndexedX,
+    ZeroPageIndexedY,
+    Indirect,
+    PreIndexedIndirect,
+    PostIndexedIndirect,
+    Relative,
 }
 
-impl Opcode {
-    pub fn execute(&self, cpu: &CPU) {
+impl AddressingMode {
+    pub fn get_bytes(&self, cpu: &CPU) -> Vec<u8> {
+        let n_bytes = match *self {
+            AddressingMode::Immediate => 2,
+            AddressingMode::ZeroPageAbsolute => 2,
+            AddressingMode::Absolute => 3,
+            AddressingMode::Implied => 1,
+            AddressingMode::Accumulator => 1,
+            AddressingMode::ZeroPageIndexed => 2,
+            _ => panic!("unsupported addressing mode {:?}", self)
+        };
+
+        (0 .. n_bytes).map(|n| cpu.mem.read(cpu.pc + n).unwrap())
+            .collect::<Vec<_>>()
+    }
+
+    pub fn get_data(&self, cpu: &CPU) -> (u16, u8) {
         match *self {
-            Opcode::Jump => {
-                let lo = cpu.mem.read(cpu.pc+1)
-                    .expect("low byte") as u16;
-                let hi = cpu.mem.read(cpu.pc+2)
-                    .expect("high byte") as u16;
-                let addr = (hi << 8) | lo;
-                //cpu.pc = addr;
+            AddressingMode::Immediate => {
+                let addr = cpu.pc + 1;
+                let val = cpu.mem.read(addr)
+                    .expect("Immediate val");
+                (addr, val)
             },
-        }
-    }
-
-    pub fn debug_data(&self) -> (u8, &str, usize, usize) {
-        match *self {
-            Opcode::Jump => (0x4c, "JMP", 3, 3),
+            AddressingMode::ZeroPageAbsolute => {
+                let lo = cpu.mem.read(cpu.pc + 1)
+                    .expect("ZeroPageAbsolute arg") as u16;
+                let addr = (0x00 << 8) | lo;
+                let val = cpu.mem.read(addr)
+                    .expect("Absolute addr");
+                (addr, val)
+            },
+            AddressingMode::Absolute => {
+                let lo = cpu.mem.read(cpu.pc + 1)
+                    .expect("Absolute arg 1") as u16;
+                let hi = cpu.mem.read(cpu.pc + 2)
+                    .expect("Absolute arg 1") as u16;
+                let addr = (hi << 8) | lo;
+                let val = cpu.mem.read(addr)
+                    .expect("Absolute addr");
+                (addr, val)
+            },
+            AddressingMode::Implied => (0, 0),
+            AddressingMode::Accumulator => (0, cpu.a),
+            AddressingMode::ZeroPageIndexed => {
+                let lo = cpu.mem.read(cpu.pc + 1)
+                    .expect("ZeroPageIndexed arg") as u16;
+                let addr = (0x00 << 8) | lo;
+                let val = cpu.mem.read(addr)
+                    .expect("ZeroPageIndexed addr");
+                (addr, val)
+            },
+            _ => panic!("unsupported addressing mode {:?}", self)
         }
     }
 }
+
+#[derive(Debug)]
+pub struct Opcode(pub Instruction, pub AddressingMode, pub u8, pub u8);
+
+pub const OPCODES: [Opcode; 256] = [
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::JSR, AddressingMode::Absolute, 3, 6),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::JMP, AddressingMode::Absolute, 3, 3),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::STX, AddressingMode::ZeroPageIndexed, 2, 3),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::LDX, AddressingMode::Immediate, 2, 2),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+];
