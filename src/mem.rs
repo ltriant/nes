@@ -38,11 +38,11 @@ impl Memory {
         }
     }
 
-    pub fn write(&mut self, address: usize, val: u8) -> Result<u8, &str> {
+    pub fn write(&mut self, address: u16, val: u8) -> Result<u8, &str> {
         match address {
             // See comments in read() for explanations of the address ranges
             0 ... 0x1fff => {
-                self.ram[address % 0x800] = val;
+                self.ram[(address as usize) % 0x800] = val;
                 Ok(val)
             },
 
