@@ -1,19 +1,19 @@
 # nesulator
 
-A NES emulator
+Yet another NES emulator
 
 # To Do List
 
 1. ~~read 6502 docs~~
 2. ~~read how NES used the 6502~~
-3. implement 6502 CPU
+3. come up with a better name
+4. implement 6502 CPU
   1. ~~memory mapping (RAM)~~
   2. ~~registers + PC~~
-  3. addressing modes
-  4. opcodes
-  5. ~~iNES parser~~
-  6. work through whatever you haven't implemented yet
-4. something something PPU
-5. something something APU
-6. ???
-7. profit
+  3. ~~iNES parser~~
+  4. ~~opcodes + addressing modes structure~~
+  5. implement the rest of the instructions
+5. something something PPU
+6. something something APU
+7. ???
+8. profit
