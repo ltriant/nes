@@ -96,12 +96,25 @@ impl CPU {
         self.sp -= 1;
     }
 
+    pub fn stack_pop8(&mut self) -> u8 {
+        let val = self.mem.read(self.sp as u16)
+            .expect("unable to read from stack");
+        self.sp += 1;
+        val
+    }
+
     pub fn stack_push16(&mut self, val: u16) {
         let hi = (val >> 8) as u8;
         self.stack_push8(hi);
 
         let lo = (val & 0x00ff) as u8;
         self.stack_push8(lo);
+    }
+
+    pub fn stack_pop16(&mut self) -> u16 {
+        let lo = self.stack_pop8() as u16;
+        let hi = self.stack_pop8() as u16;
+        (hi << 8) | lo
     }
 
     pub fn step(&mut self) {
