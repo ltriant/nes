@@ -6,7 +6,10 @@ pub enum Instruction {
     JMP,
     LDX,
     STX,
-    JSR
+    JSR,
+    NOP,
+    SEC,
+    BCS
 }
 
 impl Instruction {
@@ -16,6 +19,9 @@ impl Instruction {
             Instruction::LDX => ldx(cpu, param),
             Instruction::STX => stx(cpu, param),
             Instruction::JSR => jsr(cpu, param),
+            Instruction::NOP => nop(cpu, param),
+            Instruction::SEC => sec(cpu, param),
+            Instruction::BCS => bcs(cpu, param),
             _ => panic!("unsupported instruction"),
         }
     }
@@ -34,6 +40,30 @@ fn stx(cpu: &mut CPU, (addr, _): (u16, u8)) {
         .expect("STX failed");
 }
 
-fn jsr(_cpu: &mut CPU, (_, _): (u16, u8)) {
-    panic!("JSR");
+fn jsr(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    let retaddr = cpu.pc;
+    cpu.pc = addr;
+
+    let hi = (retaddr >> 8) as u8;
+    cpu.mem.write(cpu.sp as u16, hi)
+        .expect("JSR saving to stack failed");
+    cpu.sp -= 1;
+
+    let lo = (retaddr & 0x00ff) as u8;
+    cpu.mem.write(cpu.sp as u16, lo)
+        .expect("JSR saving to stack failed");
+    cpu.sp -= 1;
+}
+
+fn nop(_: &mut CPU, (_, _): (u16, u8)) { }
+
+fn sec(cpu: &mut CPU, (_, _): (u16, u8)) {
+    cpu.c = true;
+}
+
+fn bcs(cpu: &mut CPU, (_, _): (u16, u8)) {
+    // TODO
+    if cpu.c {
+    }
+    panic!("BCS");
 }

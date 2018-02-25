@@ -11,7 +11,7 @@ type Flag = bool;
 type ProgramCounter = u16;
 
 // 8-bit register
-type StackPointer = u16;
+type StackPointer = u8;
 
 pub struct CPU {
     pub mem: Memory,
@@ -22,7 +22,7 @@ pub struct CPU {
     pub y: Register,  // Y Index
 
     // Status register flags
-    c: Flag,  // Carry
+    pub c: Flag,  // Carry
     z: Flag,  // Zero
     i: Flag,  // Interrupt
     d: Flag,  // Decimal mode
@@ -34,7 +34,7 @@ pub struct CPU {
     pub pc: ProgramCounter,
 
     // Stack pointer
-    sp: StackPointer,
+    pub sp: StackPointer,
 }
 
 impl CPU {

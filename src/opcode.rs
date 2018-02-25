@@ -28,7 +28,8 @@ impl AddressingMode {
             AddressingMode::Implied => 1,
             AddressingMode::Accumulator => 1,
             AddressingMode::ZeroPageIndexed => 2,
-            _ => panic!("unsupported addressing mode {:?}", self)
+            AddressingMode::Relative => 2,
+            _ => panic!("unsupported addressing mode {:?} at PC {:04X}", self, cpu.pc)
         };
 
         (0 .. n_bytes).map(|n| cpu.mem.read(cpu.pc + n).unwrap())
@@ -136,7 +137,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::SEC, AddressingMode::Implied, 1, 2),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
@@ -256,6 +257,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::BCS, AddressingMode::Relative, 2, 2),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
@@ -313,8 +315,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::NOP, AddressingMode::Implied, 1, 2),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
