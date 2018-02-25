@@ -90,6 +90,20 @@ impl CPU {
                  self.sp);
     }
 
+    pub fn stack_push8(&mut self, val: u8) {
+        self.mem.write(self.sp as u16, val)
+            .expect("unable to write to stack");
+        self.sp -= 1;
+    }
+
+    pub fn stack_push16(&mut self, val: u16) {
+        let hi = (val >> 8) as u8;
+        self.stack_push8(hi);
+
+        let lo = (val & 0x00ff) as u8;
+        self.stack_push8(lo);
+    }
+
     pub fn step(&mut self) {
         let opcode = self.mem.read(self.pc)
             .expect("unable to read next opcode");

@@ -43,16 +43,7 @@ fn stx(cpu: &mut CPU, (addr, _): (u16, u8)) {
 fn jsr(cpu: &mut CPU, (addr, _): (u16, u8)) {
     let retaddr = cpu.pc;
     cpu.pc = addr;
-
-    let hi = (retaddr >> 8) as u8;
-    cpu.mem.write(cpu.sp as u16, hi)
-        .expect("JSR saving to stack failed");
-    cpu.sp -= 1;
-
-    let lo = (retaddr & 0x00ff) as u8;
-    cpu.mem.write(cpu.sp as u16, lo)
-        .expect("JSR saving to stack failed");
-    cpu.sp -= 1;
+    cpu.stack_push16(retaddr);
 }
 
 fn nop(_: &mut CPU, (_, _): (u16, u8)) { }
