@@ -18,7 +18,18 @@ pub enum Instruction {
     STA,
     BIT,
     BVS,
-    BVC
+    BVC,
+    BPL,
+    RTS,
+    SEI,
+    SED,
+    PHP,
+    PLA,
+    AND,
+    CMP,
+    CLD,
+    PHA,
+    PLP,
 }
 
 impl Instruction {
@@ -40,13 +51,24 @@ impl Instruction {
             Instruction::BIT => bit(cpu, param),
             Instruction::BVS => bvs(cpu, param),
             Instruction::BVC => bvc(cpu, param),
+            Instruction::BPL => bpl(cpu, param),
+            Instruction::RTS => rts(cpu, param),
+            Instruction::SEI => sei(cpu, param),
+            Instruction::SED => sed(cpu, param),
+            Instruction::PHP => php(cpu, param),
+            Instruction::PLA => pla(cpu, param),
+            Instruction::AND => and(cpu, param),
+            Instruction::CMP => cmp(cpu, param),
+            Instruction::CLD => cld(cpu, param),
+            Instruction::PHA => pha(cpu, param),
+            Instruction::PLP => plp(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
 }
 
 fn update_sz(cpu: &mut CPU, val: u8) {
-    cpu.s = val & 0x80 == 1;
+    cpu.s = val & 0x80 != 0;
     cpu.z = val == 0;
 }
 
@@ -130,4 +152,61 @@ fn bvc(cpu: &mut CPU, (addr, _): (u16, u8)) {
     if !cpu.v {
         cpu.pc = addr;
     }
+}
+
+fn bpl(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    if !cpu.s {
+        cpu.pc = addr;
+    }
+}
+
+fn rts(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let retaddr = cpu.stack_pop16();
+    cpu.pc = retaddr;
+}
+
+fn sei(cpu: &mut CPU, (_, _): (u16, u8)) {
+    cpu.i = true;
+}
+
+fn sed(cpu: &mut CPU, (_, _): (u16, u8)) {
+    cpu.d = true;
+}
+
+fn php(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let flags = cpu.flags();
+    cpu.stack_push8(flags);
+}
+
+fn pla(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let rv = cpu.stack_pop8();
+    cpu.a = rv;
+    update_sz(cpu, rv);
+}
+
+fn and(cpu: &mut CPU, (_, val): (u16, u8)) {
+    cpu.a &= val;
+    let a = cpu.a;
+    update_sz(cpu, a);
+}
+
+fn cmp(cpu: &mut CPU, (_, val): (u16, u8)) {
+    let n = cpu.a.wrapping_sub(val);
+    cpu.s = n & 0x80 != 0;
+    cpu.c = n > val;
+    cpu.z = n == 0;
+}
+
+fn cld(cpu: &mut CPU, (_, _): (u16, u8)) {
+    cpu.d = false;
+}
+
+fn pha(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let a = cpu.a;
+    cpu.stack_push8(a);
+}
+
+fn plp(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let p = cpu.stack_pop8();
+    cpu.set_flags(p);
 }

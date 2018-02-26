@@ -26,9 +26,9 @@ pub struct CPU {
     // Status register flags
     pub c: Flag,  // Carry
     pub z: Flag,  // Zero
-    i: Flag,  // Interrupt
-    d: Flag,  // Decimal mode
-    b: Flag,  // Software interrupt (BRK)
+    pub i: Flag,  // Interrupt
+    pub d: Flag,  // Decimal mode
+    pub b: Flag,  // Software interrupt (BRK)
     pub v: Flag,  // Overflow
     pub s: Flag,  // Sign
 
@@ -52,7 +52,7 @@ impl CPU {
             z: false,
             i: true,
             d: false,
-            b: false,
+            b: true,
             v: false,
             s: false,
 
@@ -62,7 +62,7 @@ impl CPU {
         }
     }
 
-    fn flags(&self) -> u8 {
+    pub fn flags(&self) -> u8 {
         self.c as u8
             | ((self.z as u8) << 1)
             | ((self.i as u8) << 2)
@@ -71,6 +71,16 @@ impl CPU {
             | (1 << 5)
             | ((self.v as u8) << 6)
             | ((self.s as u8) << 7)
+    }
+
+    pub fn set_flags(&mut self, val: u8) {
+        self.c = val & 0x01 == 1;
+        self.z = val & 0x02 == 1;
+        self.i = val & 0x03 == 1;
+        self.d = val & 0x04 == 1;
+        self.b = val & 0x05 == 1;
+        self.v = val & 0x07 == 1;
+        self.s = val & 0x08 == 1;
     }
 
     fn debug(&self, op: &Opcode) {
