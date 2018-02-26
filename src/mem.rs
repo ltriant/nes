@@ -1,5 +1,5 @@
 pub struct Memory {
-    ram: [u8; 0x800],
+    pub ram: [u8; 0x800],
     rom: Vec<u8>,
 }
 

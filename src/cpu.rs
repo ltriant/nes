@@ -1,6 +1,8 @@
 use mem::Memory;
 use opcode::{Opcode, OPCODES};
 
+const STACK_INIT: u8 = 0xfd;
+
 // A, X, and Y are 8-bit registers
 type Register = u8;
 
@@ -56,7 +58,7 @@ impl CPU {
 
             pc: 0xc000,
 
-            sp: 0xfd,
+            sp: STACK_INIT,
         }
     }
 
@@ -91,15 +93,24 @@ impl CPU {
     }
 
     pub fn stack_push8(&mut self, val: u8) {
+        if self.sp == 0 {
+            panic!("cannot push onto a full stack");
+        }
+
         self.mem.write(self.sp as u16, val)
             .expect("unable to write to stack");
         self.sp -= 1;
     }
 
     pub fn stack_pop8(&mut self) -> u8 {
+        if self.sp == STACK_INIT {
+            panic!("cannot pop from an empty stack");
+        }
+
+        self.sp += 1;
         let val = self.mem.read(self.sp as u16)
             .expect("unable to read from stack");
-        self.sp += 1;
+
         val
     }
 
@@ -136,8 +147,42 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_init() {
-        let _cpu = CPU::new_nes_cpu();
-        // add tests when it makes sense
+    #[should_panic]
+    fn test_stack_pop_empty() {
+        let mut cpu = CPU::new_nes_cpu();
+        let _ = cpu.stack_pop8();
+        assert!(false);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_stack_push_full() {
+        let mut cpu = CPU::new_nes_cpu();
+        for _ in 0 .. 255 {
+            cpu.stack_push8(0xff);
+        }
+        assert!(false);
+    }
+
+    #[test]
+    fn test_stack() {
+        let mut cpu = CPU::new_nes_cpu();
+
+        cpu.stack_push8(0xff);
+        assert_eq!(cpu.sp, 0xfc);
+        assert_eq!(cpu.mem.ram[(cpu.sp as usize) + 1], 0xff);
+
+        cpu.stack_push16(0xdead);
+        assert_eq!(cpu.sp, 0xfa);
+        assert_eq!(cpu.mem.ram[(cpu.sp as usize) + 1], 0xad);
+        assert_eq!(cpu.mem.ram[(cpu.sp as usize) + 2], 0xde);
+
+        let rv = cpu.stack_pop16();
+        assert_eq!(cpu.sp, 0xfc);
+        assert_eq!(rv, 0xdead);
+
+        let rv = cpu.stack_pop8();
+        assert_eq!(cpu.sp, 0xfd);
+        assert_eq!(rv, 0xff);
     }
 }
