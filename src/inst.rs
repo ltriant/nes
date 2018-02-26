@@ -12,7 +12,9 @@ pub enum Instruction {
     BCS,
     CLC,
     BCC,
-    LDA
+    LDA,
+    BEQ,
+    BNE
 }
 
 impl Instruction {
@@ -28,6 +30,8 @@ impl Instruction {
             Instruction::CLC => clc(cpu, param),
             Instruction::BCC => bcc(cpu, param),
             Instruction::LDA => lda(cpu, param),
+            Instruction::BEQ => beq(cpu, param),
+            Instruction::BNE => bne(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -83,4 +87,16 @@ fn bcc(cpu: &mut CPU, (addr, _): (u16, u8)) {
 fn lda(cpu: &mut CPU, (_, val): (u16, u8)) {
     cpu.a = val;
     update_sz(cpu, val);
+}
+
+fn beq(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    if cpu.z {
+        cpu.pc = addr;
+    }
+}
+
+fn bne(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    if !cpu.z {
+        cpu.pc = addr;
+    }
 }
