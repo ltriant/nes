@@ -25,12 +25,12 @@ pub struct CPU {
 
     // Status register flags
     pub c: Flag,  // Carry
-    z: Flag,  // Zero
+    pub z: Flag,  // Zero
     i: Flag,  // Interrupt
     d: Flag,  // Decimal mode
     b: Flag,  // Software interrupt (BRK)
     v: Flag,  // Overflow
-    s: Flag,  // Sign
+    pub s: Flag,  // Sign
 
     // Program counter
     pub pc: ProgramCounter,
@@ -50,7 +50,7 @@ impl CPU {
 
             c: false,
             z: false,
-            i: false,
+            i: true,
             d: false,
             b: false,
             v: false,
@@ -68,7 +68,7 @@ impl CPU {
             | ((self.i as u8) << 2)
             | ((self.d as u8) << 3)
             | ((self.b as u8) << 4)
-            | (0 << 5)
+            | (1 << 5)
             | ((self.v as u8) << 6)
             | ((self.s as u8) << 7)
     }

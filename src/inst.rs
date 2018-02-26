@@ -11,7 +11,8 @@ pub enum Instruction {
     SEC,
     BCS,
     CLC,
-    BCC
+    BCC,
+    LDA
 }
 
 impl Instruction {
@@ -26,9 +27,15 @@ impl Instruction {
             Instruction::BCS => bcs(cpu, param),
             Instruction::CLC => clc(cpu, param),
             Instruction::BCC => bcc(cpu, param),
+            Instruction::LDA => lda(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
+}
+
+fn update_sz(cpu: &mut CPU, val: u8) {
+    cpu.s = val & 0x80 == 1;
+    cpu.z = val == 0;
 }
 
 fn jmp(cpu: &mut CPU, (addr, _): (u16, u8)) {
@@ -37,6 +44,7 @@ fn jmp(cpu: &mut CPU, (addr, _): (u16, u8)) {
 
 fn ldx(cpu: &mut CPU, (_, val): (u16, u8)) {
     cpu.x = val;
+    update_sz(cpu, val);
 }
 
 fn stx(cpu: &mut CPU, (addr, _): (u16, u8)) {
@@ -72,3 +80,7 @@ fn bcc(cpu: &mut CPU, (addr, _): (u16, u8)) {
     }
 }
 
+fn lda(cpu: &mut CPU, (_, val): (u16, u8)) {
+    cpu.a = val;
+    update_sz(cpu, val);
+}
