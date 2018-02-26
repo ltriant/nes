@@ -14,7 +14,11 @@ pub enum Instruction {
     BCC,
     LDA,
     BEQ,
-    BNE
+    BNE,
+    STA,
+    BIT,
+    BVS,
+    BVC
 }
 
 impl Instruction {
@@ -32,6 +36,10 @@ impl Instruction {
             Instruction::LDA => lda(cpu, param),
             Instruction::BEQ => beq(cpu, param),
             Instruction::BNE => bne(cpu, param),
+            Instruction::STA => sta(cpu, param),
+            Instruction::BIT => bit(cpu, param),
+            Instruction::BVS => bvs(cpu, param),
+            Instruction::BVC => bvc(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -97,6 +105,29 @@ fn beq(cpu: &mut CPU, (addr, _): (u16, u8)) {
 
 fn bne(cpu: &mut CPU, (addr, _): (u16, u8)) {
     if !cpu.z {
+        cpu.pc = addr;
+    }
+}
+
+fn sta(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    cpu.mem.write(addr, cpu.a)
+        .expect("STA failed");
+}
+
+fn bit(cpu: &mut CPU, (_, val): (u16, u8)) {
+    let f = cpu.a & val;
+    cpu.v = val & 0x40 != 0;
+    update_sz(cpu, f);
+}
+
+fn bvs(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    if cpu.v {
+        cpu.pc = addr;
+    }
+}
+
+fn bvc(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    if !cpu.v {
         cpu.pc = addr;
     }
 }

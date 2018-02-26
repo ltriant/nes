@@ -29,7 +29,7 @@ pub struct CPU {
     i: Flag,  // Interrupt
     d: Flag,  // Decimal mode
     b: Flag,  // Software interrupt (BRK)
-    v: Flag,  // Overflow
+    pub v: Flag,  // Overflow
     pub s: Flag,  // Sign
 
     // Program counter
@@ -81,7 +81,7 @@ impl CPU {
             .collect::<Vec<_>>()
             .join(" ");
 
-        println!("{:4X}  {:8}  {:02?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
+        println!("{:4X}  {:8}  {:32?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
                  self.pc,
                  bytes,
                  inst,
