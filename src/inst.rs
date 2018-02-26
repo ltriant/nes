@@ -9,7 +9,9 @@ pub enum Instruction {
     JSR,
     NOP,
     SEC,
-    BCS
+    BCS,
+    CLC,
+    BCC
 }
 
 impl Instruction {
@@ -22,7 +24,9 @@ impl Instruction {
             Instruction::NOP => nop(cpu, param),
             Instruction::SEC => sec(cpu, param),
             Instruction::BCS => bcs(cpu, param),
-            _ => panic!("unsupported instruction"),
+            Instruction::CLC => clc(cpu, param),
+            Instruction::BCC => bcc(cpu, param),
+            _ => panic!("unsupported instruction {:?}", *self),
         }
     }
 }
@@ -52,9 +56,19 @@ fn sec(cpu: &mut CPU, (_, _): (u16, u8)) {
     cpu.c = true;
 }
 
-fn bcs(cpu: &mut CPU, (_, _): (u16, u8)) {
-    // TODO
+fn bcs(cpu: &mut CPU, (addr, _): (u16, u8)) {
     if cpu.c {
+        cpu.pc = addr;
     }
-    panic!("BCS");
 }
+
+fn clc(cpu: &mut CPU, (_, _): (u16, u8)) {
+    cpu.c = false;
+}
+
+fn bcc(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    if !cpu.c {
+        cpu.pc = addr;
+    }
+}
+

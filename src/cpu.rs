@@ -136,8 +136,9 @@ impl CPU {
         self.debug(&op);
 
         let &Opcode(ref inst, ref addr_mode, ref bytes, ref _cycles) = op;
-        let operand = addr_mode.get_data(self);
+        let pc = self.pc;
         self.pc += *bytes as u16;
+        let operand = addr_mode.get_data(self, pc);
         inst.run(self, operand);
     }
 }
