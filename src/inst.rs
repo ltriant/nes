@@ -30,6 +30,10 @@ pub enum Instruction {
     CLD,
     PHA,
     PLP,
+    BMI,
+    ORA,
+    CLV,
+    EOR,
 }
 
 impl Instruction {
@@ -62,6 +66,10 @@ impl Instruction {
             Instruction::CLD => cld(cpu, param),
             Instruction::PHA => pha(cpu, param),
             Instruction::PLP => plp(cpu, param),
+            Instruction::BMI => bmi(cpu, param),
+            Instruction::ORA => ora(cpu, param),
+            Instruction::CLV => clv(cpu, param),
+            Instruction::EOR => eor(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -209,4 +217,24 @@ fn pha(cpu: &mut CPU, (_, _): (u16, u8)) {
 fn plp(cpu: &mut CPU, (_, _): (u16, u8)) {
     let p = cpu.stack_pop8();
     cpu.set_flags(p);
+}
+
+fn bmi(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    if cpu.s {
+        cpu.pc = addr;
+    }
+}
+
+fn ora(cpu: &mut CPU, (_, val): (u16, u8)) {
+    let na = cpu.a | val;
+    update_sz(cpu, na);
+    cpu.a = val;
+}
+
+fn clv(cpu: &mut CPU, (_, _): (u16, u8)) {
+    cpu.v = false;
+}
+
+fn eor(cpu: &mut CPU, (_, val): (u16, u8)) {
+    panic!("AHHHHH");
 }

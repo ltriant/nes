@@ -41,7 +41,7 @@ pub struct CPU {
 
 impl CPU {
     pub fn new_nes_cpu() -> CPU {
-        CPU {
+        let mut cpu = CPU {
             mem: Memory::new_nes_mem(),
 
             a: 0,
@@ -50,16 +50,20 @@ impl CPU {
 
             c: false,
             z: false,
-            i: true,
+            i: false,
             d: false,
-            b: true,
+            b: false,
             v: false,
             s: false,
 
             pc: 0xc000,
 
             sp: STACK_INIT,
-        }
+        };
+
+        cpu.set_flags(0x34);
+
+        cpu
     }
 
     pub fn flags(&self) -> u8 {
@@ -67,7 +71,7 @@ impl CPU {
             | ((self.z as u8) << 1)
             | ((self.i as u8) << 2)
             | ((self.d as u8) << 3)
-            | ((self.b as u8) << 4)
+            | (1 << 4)
             | (1 << 5)
             | ((self.v as u8) << 6)
             | ((self.s as u8) << 7)
