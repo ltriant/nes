@@ -1,0 +1,15 @@
+#!/usr/bin/env perl
+# pcmp -- processor flag comparison
+# usage: pcmp <hex> [<hex>, ...]
+
+use v5.10;
+use warnings;
+use strict;
+
+die "args needed" unless @ARGV > 0;
+
+say "      czid__vs";
+for (@ARGV) {
+	die "bad hex string: $_" unless /^[0-9a-f]+$/i;
+	say "0x$_: ", unpack("B8", hex $_)
+}
