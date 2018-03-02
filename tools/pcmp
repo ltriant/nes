@@ -11,5 +11,5 @@ die "args needed" unless @ARGV > 0;
 say "      czid__vs";
 for (@ARGV) {
 	die "bad hex string: $_" unless /^[0-9a-f]+$/i;
-	say "0x$_: ", unpack("B8", hex $_)
+	printf "0x$_: %08b\n", hex $_;
 }
