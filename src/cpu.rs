@@ -41,7 +41,7 @@ pub struct CPU {
 
 impl CPU {
     pub fn new_nes_cpu() -> CPU {
-        let mut cpu = CPU {
+        CPU {
             mem: Memory::new_nes_mem(),
 
             a: 0,
@@ -56,14 +56,23 @@ impl CPU {
             v: false,
             s: false,
 
-            pc: 0xc000,
+            pc: 0x0000,
 
             sp: STACK_INIT,
-        };
+        }
+    }
 
-        cpu.set_flags(0x34);
+    pub fn init(&mut self) {
+        let lo = self.mem.read(0xFFFC).expect("low PC byte") as u16;
+        let hi = self.mem.read(0xFFFD).expect("high PC byte") as u16;
+        let addr = (hi << 8) | lo;
+        println!("starting program counter: 0x{:04X}", addr);
+        self.pc = addr;
+        self.pc = 0xc000;
 
-        cpu
+        let init_flags = 0x34;
+        println!("setting initial flags: 0x{:02X}", init_flags);
+        self.set_flags(init_flags);
     }
 
     pub fn flags(&self) -> u8 {

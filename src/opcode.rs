@@ -175,7 +175,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::TAX, AddressingMode::Implied, 1, 2),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::LDA, AddressingMode::Absolute, 3, 4),
     Opcode(Instruction::LDX, AddressingMode::Absolute, 3, 4),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::BCS, AddressingMode::Relative, 2, 2),
