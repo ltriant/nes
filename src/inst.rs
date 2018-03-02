@@ -34,6 +34,20 @@ pub enum Instruction {
     ORA,
     CLV,
     EOR,
+    ADC,
+    LDY,
+    CPY,
+    CPX,
+    SBC,
+    STY,
+    INY,
+    INX,
+    DEY,
+    DEX,
+    TAY,
+    TAX,
+    TYA,
+    TXA,
 }
 
 impl Instruction {
@@ -70,6 +84,20 @@ impl Instruction {
             Instruction::ORA => ora(cpu, param),
             Instruction::CLV => clv(cpu, param),
             Instruction::EOR => eor(cpu, param),
+            Instruction::ADC => adc(cpu, param),
+            Instruction::LDY => ldy(cpu, param),
+            Instruction::CPY => cpy(cpu, param),
+            Instruction::CPX => cpx(cpu, param),
+            Instruction::SBC => sbc(cpu, param),
+            Instruction::STY => sty(cpu, param),
+            Instruction::INY => iny(cpu, param),
+            Instruction::INX => inx(cpu, param),
+            Instruction::DEY => dey(cpu, param),
+            Instruction::DEX => dex(cpu, param),
+            Instruction::TAY => tay(cpu, param),
+            Instruction::TAX => tax(cpu, param),
+            Instruction::TYA => tya(cpu, param),
+            Instruction::TXA => txa(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -182,8 +210,18 @@ fn sed(cpu: &mut CPU, (_, _): (u16, u8)) {
 }
 
 fn php(cpu: &mut CPU, (_, _): (u16, u8)) {
-    let flags = cpu.flags();
+    // https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+    // According to the above link, the PHP instruction sets bits 4 and 5 on
+    // the value it pushes onto the stack.
+    // The PLP call later will ignore these bits.
+    let flags = cpu.flags() | 0x10;
     cpu.stack_push8(flags);
+}
+
+fn plp(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let p = cpu.stack_pop8() & 0xef;
+    update_sz(cpu, p);
+    cpu.set_flags(p);
 }
 
 fn pla(cpu: &mut CPU, (_, _): (u16, u8)) {
@@ -214,11 +252,6 @@ fn pha(cpu: &mut CPU, (_, _): (u16, u8)) {
     cpu.stack_push8(a);
 }
 
-fn plp(cpu: &mut CPU, (_, _): (u16, u8)) {
-    let p = cpu.stack_pop8();
-    cpu.set_flags(p);
-}
-
 fn bmi(cpu: &mut CPU, (addr, _): (u16, u8)) {
     if cpu.s {
         cpu.pc = addr;
@@ -227,8 +260,8 @@ fn bmi(cpu: &mut CPU, (addr, _): (u16, u8)) {
 
 fn ora(cpu: &mut CPU, (_, val): (u16, u8)) {
     let na = cpu.a | val;
-    update_sz(cpu, na);
     cpu.a = val;
+    update_sz(cpu, na);
 }
 
 fn clv(cpu: &mut CPU, (_, _): (u16, u8)) {
@@ -236,5 +269,96 @@ fn clv(cpu: &mut CPU, (_, _): (u16, u8)) {
 }
 
 fn eor(cpu: &mut CPU, (_, val): (u16, u8)) {
-    panic!("AHHHHH");
+    let val = val ^ cpu.a;
+    cpu.a = val;
+    update_sz(cpu, val);
+}
+
+fn adc(cpu: &mut CPU, (_, val): (u16, u8)) {
+    let n = (val as u16) + (cpu.a as u16) + (cpu.c as u16);
+    cpu.v = cpu.a as u16 & 0x80 == 0 && n & 0x80 != 0;
+    cpu.s = n & 0x80 != 0;
+    cpu.z = n == 0;
+    cpu.c = n > 0xff;
+    cpu.a = (n & 0xff) as u8;
+}
+
+fn ldy(cpu: &mut CPU, (_, val): (u16, u8)) {
+    cpu.y = val;
+    update_sz(cpu, val);
+}
+
+fn cpy(cpu: &mut CPU, (_, val): (u16, u8)) {
+    let n = cpu.y.wrapping_sub(val);
+    cpu.s = n & 0x80 != 0;
+    cpu.c = n > val;
+    cpu.z = n == 0;
+}
+
+fn cpx(cpu: &mut CPU, (_, val): (u16, u8)) {
+    let n = cpu.x.wrapping_sub(val);
+    cpu.s = n & 0x80 != 0;
+    cpu.c = n > val;
+    cpu.z = n == 0;
+}
+
+fn sbc(cpu: &mut CPU, (_, val): (u16, u8)) {
+    let n = cpu.a.wrapping_sub(val)
+        .wrapping_sub(cpu.c as u8);
+    cpu.c = n >= 0;
+    cpu.a = n & 0xff;
+    update_sz(cpu, n);
+}
+
+fn sty(cpu: &mut CPU, (addr, _): (u16, u8)) {
+    cpu.mem.write(addr, cpu.y)
+        .expect("STY failed");
+}
+
+fn iny(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.y.wrapping_add(1);
+    cpu.y = n;
+    update_sz(cpu, n);
+}
+
+fn dey(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.y.wrapping_sub(1);
+    cpu.y = n;
+    update_sz(cpu, n);
+}
+
+fn inx(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.x.wrapping_add(1);
+    cpu.x = n;
+    update_sz(cpu, n);
+}
+
+fn dex(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.x.wrapping_sub(1);
+    cpu.x = n;
+    update_sz(cpu, n);
+}
+
+fn tay(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.a;
+    cpu.y = n;
+    update_sz(cpu, n);
+}
+
+fn tax(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.a;
+    cpu.x = n;
+    update_sz(cpu, n);
+}
+
+fn tya(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.y;
+    cpu.a = n;
+    update_sz(cpu, n);
+}
+
+fn txa(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let n = cpu.x;
+    cpu.a = n;
+    update_sz(cpu, n);
 }

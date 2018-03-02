@@ -71,7 +71,7 @@ impl CPU {
             | ((self.z as u8) << 1)
             | ((self.i as u8) << 2)
             | ((self.d as u8) << 3)
-            | (1 << 4)
+            | ((self.b as u8) << 4)
             | (1 << 5)
             | ((self.v as u8) << 6)
             | ((self.s as u8) << 7)
