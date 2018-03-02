@@ -153,7 +153,7 @@ impl CPU {
         let pc = self.pc;
         self.pc += *bytes as u16;
         let operand = addr_mode.get_data(self, pc);
-        inst.run(self, operand);
+        inst.run(self, operand, addr_mode);
     }
 }
 

@@ -1,4 +1,5 @@
 use cpu::CPU;
+use opcode::AddressingMode;
 
 #[derive(Debug)]
 pub enum Instruction {
@@ -48,10 +49,14 @@ pub enum Instruction {
     TAX,
     TYA,
     TXA,
+    TSX,
+    TXS,
+    INC,
+    ASL,
 }
 
 impl Instruction {
-    pub fn run(&self, cpu: &mut CPU, param: (u16, u8)) {
+    pub fn run(&self, cpu: &mut CPU, param: (u16, u8), addr_mode: &AddressingMode) {
         match *self {
             Instruction::JMP => jmp(cpu, param),
             Instruction::LDX => ldx(cpu, param),
@@ -98,6 +103,10 @@ impl Instruction {
             Instruction::TAX => tax(cpu, param),
             Instruction::TYA => tya(cpu, param),
             Instruction::TXA => txa(cpu, param),
+            Instruction::TXS => txs(cpu, param),
+            Instruction::TSX => tsx(cpu, param),
+            Instruction::INC => inc(cpu, param),
+            Instruction::ASL => asl(cpu, param, addr_mode),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -360,5 +369,35 @@ fn tya(cpu: &mut CPU, (_, _): (u16, u8)) {
 fn txa(cpu: &mut CPU, (_, _): (u16, u8)) {
     let n = cpu.x;
     cpu.a = n;
+    update_sz(cpu, n);
+}
+
+fn txs(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let x = cpu.x;
+    cpu.stack_push8(x);
+}
+
+fn tsx(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let x = cpu.stack_pop8();
+    cpu.x = x;
+}
+
+fn inc(cpu: &mut CPU, (addr, val): (u16, u8)) {
+    let n = (val + 1) & 0xff;
+    cpu.mem.write(addr, n)
+        .expect("INC failed");
+    update_sz(cpu, n);
+}
+
+fn asl(cpu: &mut CPU, (addr, val): (u16, u8), addr_mode: &AddressingMode) {
+    cpu.c = val & 0x80 == 1;
+    let n = (val << 1) & 0xff;
+
+    // TODO When the addressing mode is accumulator, the addr variable will be 0... ?
+    match *addr_mode {
+        AddressingMode::Accumulator => { cpu.a = n; },
+        _ => { cpu.mem.write(addr, n).expect("ASL failed"); }
+    };
+
     update_sz(cpu, n);
 }
