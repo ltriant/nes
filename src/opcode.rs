@@ -1,6 +1,9 @@
 use cpu::CPU;
 use inst::Instruction;
 
+#[derive(Debug)]
+pub struct Opcode(pub Instruction, pub AddressingMode, pub u8, pub u8);
+
 pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
@@ -113,7 +116,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::JMP, AddressingMode::Indirect, 3, 5),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::RRA, AddressingMode::Absolute, 3, 6),
     Opcode(Instruction::BVS, AddressingMode::Relative, 2, 2),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
@@ -259,9 +262,6 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
 ];
-
-#[derive(Debug)]
-pub struct Opcode(pub Instruction, pub AddressingMode, pub u8, pub u8);
 
 #[derive(Debug)]
 pub enum AddressingMode {

@@ -53,6 +53,7 @@ pub enum Instruction {
     TXS,
     INC,
     ASL,
+    RRA,
 }
 
 impl Instruction {
@@ -107,6 +108,7 @@ impl Instruction {
             Instruction::TSX => tsx(cpu, param),
             Instruction::INC => inc(cpu, param),
             Instruction::ASL => asl(cpu, param, addr_mode),
+            Instruction::RRA => rra(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -401,3 +403,6 @@ fn asl(cpu: &mut CPU, (addr, val): (u16, u8), addr_mode: &AddressingMode) {
 
     update_sz(cpu, n);
 }
+
+// Illegal opcodes
+fn rra(_: &mut CPU, (_, _): (u16, u8)) { }
