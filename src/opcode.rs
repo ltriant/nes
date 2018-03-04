@@ -106,7 +106,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::ADC, AddressingMode::ZeroPageIndexed),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::PLA, AddressingMode::Implied),
@@ -114,11 +114,11 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::JMP, AddressingMode::Indirect),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::ADC, AddressingMode::Absolute),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::RRA, AddressingMode::Absolute),
     Opcode(Instruction::BVS, AddressingMode::Relative),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::ADC, AddressingMode::PostIndexedIndirectY),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
@@ -126,11 +126,11 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::SEI, AddressingMode::Implied),
+    Opcode(Instruction::ADC, AddressingMode::AbsoluteY),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
-    Opcode(Instruction::None, AddressingMode::None),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::ADC, AddressingMode::AbsoluteX),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
@@ -272,6 +272,7 @@ pub enum AddressingMode {
     Implied,
     Accumulator,
     AbsoluteX,
+    AbsoluteY,
     IndexedY,
     ZeroPageIndexed,
     ZeroPageAbsoluteX,
@@ -285,18 +286,22 @@ pub enum AddressingMode {
 impl AddressingMode {
     pub fn n_bytes(&self) -> Result<usize, ()> {
         match *self {
-            AddressingMode::Immediate => Ok(2),
-            AddressingMode::ZeroPageAbsolute => Ok(2),
-            AddressingMode::Absolute => Ok(3),
-            AddressingMode::Implied => Ok(1),
-            AddressingMode::Accumulator => Ok(1),
-            AddressingMode::ZeroPageIndexed => Ok(2),
-            AddressingMode::Relative => Ok(2),
-            AddressingMode::AbsoluteX => Ok(3),
-            AddressingMode::Indirect => Ok(3),
-            AddressingMode::ZeroPageAbsoluteX => Ok(2),
-            AddressingMode::PreIndexedIndirectX => Ok(3),
-            AddressingMode::PostIndexedIndirectY => Ok(2),
+              AddressingMode::Implied
+            | AddressingMode::Accumulator => Ok(1),
+
+              AddressingMode::Immediate
+            | AddressingMode::ZeroPageAbsolute
+            | AddressingMode::ZeroPageIndexed
+            | AddressingMode::Relative
+            | AddressingMode::ZeroPageAbsoluteX
+            | AddressingMode::PreIndexedIndirectX
+            | AddressingMode::PostIndexedIndirectY => Ok(2),
+
+              AddressingMode::Absolute
+            | AddressingMode::AbsoluteX
+            | AddressingMode::AbsoluteY
+            | AddressingMode::Indirect => Ok(3),
+
             _ => Err(()),
         }
     }
@@ -364,6 +369,16 @@ impl AddressingMode {
                     .expect("AbsoluteX addr");
                 Ok((0, val + cpu.x))
             },
+            AddressingMode::AbsoluteY => {
+                let lo = cpu.mem.read(pc + 1)
+                    .expect("AbsoluteY arg 1") as u16;
+                let hi = cpu.mem.read(pc + 2)
+                    .expect("AbsoluteY arg 2") as u16;
+                let addr = (hi << 8) | lo;
+                let val = cpu.mem.read(addr)
+                    .expect("AbsoluteY addr");
+                Ok((0, val + cpu.y))
+            },
             AddressingMode::Indirect => {
                 let lo = cpu.mem.read(pc + 1)
                     .expect("Indirect arg 1") as u16;
@@ -400,8 +415,7 @@ impl AddressingMode {
             AddressingMode::PreIndexedIndirectX => {
                 let lo = cpu.mem.read(pc + 1)
                     .expect("PreIndexedIndirectX arg 1");
-                let x = cpu.x;
-                let addr = lo.wrapping_add(x) as u16;
+                let addr = lo.wrapping_add(cpu.x) as u16;
                 let val = cpu.mem.read(addr)
                     .expect("PreIndexedIndirectX val");
                 Ok((addr, val))
