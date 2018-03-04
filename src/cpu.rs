@@ -97,7 +97,14 @@ impl CPU {
     }
 
     fn debug(&self, op: &Opcode) {
-        let Opcode(ref inst, ref addr_mode, _, _) = *op;
+        let Opcode(ref inst, ref addr_mode) = *op;
+
+        if let Err(_) = addr_mode.n_bytes() {
+            panic!("unsupported addressing mode {:?} at PC {:04X}",
+                   addr_mode,
+                   self.pc);
+        }
+
         let bytes = addr_mode.get_bytes(self)
             .iter()
             .map(|arg| String::from(format!("{:02X}", arg)))
@@ -158,11 +165,24 @@ impl CPU {
         let op = &OPCODES[opcode as usize];
         self.debug(&op);
 
-        let &Opcode(ref inst, ref addr_mode, ref bytes, ref _cycles) = op;
-        let pc = self.pc;
-        self.pc += *bytes as u16;
-        let operand = addr_mode.get_data(self, pc);
-        inst.run(self, operand, addr_mode);
+        let &Opcode(ref inst, ref addr_mode) = op;
+
+        if let Ok(bytes) = addr_mode.n_bytes() {
+            let pc = self.pc;
+            self.pc += bytes as u16;
+
+            if let Ok(operand) = addr_mode.get_data(self, pc) {
+                inst.run(self, operand, addr_mode);
+            }
+            else {
+                panic!("unable to get data");
+            }
+        }
+        else {
+            panic!("unsupported addressing mode {:?} at PC {:04X}",
+                   addr_mode,
+                   self.pc);
+        }
     }
 }
 
