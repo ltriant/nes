@@ -100,9 +100,11 @@ impl CPU {
         let Opcode(ref inst, ref addr_mode) = *op;
 
         if let Err(_) = addr_mode.n_bytes() {
-            panic!("unsupported addressing mode {:?} at PC {:04X}",
+            let opcode = self.mem.read(self.pc).unwrap();
+            panic!("unsupported addressing mode {:?} at PC {:04X}, opcode {:02X}",
                    addr_mode,
-                   self.pc);
+                   self.pc,
+                   opcode);
         }
 
         let bytes = addr_mode.get_bytes(self)
@@ -179,9 +181,11 @@ impl CPU {
             }
         }
         else {
-            panic!("unsupported addressing mode {:?} at PC {:04X}",
+            let opcode = self.mem.read(self.pc).unwrap();
+            panic!("unsupported addressing mode {:?} at PC {:04X}, opcode {:02X}",
                    addr_mode,
-                   self.pc);
+                   self.pc,
+                   opcode);
         }
     }
 }
