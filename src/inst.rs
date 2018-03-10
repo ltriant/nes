@@ -134,9 +134,9 @@ fn stx(cpu: &mut CPU, (addr, _): (u16, u8)) {
 }
 
 fn jsr(cpu: &mut CPU, (addr, _): (u16, u8)) {
-    let retaddr = cpu.pc;
-    cpu.pc = addr;
+    let retaddr = cpu.pc - 1;
     cpu.stack_push16(retaddr);
+    cpu.pc = addr;
 }
 
 fn nop(_: &mut CPU, (_, _): (u16, u8)) { }
@@ -209,7 +209,7 @@ fn bpl(cpu: &mut CPU, (addr, _): (u16, u8)) {
 
 fn rts(cpu: &mut CPU, (_, _): (u16, u8)) {
     let retaddr = cpu.stack_pop16();
-    cpu.pc = retaddr;
+    cpu.pc = retaddr + 1;
 }
 
 fn sei(cpu: &mut CPU, (_, _): (u16, u8)) {
