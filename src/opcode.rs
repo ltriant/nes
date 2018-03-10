@@ -69,7 +69,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::RTI, AddressingMode::Implied),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
@@ -102,7 +102,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::RTS, AddressingMode::Implied),
-    Opcode(Instruction::ADC, AddressingMode::PreIndexedIndirectX),
+    Opcode(Instruction::ADC, AddressingMode::IndexedIndirect),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
@@ -116,9 +116,9 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::JMP, AddressingMode::Indirect),
     Opcode(Instruction::ADC, AddressingMode::Absolute),
     Opcode(Instruction::None, AddressingMode::None),
-    Opcode(Instruction::RRA, AddressingMode::Absolute),
+    Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::BVS, AddressingMode::Relative),
-    Opcode(Instruction::ADC, AddressingMode::PostIndexedIndirectY),
+    Opcode(Instruction::ADC, AddressingMode::IndirectIndexed),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
@@ -166,7 +166,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::LDY, AddressingMode::Immediate),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::LDA, AddressingMode::IndexedIndirect),
     Opcode(Instruction::LDX, AddressingMode::Immediate),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
@@ -182,15 +182,15 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::LDX, AddressingMode::Absolute),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::BCS, AddressingMode::Relative),
+    Opcode(Instruction::LDA, AddressingMode::IndirectIndexed),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
-    Opcode(Instruction::None, AddressingMode::None),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::LDA, AddressingMode::ZeroPageAbsoluteX),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::CLV, AddressingMode::Implied),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::LDA, AddressingMode::AbsoluteY),
     Opcode(Instruction::TSX, AddressingMode::Implied),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::None, AddressingMode::None),
@@ -278,8 +278,8 @@ pub enum AddressingMode {
     ZeroPageAbsoluteX,
     ZeroPageAbsoluteY,
     Indirect,
-    PreIndexedIndirectX,
-    PostIndexedIndirectY,
+    IndexedIndirect,
+    IndirectIndexed,
     Relative,
 }
 
@@ -294,8 +294,8 @@ impl AddressingMode {
             | AddressingMode::ZeroPageIndexed
             | AddressingMode::Relative
             | AddressingMode::ZeroPageAbsoluteX
-            | AddressingMode::PreIndexedIndirectX
-            | AddressingMode::PostIndexedIndirectY => Ok(2),
+            | AddressingMode::IndexedIndirect
+            | AddressingMode::IndirectIndexed => Ok(2),
 
               AddressingMode::Absolute
             | AddressingMode::AbsoluteX
@@ -351,6 +351,11 @@ impl AddressingMode {
             AddressingMode::Relative => {
                 let offset = cpu.mem.read(pc + 1)
                     .expect("Relative arg") as u16;
+
+                let is_neg = (offset as i16) < 0;
+                if is_neg {
+                    panic!("negatory");
+                }
 
                 // TODO negative offset?
 
@@ -412,19 +417,19 @@ impl AddressingMode {
                     .expect("ZeroPageAbsoluteY addr");
                 Ok((0, val + cpu.y))
             },
-            AddressingMode::PreIndexedIndirectX => {
+            AddressingMode::IndexedIndirect => {
                 let lo = cpu.mem.read(pc + 1)
-                    .expect("PreIndexedIndirectX arg 1");
+                    .expect("IndexedIndirect arg 1");
                 let addr = lo.wrapping_add(cpu.x) as u16;
                 let val = cpu.mem.read(addr)
-                    .expect("PreIndexedIndirectX val");
+                    .expect("IndexedIndirect val");
                 Ok((addr, val))
             },
-            AddressingMode::PostIndexedIndirectY => {
+            AddressingMode::IndirectIndexed => {
                 let lo = cpu.mem.read(pc + 1)
-                    .expect("PostIndexedIndirectY arg 1") as u16;
+                    .expect("IndirectIndexed arg 1") as u16;
                 let val = cpu.mem.read(lo)
-                    .expect("PostIndexedIndirectY val");
+                    .expect("IndirectIndexed val");
                 Ok((lo, val + cpu.y))
             },
             _ => Err(())
