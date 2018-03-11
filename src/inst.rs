@@ -54,6 +54,7 @@ pub enum Instruction {
     INC,
     ASL,
     RRA,
+    RTI,
 }
 
 impl Instruction {
@@ -109,6 +110,7 @@ impl Instruction {
             Instruction::INC => inc(cpu, param),
             Instruction::ASL => asl(cpu, param, addr_mode),
             Instruction::RRA => rra(cpu, param),
+            Instruction::RTI => rti(cpu, param),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -402,6 +404,15 @@ fn asl(cpu: &mut CPU, (addr, val): (u16, u8), addr_mode: &AddressingMode) {
     };
 
     update_sz(cpu, n);
+}
+
+fn rti(cpu: &mut CPU, (_, _): (u16, u8)) {
+    let flags = cpu.stack_pop8() & 0xef;
+    update_sz(cpu, flags);
+    cpu.set_flags(flags);
+
+    let retaddr = cpu.stack_pop16();
+    cpu.pc = retaddr;
 }
 
 // Illegal opcodes
