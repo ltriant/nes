@@ -29,6 +29,7 @@ pub struct CPU {
     pub i: Flag,  // Interrupt
     pub d: Flag,  // Decimal mode
     pub b: Flag,  // Software interrupt (BRK)
+    pub u: Flag,  // Unused flag
     pub v: Flag,  // Overflow
     pub s: Flag,  // Sign
 
@@ -53,6 +54,7 @@ impl CPU {
             i: false,
             d: false,
             b: false,
+            u: false,
             v: false,
             s: false,
 
@@ -70,30 +72,30 @@ impl CPU {
         self.pc = addr;
         self.pc = 0xc000;
 
-        let init_flags = 0x34;
-        println!("setting initial flags: 0x{:02X}", init_flags);
-        self.set_flags(init_flags);
+        self.set_flags(0x24);
+        println!("initial flags: 0x{:02X}", self.flags());
     }
 
     pub fn flags(&self) -> u8 {
-        self.c as u8
-            | ((self.z as u8) << 1)
-            | ((self.i as u8) << 2)
-            | ((self.d as u8) << 3)
-            | ((self.b as u8) << 4)
-            | (1 << 5)
-            | ((self.v as u8) << 6)
-            | ((self.s as u8) << 7)
+           (self.c as u8)
+        | ((self.z as u8) << 1)
+        | ((self.i as u8) << 2)
+        | ((self.d as u8) << 3)
+        | ((self.b as u8) << 4)
+        | ((self.u as u8) << 5)
+        | ((self.v as u8) << 6)
+        | ((self.s as u8) << 7)
     }
 
     pub fn set_flags(&mut self, val: u8) {
         self.c = val & 0x01 == 1;
-        self.z = val & 0x02 == 1;
-        self.i = val & 0x03 == 1;
-        self.d = val & 0x04 == 1;
-        self.b = val & 0x05 == 1;
-        self.v = val & 0x07 == 1;
-        self.s = val & 0x08 == 1;
+        self.z = (val >> 1 & 0x01) == 1;
+        self.i = (val >> 2 & 0x01) == 1;
+        self.d = (val >> 3 & 0x01) == 1;
+        self.b = (val >> 4 & 0x01) == 1;
+        self.u = (val >> 5 & 0x01) == 1;
+        self.v = (val >> 6 & 0x01) == 1;
+        self.s = (val >> 7 & 0x01) == 1;
     }
 
     fn debug(&self, op: &Opcode) {
@@ -232,5 +234,21 @@ mod tests {
         let rv = cpu.stack_pop8();
         assert_eq!(cpu.sp, 0xfd);
         assert_eq!(rv, 0xff);
+    }
+
+    #[test]
+    fn test_flags() {
+        let mut cpu = CPU::new_nes_cpu();
+
+        assert_eq!(cpu.flags(), 0x00);
+
+        cpu.set_flags(0x24);
+        assert_eq!(cpu.flags(), 0x24);
+
+        cpu.set_flags(0x00);
+        assert_eq!(cpu.flags(), 0x00);
+
+        cpu.c = true;
+        assert_eq!(cpu.flags(), 0x01);
     }
 }
