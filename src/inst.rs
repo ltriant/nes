@@ -379,8 +379,7 @@ fn txa(cpu: &mut CPU, _: u16, _: u8) {
 }
 
 fn txs(cpu: &mut CPU, _: u16, _: u8) {
-    let x = cpu.x;
-    cpu.stack_push8(x);
+    cpu.sp = cpu.x;
 }
 
 fn tsx(cpu: &mut CPU, _: u16, _: u8) {
