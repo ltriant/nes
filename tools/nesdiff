@@ -1,0 +1,33 @@
+#!/usr/bin/env perl
+# nesdiff -- compare debug output to nestest
+
+use v5.10;
+use warnings;
+use strict;
+
+use IO::All qw(io);
+
+my $txt_output = shift || die "need an input file";
+my $nestest_output = shift || "doc/nestest.log";
+
+my @txt = io->file($txt_output)->chomp->getlines;
+my @nestest = io->file($nestest_output)->chomp->getlines;
+
+my $i = 0;
+while (($i < @txt) and ($i < @nestest)) {
+	my $txt = $txt[$i];
+	my @txt_fields = (split / +/, $txt)[0, -5, -4, -3, -2, -1];
+	$txt = join ' ', @txt_fields;
+
+	my $nes = $nestest[$i];
+	$nes =~ s/ CYC:.*$//g;
+	my @nes_fields = (split / +/, $nes)[0, -5, -4, -3, -2, -1];
+	$nes = join ' ', @nes_fields;
+
+	if ($txt ne $nes) {
+		say "$txt -> $nes";
+		last;
+	}
+
+	$i += 1;
+}
