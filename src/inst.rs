@@ -288,11 +288,19 @@ fn eor(cpu: &mut CPU, _: u16, val: u8) {
 
 fn adc(cpu: &mut CPU, _: u16, val: u8) {
     let n = (val as u16) + (cpu.a as u16) + (cpu.c as u16);
-    cpu.v = cpu.a as u16 & 0x80 == 0 && n & 0x80 != 0;
-    cpu.s = n & 0x80 != 0;
-    cpu.z = n == 0;
+
+    let a = (n & 0xff) as u8;
+    update_sz(cpu, a);
+
     cpu.c = n > 0xff;
-    cpu.a = (n & 0xff) as u8;
+
+    // I took this from the NesDev forums.
+    // It's only concerned with the 8th bit, which indicates the sign of each
+    // value. The overflow bit is set if adding two positive numbers results
+    // in a negative, or if adding two negative numbers results in a positive.
+    cpu.v = ((cpu.a ^ val) & 0x80 == 0) && ((cpu.a ^ n as u8) & 0x80 > 0);
+
+    cpu.a = a;
 }
 
 fn ldy(cpu: &mut CPU, _: u16, val: u8) {
