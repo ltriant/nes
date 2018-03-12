@@ -273,7 +273,7 @@ fn bmi(cpu: &mut CPU, addr: u16, _: u8) {
 
 fn ora(cpu: &mut CPU, _: u16, val: u8) {
     let na = cpu.a | val;
-    cpu.a = val;
+    cpu.a = na;
     update_sz(cpu, na);
 }
 
