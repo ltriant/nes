@@ -310,16 +310,14 @@ fn ldy(cpu: &mut CPU, _: u16, val: u8) {
 
 fn cpy(cpu: &mut CPU, _: u16, val: u8) {
     let n = cpu.y.wrapping_sub(val);
-    cpu.s = n & 0x80 != 0;
-    cpu.c = n > val;
-    cpu.z = n == 0;
+    update_sz(cpu, n);
+    cpu.c = cpu.y >= val;
 }
 
 fn cpx(cpu: &mut CPU, _: u16, val: u8) {
     let n = cpu.x.wrapping_sub(val);
-    cpu.s = n & 0x80 != 0;
-    cpu.c = n > val;
-    cpu.z = n == 0;
+    update_sz(cpu, n);
+    cpu.c = cpu.x >= val;
 }
 
 fn sbc(cpu: &mut CPU, _: u16, val: u8) {
