@@ -253,9 +253,8 @@ fn and(cpu: &mut CPU, _: u16, val: u8) {
 
 fn cmp(cpu: &mut CPU, _: u16, val: u8) {
     let n = cpu.a.wrapping_sub(val);
-    cpu.s = n & 0x80 != 0;
-    cpu.c = n > val;
-    cpu.z = n == 0;
+    cpu.c = n >= val;
+    update_sz(cpu, n);
 }
 
 fn cld(cpu: &mut CPU, _: u16, _: u8) {
