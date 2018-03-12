@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# pcmp -- processor flag comparison
+# nes-flags -- processor flag dump
 # usage: pcmp <hex> [<hex>, ...]
 
 use v5.10;

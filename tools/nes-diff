@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# nesdiff -- compare debug output to nestest
+# nes-diff -- compare debug output to nestest
 
 use v5.10;
 use warnings;
