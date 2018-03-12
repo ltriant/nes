@@ -53,7 +53,6 @@ pub enum Instruction {
     TXS,
     INC,
     ASL,
-    RRA,
     RTI,
     ROR,
 }
@@ -110,7 +109,6 @@ impl Instruction {
             Instruction::TSX => tsx(cpu, addr, val),
             Instruction::INC => inc(cpu, addr, val),
             Instruction::ASL => asl(cpu, addr, val, addr_mode),
-            Instruction::RRA => rra(cpu, addr, val),
             Instruction::RTI => rti(cpu, addr, val),
             Instruction::ROR => ror(cpu, addr, val, addr_mode),
             _ => panic!("unsupported instruction {:?}", *self),
@@ -415,9 +413,6 @@ fn rti(cpu: &mut CPU, _: u16, _: u8) {
     cpu.pc = retaddr;
 }
 
-fn ror(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
+fn ror(_cpu: &mut CPU, _addr: u16, _val: u8, _addr_mode: &AddressingMode) {
     panic!("ROR");
 }
-
-// Illegal opcodes
-fn rra(_: &mut CPU, _: u16, _: u8) { }
