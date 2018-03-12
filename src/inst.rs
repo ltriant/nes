@@ -188,9 +188,10 @@ fn sta(cpu: &mut CPU, addr: u16, _: u8) {
 }
 
 fn bit(cpu: &mut CPU, _: u16, val: u8) {
+    cpu.s = val & 0x80 != 0;
+    cpu.v = (val >> 0x06 & 0x01) == 1;
     let f = cpu.a & val;
-    cpu.v = val & 0x40 != 0;
-    update_sz(cpu, f);
+    cpu.z = f == 0;
 }
 
 fn bvs(cpu: &mut CPU, addr: u16, _: u8) {
