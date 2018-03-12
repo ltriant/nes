@@ -234,8 +234,7 @@ fn php(cpu: &mut CPU, _: u16, _: u8) {
 }
 
 fn plp(cpu: &mut CPU, _: u16, _: u8) {
-    let p = cpu.stack_pop8() & 0xef;
-    update_sz(cpu, p);
+    let p = cpu.stack_pop8() & 0xef | 0x20;
     cpu.set_flags(p);
 }
 
