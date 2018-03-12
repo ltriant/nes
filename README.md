@@ -1,4 +1,4 @@
-# nesulator
+# un-named project
 
 Yet another NES emulator
 
@@ -12,7 +12,10 @@ Yet another NES emulator
   2. ~~registers + PC~~
   3. ~~iNES parser~~
   4. ~~opcodes + addressing modes structure~~
-  5. implement the rest of the instructions
+  5. calculate cycle counts
+  6. iNES parser in its own module
+  7. complete the iNES parser
+  8. implement the rest of the instructions
 5. something something PPU
 6. something something APU
 7. ???
