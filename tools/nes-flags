@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # nes-flags -- processor flag dump
-# usage: pcmp <hex> [<hex>, ...]
+# usage: nes-flags <hex> [<hex>, ...]
 
 use v5.10;
 use warnings;
@@ -8,7 +8,7 @@ use strict;
 
 die "args needed" unless @ARGV > 0;
 
-say "      czid__vs";
+say "      sv__dizc";
 for (@ARGV) {
 	die "bad hex string: $_" unless /^[0-9a-f]+$/i;
 	printf "0x$_: %08b\n", hex $_;
