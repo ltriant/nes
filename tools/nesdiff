@@ -13,6 +13,11 @@ my $nestest_output = shift || "doc/nestest.log";
 my @txt = io->file($txt_output)->chomp->getlines;
 my @nestest = io->file($nestest_output)->chomp->getlines;
 
+# ignore the cruft I output at the top of my log
+while ($txt[0] !~ /^[0-9A-Fa-f]{4}/) {
+	shift @txt;
+}
+
 my $i = 0;
 while (($i < @txt) and ($i < @nestest)) {
 	my $txt = $txt[$i];
