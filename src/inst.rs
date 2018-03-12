@@ -382,8 +382,9 @@ fn txs(cpu: &mut CPU, _: u16, _: u8) {
 }
 
 fn tsx(cpu: &mut CPU, _: u16, _: u8) {
-    let x = cpu.stack_pop8();
-    cpu.x = x;
+    let s = cpu.sp;
+    update_sz(cpu, s);
+    cpu.x = s;
 }
 
 fn inc(cpu: &mut CPU, addr: u16, val: u8) {
