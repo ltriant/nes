@@ -267,7 +267,6 @@ pub const OPCODES: [Opcode; 256] = [
 pub enum AddressingMode {
     None,
     Immediate,
-    ZeroPageAbsolute,
     Absolute,
     Implied,
     Accumulator,
@@ -290,7 +289,6 @@ impl AddressingMode {
             | AddressingMode::Accumulator => Ok(1),
 
               AddressingMode::Immediate
-            | AddressingMode::ZeroPageAbsolute
             | AddressingMode::ZeroPageIndexed
             | AddressingMode::Relative
             | AddressingMode::ZeroPageAbsoluteX
@@ -318,14 +316,6 @@ impl AddressingMode {
                 let addr = pc + 1;
                 let val = cpu.mem.read(addr)
                     .expect("Immediate val");
-                Ok((addr, val))
-            },
-            AddressingMode::ZeroPageAbsolute => {
-                let lo = cpu.mem.read(pc + 1)
-                    .expect("ZeroPageAbsolute arg") as u16;
-                let addr = (0x00 << 8) | lo;
-                let val = cpu.mem.read(addr)
-                    .expect("Absolute addr");
                 Ok((addr, val))
             },
             AddressingMode::Absolute => {
