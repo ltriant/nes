@@ -30,8 +30,8 @@ while (($i < @txt) and ($i < @nestest)) {
 	$nes = join ' ', @nes_fields;
 
 	if ($txt ne $nes) {
-		say "- " . $nes;
-		say "+ " . $txt;
+		say "$i - $nes";
+		say "$i + $txt";
 		last;
 	}
 
