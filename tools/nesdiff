@@ -25,7 +25,8 @@ while (($i < @txt) and ($i < @nestest)) {
 	$nes = join ' ', @nes_fields;
 
 	if ($txt ne $nes) {
-		say "$txt -> $nes";
+		say "- " . $nes;
+		say "+ " . $txt;
 		last;
 	}
 
