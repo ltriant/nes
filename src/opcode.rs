@@ -79,7 +79,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::PHA, AddressingMode::Implied),
     Opcode(Instruction::EOR, AddressingMode::Immediate),
-    Opcode(Instruction::None, AddressingMode::None),
+    Opcode(Instruction::LSR, AddressingMode::Accumulator),
     Opcode(Instruction::None, AddressingMode::None),
     Opcode(Instruction::JMP, AddressingMode::Absolute),
     Opcode(Instruction::None, AddressingMode::None),

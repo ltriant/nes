@@ -55,6 +55,7 @@ pub enum Instruction {
     ASL,
     RTI,
     ROR,
+    LSR,
 }
 
 impl Instruction {
