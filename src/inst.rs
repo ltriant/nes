@@ -416,8 +416,7 @@ fn asl(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
 }
 
 fn rti(cpu: &mut CPU, _: u16, _: u8) {
-    let flags = cpu.stack_pop8() & 0xef;
-    update_sz(cpu, flags);
+    let flags = cpu.stack_pop8() & 0xef | 0x20;
     cpu.set_flags(flags);
 
     let retaddr = cpu.stack_pop16();
