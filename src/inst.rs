@@ -403,7 +403,7 @@ fn inc(cpu: &mut CPU, addr: u16, val: u8) {
 }
 
 fn asl(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
-    cpu.c = val & 0x80 == 1;
+    cpu.c = val & 0x80 != 0;
     let n = (val << 1) & 0xff;
 
     // TODO When the addressing mode is accumulator, the addr variable will be 0... ?
