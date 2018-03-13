@@ -68,9 +68,9 @@ impl CPU {
         let lo = self.mem.read(0xFFFC).expect("low PC byte") as u16;
         let hi = self.mem.read(0xFFFD).expect("high PC byte") as u16;
         let addr = (hi << 8) | lo;
-        println!("starting program counter: 0x{:04X}", addr);
         self.pc = addr;
         self.pc = 0xc000;
+        println!("starting program counter: 0x{:04X}", self.pc);
 
         self.set_flags(0x24);
         println!("initial flags: 0x{:02X}", self.flags());
@@ -131,7 +131,9 @@ impl CPU {
             panic!("cannot push onto a full stack");
         }
 
-        self.mem.write(self.sp as u16, val)
+        // The stack page exists from 0x0100 to 0x01FF
+        let addr = (0x01 << 8) | self.sp as u16;
+        self.mem.write(addr, val)
             .expect("unable to write to stack");
         self.sp -= 1;
     }
@@ -142,7 +144,10 @@ impl CPU {
         }
 
         self.sp += 1;
-        let val = self.mem.read(self.sp as u16)
+
+        // The stack page exists from 0x0100 to 0x01FF
+        let addr = (0x01 << 8) | self.sp as u16;
+        let val = self.mem.read(addr)
             .expect("unable to read from stack");
 
         val
@@ -220,12 +225,12 @@ mod tests {
 
         cpu.stack_push8(0xff);
         assert_eq!(cpu.sp, 0xfc);
-        assert_eq!(cpu.mem.ram[(cpu.sp as usize) + 1], 0xff);
+        assert_eq!(cpu.mem.ram[0x0100 + (cpu.sp as usize) + 1], 0xff);
 
         cpu.stack_push16(0xdead);
         assert_eq!(cpu.sp, 0xfa);
-        assert_eq!(cpu.mem.ram[(cpu.sp as usize) + 1], 0xad);
-        assert_eq!(cpu.mem.ram[(cpu.sp as usize) + 2], 0xde);
+        assert_eq!(cpu.mem.ram[0x100 + (cpu.sp as usize) + 1], 0xad);
+        assert_eq!(cpu.mem.ram[0x100 + (cpu.sp as usize) + 2], 0xde);
 
         let rv = cpu.stack_pop16();
         assert_eq!(cpu.sp, 0xfc);
