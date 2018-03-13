@@ -321,7 +321,15 @@ fn cpx(cpu: &mut CPU, _: u16, val: u8) {
 }
 
 fn sbc(cpu: &mut CPU, _: u16, val: u8) {
-    adc(cpu, 0, !val);
+    let n: i8 = (cpu.a as i8)
+        .wrapping_sub(val as i8)
+        .wrapping_sub(1 - cpu.c as i8) ;
+
+    let a = (n & 0xff) as u8;
+    update_sz(cpu, a);
+    cpu.c = n >= 0;
+    cpu.v = ((cpu.a ^ val) & 0x80 > 0) && ((cpu.a ^ n as u8) & 0x80 > 0);
+    cpu.a = a;
 }
 
 fn sty(cpu: &mut CPU, addr: u16, _: u8) {
