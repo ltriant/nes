@@ -1,12 +1,16 @@
-# un-named project
+## toad
 
-Yet another NES emulator
+A tiny NES emulator
 
-# To Do List
+## Summary
+
+This is a NES emulator, aiming to be tiny in many ways, from its resource footprint, to its code and design.
+
+## To Do
 
 1. ~~read 6502 docs~~
 2. ~~read how NES used the 6502~~
-3. come up with a better name
+3. ~~come up with a better name~~
 4. implement 6502 CPU
   1. ~~memory mapping (RAM)~~
   2. ~~registers + PC~~

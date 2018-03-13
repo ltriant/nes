@@ -1,6 +1,6 @@
 [package]
-name = "nesulator"
+name = "toad"
 version = "0.1.0"
-authors = ["Luke Triantafyllidis <luket@mailguard.com.au>"]
+authors = ["Luke Triantafyllidis <ltriant@cpan.org>"]
 
 [dependencies]
