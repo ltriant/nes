@@ -3,6 +3,7 @@ mod cpu;
 mod opcode;
 mod inst;
 mod mem;
+mod ines;
 
 use console::Console;
 
