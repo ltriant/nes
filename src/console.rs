@@ -39,11 +39,11 @@ impl Console {
         assert_eq!(magic, [0x4e, 0x45, 0x53, 0x1a]); // NES^Z
 
         // Get the number of 16KB ROM banks
-        let n_rom_banks = header[4];
+        let n_rom_banks = header[4] as usize;
         println!("16KB ROM banks: {}", n_rom_banks);
 
         // Get the number of 8KB VROM banks
-        let n_vrom_banks = header[5];
+        let n_vrom_banks = header[5] as usize;
         println!("8KB VROM banks: {}", n_vrom_banks);
 
         // Get the mapper
@@ -72,7 +72,7 @@ impl Console {
 
         if n_rom_banks > 0 {
             // Read the banks of ROM data
-            let mut rom = vec![0; n_rom_banks as usize * 16 * 1024];
+            let mut rom = vec![0; n_rom_banks * 16 * 1024];
             let bytes = fh.read(&mut rom)?;
             println!("read {} banks ({} bytes) of 16KB ROM data", n_rom_banks, bytes);
 
@@ -81,7 +81,7 @@ impl Console {
 
         if n_vrom_banks > 0 {
             // Read the banks of VROM data
-            let mut vrom = vec![0; n_vrom_banks as usize * 8 * 1024];
+            let mut vrom = vec![0; n_vrom_banks * 8 * 1024];
             let bytes = fh.read(&mut vrom)?;
             println!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
         }
