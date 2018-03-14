@@ -31,13 +31,13 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut Memory) -> Result<(), Cart
     println!("8KB VROM banks: {}", n_vrom_banks);
 
     // Get the mapper
-    // TODO the high 4 bits are for things?
-    let mapper_low = header[6] & 0x0f;
+    // TODO the low 4 bits are for things?
+    let mapper_low = (header[6] & 0xf0) >> 4;
 
-    // TODO the high 4 bits are for things?
-    let mapper_high = header[7] & 0x0f;
+    // TODO the low 4 bits are for things?
+    let mapper_high = header[7] & 0xf0 >> 4;
 
-    let mapper = (mapper_high << 4) & mapper_low;
+    let mapper = (mapper_high << 4) | mapper_low;
     // only support mapper 0 for now
     println!("mapper: {}", mapper);
 
