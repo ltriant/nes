@@ -13,7 +13,7 @@ pub enum CartridgeError {
 
 pub fn load_file_into_memory(fh: &mut File, mem: &mut Memory) -> Result<(), CartridgeError> {
     let mut header = [0; 16];
-    let bytes = fh.read(&mut header)
+    let _ = fh.read(&mut header)
         .map_err(CartridgeError::IO)?;
 
     // NES^Z
