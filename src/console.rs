@@ -16,7 +16,7 @@ impl Console {
         }
     }
 
-    pub fn disassemble(&mut self) {
+    pub fn power_up(&mut self) {
         self.cpu.init();
         loop {
             self.cpu.step();

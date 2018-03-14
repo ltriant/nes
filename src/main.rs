@@ -15,5 +15,5 @@ fn main() {
     //    .expect("could not insert nestest");
 
 
-    console.disassemble();
+    console.power_up();
 }
