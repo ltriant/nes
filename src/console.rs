@@ -30,44 +30,29 @@ impl Console {
         let mut fh = File::open(filename)
             .expect("cannot open file");
 
-        let mut header = [0; 4];
+        let mut header = [0; 16];
         let bytes = fh.read(&mut header)
-            .expect("cannot read header");
+            .expect("cannot read catridge header");
 
-        // Require an iNES format file
-        assert_eq!(bytes, 4);
-        assert_eq!(header, [0x4e, 0x45, 0x53, 0x1a]); // NES^Z
+        assert_eq!(bytes, 16);
+
+        let magic = &header[0 .. 4];
+        assert_eq!(magic, [0x4e, 0x45, 0x53, 0x1a]); // NES^Z
 
         // Get the number of 16KB ROM banks
-        let mut n_rom_banks = [0; 1];
-        let bytes = fh.read(&mut n_rom_banks)
-            .expect("cannot read ROM banks");
-        assert_eq!(bytes, 1);
-        let n_rom_banks = n_rom_banks[0];
+        let n_rom_banks = header[4];
         println!("16KB ROM banks: {}", n_rom_banks);
 
         // Get the number of 8KB VROM banks
-        let mut n_vrom_banks = [0; 1];
-        let bytes = fh.read(&mut n_vrom_banks)
-            .expect("cannot read VROM banks");
-        assert_eq!(bytes, 1);
-        let n_vrom_banks = n_vrom_banks[0];
+        let n_vrom_banks = header[5];
         println!("8KB VROM banks: {}", n_vrom_banks);
 
         // Get the mapper
-        let mut mapper_low = [0; 1];
-        let bytes = fh.read(&mut mapper_low)
-            .expect("cannot read low mapper byte");
-        assert_eq!(bytes, 1);
         // TODO the high 4 bits are for things?
-        let mapper_low = mapper_low[0] & 0x0f;
+        let mapper_low = header[6] & 0x0f;
 
-        let mut mapper_high = [0; 1];
-        let bytes = fh.read(&mut mapper_high)
-            .expect("cannot read high mapper byte");
-        assert_eq!(bytes, 1);
         // TODO the high 4 bits are for things?
-        let mapper_high = mapper_high[0] & 0x0f;
+        let mapper_high = header[7] & 0x0f;
 
         let mapper = (mapper_high << 4) & mapper_low;
         // only support mapper 0 for now
@@ -75,26 +60,15 @@ impl Console {
         println!("mapper: {}", mapper);
 
         // Get the number of 8KB RAM banks
-        let mut n_ram_banks = [0; 1];
-        let bytes = fh.read(&mut n_ram_banks)
-            .expect("cannot read RAM banks");
-        assert_eq!(bytes, 1);
-        let n_ram_banks = n_ram_banks[0];
+        let n_ram_banks = header[8];
         println!("8KB RAM banks: {}", n_ram_banks);
 
         // Get the cartridge type, 1 for PAL, anything else means NTSC
-        let mut cartridge_type = [0; 1];
-        let bytes = fh.read(&mut cartridge_type)
-            .expect("cannot read cartridge type");
-        assert_eq!(bytes, 1);
-        let cartridge_type = cartridge_type[0] >> 7;
+        let cartridge_type = header[9] >> 7;
         println!("cartridge type: {}", cartridge_type);
 
         // Reserved bytes, must all be zeroes
-        let mut zeroes = [1; 6];
-        let bytes = fh.read(&mut zeroes)
-            .expect("cannot read bytes 11-16");
-        assert_eq!(bytes, 6);
+        let zeroes = &header[10 .. 16];
         assert_eq!(zeroes, [0, 0, 0, 0, 0, 0]);
 
         if n_rom_banks > 0 {
