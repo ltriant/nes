@@ -16,10 +16,11 @@ This is a NES emulator, aiming to be tiny in many ways, from its resource footpr
   2. ~~registers + PC~~
   3. ~~iNES parser~~
   4. ~~opcodes + addressing modes structure~~
-  5. iNES parser in its own module
-  6. complete the iNES parser
-  7. calculate cycle counts
-  8. implement the rest of the instructions
+  5. ~~iNES parser in its own module~~
+  6. figure out how the mappers will fit into this design
+  7. complete the iNES parser
+  8. calculate cycle counts
+  9. implement the rest of the instructions
 5. something something PPU
 6. something something APU
 7. ???
