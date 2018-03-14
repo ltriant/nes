@@ -1,6 +1,7 @@
 use cpu::CPU;
 
 use std::fs::File;
+use std::io;
 use std::io::Read;
 
 pub struct Console {
@@ -24,15 +25,13 @@ impl Console {
     }
 
     // TODO move iNES parsing into a separate module?
-    pub fn insert_cartridge(&mut self, filename: &str) -> Result<(), &str> {
+    pub fn insert_cartridge(&mut self, filename: &str) -> Result<(), io::Error> {
         println!("loading {}", filename);
 
-        let mut fh = File::open(filename)
-            .expect("cannot open file");
+        let mut fh = File::open(filename)?;
 
         let mut header = [0; 16];
-        let bytes = fh.read(&mut header)
-            .expect("cannot read catridge header");
+        let bytes = fh.read(&mut header)?;
 
         assert_eq!(bytes, 16);
 
@@ -74,8 +73,7 @@ impl Console {
         if n_rom_banks > 0 {
             // Read the banks of ROM data
             let mut rom = vec![0; n_rom_banks as usize * 16 * 1024];
-            let bytes = fh.read(&mut rom)
-                .expect("cannot read ROM banks");
+            let bytes = fh.read(&mut rom)?;
             println!("read {} banks ({} bytes) of 16KB ROM data", n_rom_banks, bytes);
 
             self.cpu.mem.load_rom(&rom);
@@ -84,8 +82,7 @@ impl Console {
         if n_vrom_banks > 0 {
             // Read the banks of VROM data
             let mut vrom = vec![0; n_vrom_banks as usize * 8 * 1024];
-            let bytes = fh.read(&mut vrom)
-                .expect("cannot read VROM banks");
+            let bytes = fh.read(&mut vrom)?;
             println!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
         }
 
