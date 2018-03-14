@@ -1,5 +1,5 @@
 use cpu::CPU;
-use ines;
+use ines::{Cartridge, CartridgeError};
 
 use std::fs::File;
 
@@ -16,11 +16,11 @@ impl Console {
         }
     }
 
-    pub fn insert_cartridge(&mut self, filename: &str) -> Result<(), ines::CartridgeError> {
+    pub fn insert_cartridge(&mut self, filename: &str) -> Result<(), CartridgeError> {
         println!("loading {}", filename);
         let mut fh = File::open(filename)
-            .map_err(ines::CartridgeError::IO)?;
-        ines::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
+            .map_err(CartridgeError::IO)?;
+        let _ = Cartridge::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
         Ok(())
     }
 
