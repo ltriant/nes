@@ -310,7 +310,9 @@ impl AddressingMode {
             .collect::<Vec<_>>()
     }
 
-    pub fn get_data(&self, cpu: &CPU, pc: u16) -> Result<(u16, u8), ()> {
+    pub fn get_data(&self, cpu: &CPU) -> Result<(u16, u8), ()> {
+        let pc = cpu.pc - self.n_bytes().unwrap() as u16;
+
         match *self {
             AddressingMode::Immediate => {
                 let addr = pc + 1;

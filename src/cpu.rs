@@ -177,10 +177,9 @@ impl CPU {
         let &Opcode(ref inst, ref addr_mode) = op;
 
         if let Ok(bytes) = addr_mode.n_bytes() {
-            let pc = self.pc;
             self.pc += bytes as u16;
 
-            if let Ok(operand) = addr_mode.get_data(self, pc) {
+            if let Ok(operand) = addr_mode.get_data(self) {
                 inst.run(self, operand, addr_mode);
             }
             else {
