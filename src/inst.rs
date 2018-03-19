@@ -54,7 +54,6 @@ pub enum Instruction {
     INC,
     ASL,
     RTI,
-    ROR,
     LSR,
 }
 
@@ -111,7 +110,6 @@ impl Instruction {
             Instruction::INC => inc(cpu, addr, val),
             Instruction::ASL => asl(cpu, addr, val, addr_mode),
             Instruction::RTI => rti(cpu, addr, val),
-            Instruction::ROR => ror(cpu, addr, val, addr_mode),
             _ => panic!("unsupported instruction {:?}", *self),
         }
     }
@@ -422,8 +420,4 @@ fn rti(cpu: &mut CPU, _: u16, _: u8) {
 
     let retaddr = cpu.stack_pop16();
     cpu.pc = retaddr;
-}
-
-fn ror(_cpu: &mut CPU, _addr: u16, _val: u8, _addr_mode: &AddressingMode) {
-    panic!("ROR");
 }
