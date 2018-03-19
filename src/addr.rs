@@ -121,8 +121,17 @@ impl AddressingMode {
 
                 let lo = cpu.mem.read(addr)
                     .expect("Indirect addr 1") as u16;
-                let hi = cpu.mem.read(addr + 1)
-                    .expect("Indirect addr 2") as u16;
+
+                let hi =
+                    if addr & 0xff == 0xff {
+                        cpu.mem.read(addr & 0xff00)
+                            .expect("Indirect addr 2 bug") as u16
+                    }
+                    else {
+                        cpu.mem.read(addr + 1)
+                            .expect("Indirect addr 2") as u16
+                    };
+
                 let addr = (hi << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("Indirect addr val");
