@@ -272,7 +272,6 @@ pub enum AddressingMode {
     Accumulator,
     AbsoluteX,
     AbsoluteY,
-    IndexedY,
     ZeroPageIndexed,
     ZeroPageAbsoluteX,
     ZeroPageAbsoluteY,
