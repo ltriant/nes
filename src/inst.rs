@@ -324,7 +324,7 @@ fn sbc(cpu: &mut CPU, _: u16, val: u8) {
         .wrapping_sub(val as i8)
         .wrapping_sub(1 - cpu.c as i8) ;
 
-    let a = (n & 0xff) as u8;
+    let a = n as u8;
     update_sz(cpu, a);
     cpu.c = n >= 0;
     cpu.v = ((cpu.a ^ val) & 0x80 > 0) && ((cpu.a ^ n as u8) & 0x80 > 0);
