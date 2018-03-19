@@ -1,5 +1,5 @@
 use cpu::CPU;
-use opcode::AddressingMode;
+use addr::AddressingMode;
 
 #[derive(Debug)]
 pub enum Instruction {

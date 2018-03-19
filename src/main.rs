@@ -4,6 +4,7 @@ mod opcode;
 mod inst;
 mod mem;
 mod ines;
+mod addr;
 
 use console::Console;
 
