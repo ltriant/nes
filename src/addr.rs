@@ -18,6 +18,10 @@ pub enum AddressingMode {
     Relative,
 }
 
+fn pages_differ(addr_a: u16, addr_b: u16) -> bool {
+    (addr_a & 0xff00) != (addr_b & 0xff00)
+}
+
 impl AddressingMode {
     pub fn n_bytes(&self) -> Result<usize, ()> {
         match *self {
@@ -46,7 +50,8 @@ impl AddressingMode {
             .collect::<Vec<_>>()
     }
 
-    pub fn get_data(&self, cpu: &CPU) -> Result<(u16, u8), ()> {
+    pub fn get_data(&self, cpu: &CPU) -> Result<(u16, u8, bool), ()> {
+        // At this point, cpu.pc points to the next instruction.
         let pc = cpu.pc - self.n_bytes().unwrap() as u16;
 
         match *self {
@@ -54,7 +59,7 @@ impl AddressingMode {
                 let addr = pc + 1;
                 let val = cpu.mem.read(addr)
                     .expect("Immediate val");
-                Ok((addr, val))
+                Ok((addr, val, false))
             },
             AddressingMode::Absolute => {
                 let lo = cpu.mem.read(pc + 1)
@@ -64,17 +69,17 @@ impl AddressingMode {
                 let addr = (hi << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("Absolute addr");
-                Ok((addr, val))
+                Ok((addr, val, false))
             },
-            AddressingMode::Implied => Ok((0, 0)),
-            AddressingMode::Accumulator => Ok((0, cpu.a)),
+            AddressingMode::Implied => Ok((0, 0, false)),
+            AddressingMode::Accumulator => Ok((0, cpu.a, false)),
             AddressingMode::ZeroPageIndexed => {
                 let lo = cpu.mem.read(pc + 1)
                     .expect("ZeroPageIndexed arg") as u16;
                 let addr = (0x00 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageIndexed addr");
-                Ok((addr, val))
+                Ok((addr, val, false))
             },
             AddressingMode::Relative => {
                 let offset = cpu.mem.read(pc + 1)
@@ -90,7 +95,7 @@ impl AddressingMode {
                 // NOTE This has to be based off the current program counter,
                 // _after_ it has been advanced, but before the instruction is
                 // being executed. I don't know why though?
-                Ok((cpu.pc + offset, 0))
+                Ok((cpu.pc + offset, 0, false))
             },
             AddressingMode::AbsoluteX => {
                 let lo = cpu.mem.read(pc + 1)
@@ -98,9 +103,10 @@ impl AddressingMode {
                 let hi = cpu.mem.read(pc + 2)
                     .expect("AbsoluteX arg 2") as u16;
                 let addr = (hi << 8) | lo;
-                let val = cpu.mem.read(addr)
+                let n_addr = addr + cpu.x as u16;
+                let val = cpu.mem.read(n_addr)
                     .expect("AbsoluteX addr");
-                Ok((0, val + cpu.x))
+                Ok((0, val, pages_differ(addr, n_addr)))
             },
             AddressingMode::AbsoluteY => {
                 let lo = cpu.mem.read(pc + 1)
@@ -108,9 +114,10 @@ impl AddressingMode {
                 let hi = cpu.mem.read(pc + 2)
                     .expect("AbsoluteY arg 2") as u16;
                 let addr = (hi << 8) | lo;
-                let val = cpu.mem.read(addr)
+                let n_addr = addr + cpu.y as u16;
+                let val = cpu.mem.read(n_addr)
                     .expect("AbsoluteY addr");
-                Ok((0, val + cpu.y))
+                Ok((0, val, pages_differ(addr, n_addr)))
             },
             AddressingMode::Indirect => {
                 let lo = cpu.mem.read(pc + 1)
@@ -136,7 +143,7 @@ impl AddressingMode {
                 let val = cpu.mem.read(addr)
                     .expect("Indirect addr val");
 
-                Ok((addr, val))
+                Ok((addr, val, false))
             }
             AddressingMode::ZeroPageAbsoluteX => {
                 let lo = cpu.mem.read(pc + 1)
@@ -144,7 +151,7 @@ impl AddressingMode {
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageAbsoluteX addr");
-                Ok((0, val + cpu.x))
+                Ok((0, val + cpu.x, false))
             },
             AddressingMode::ZeroPageAbsoluteY => {
                 let lo = cpu.mem.read(pc + 1)
@@ -152,7 +159,7 @@ impl AddressingMode {
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageAbsoluteY addr");
-                Ok((0, val + cpu.y))
+                Ok((0, val + cpu.y, false))
             },
             AddressingMode::IndexedIndirect => {
                 let lo = cpu.mem.read(pc + 1)
@@ -160,14 +167,15 @@ impl AddressingMode {
                 let addr = lo.wrapping_add(cpu.x) as u16;
                 let val = cpu.mem.read(addr)
                     .expect("IndexedIndirect val");
-                Ok((addr, val))
+                Ok((addr, val, false))
             },
             AddressingMode::IndirectIndexed => {
-                let lo = cpu.mem.read(pc + 1)
-                    .expect("IndirectIndexed arg 1") as u16;
-                let val = cpu.mem.read(lo)
+                let addr = cpu.mem.read(pc + 1)
+                    .expect("IndirectIndexed addr") as u16;
+                let n_addr = addr + cpu.y as u16;
+                let val = cpu.mem.read(n_addr)
                     .expect("IndirectIndexed val");
-                Ok((lo, val + cpu.y))
+                Ok((addr, val, pages_differ(addr, n_addr)))
             },
             _ => Err(())
         }

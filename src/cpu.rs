@@ -38,6 +38,8 @@ pub struct CPU {
 
     // Stack pointer
     pub sp: StackPointer,
+
+    cycles: usize,
 }
 
 impl CPU {
@@ -61,6 +63,8 @@ impl CPU {
             pc: 0x0000,
 
             sp: STACK_INIT,
+
+            cycles: 0,
         }
     }
 
@@ -115,7 +119,7 @@ impl CPU {
             .collect::<Vec<_>>()
             .join(" ");
 
-        println!("{:4X}  {:8}  {:32?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}",
+        println!("{:4X}  {:8}  {:32?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{:-3}",
                  self.pc,
                  bytes,
                  inst,
@@ -123,7 +127,8 @@ impl CPU {
                  self.x,
                  self.y,
                  self.flags(),
-                 self.sp);
+                 self.sp,
+                 self.cycles);
     }
 
     pub fn stack_push8(&mut self, val: u8) {
@@ -179,8 +184,8 @@ impl CPU {
         if let Ok(bytes) = addr_mode.n_bytes() {
             self.pc += bytes as u16;
 
-            if let Ok(operand) = addr_mode.get_data(self) {
-                inst.run(self, operand, addr_mode);
+            if let Ok((addr, val, pages_crossed)) = addr_mode.get_data(self) {
+                inst.run(self, addr, val, addr_mode);
             }
             else {
                 panic!("unable to get data");

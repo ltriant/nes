@@ -58,7 +58,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn run(&self, cpu: &mut CPU, (addr, val): (u16, u8), addr_mode: &AddressingMode) {
+    pub fn run(&self, cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
         match *self {
             Instruction::ADC => adc(cpu, addr, val),
             Instruction::AND => and(cpu, addr, val),
