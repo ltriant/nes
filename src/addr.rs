@@ -32,6 +32,7 @@ impl AddressingMode {
             | AddressingMode::ZeroPageIndexed
             | AddressingMode::Relative
             | AddressingMode::ZeroPageAbsoluteX
+            | AddressingMode::ZeroPageAbsoluteY
             | AddressingMode::IndexedIndirect
             | AddressingMode::IndirectIndexed => Ok(2),
 
@@ -151,7 +152,7 @@ impl AddressingMode {
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageAbsoluteX addr");
-                Ok((0, val + cpu.x, false))
+                Ok((0, val.wrapping_add(cpu.x), false))
             },
             AddressingMode::ZeroPageAbsoluteY => {
                 let lo = cpu.mem.read(pc + 1)
@@ -159,7 +160,7 @@ impl AddressingMode {
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageAbsoluteY addr");
-                Ok((0, val + cpu.y, false))
+                Ok((0, val.wrapping_add(cpu.y), false))
             },
             AddressingMode::IndexedIndirect => {
                 let lo = cpu.mem.read(pc + 1)
