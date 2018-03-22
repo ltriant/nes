@@ -163,8 +163,15 @@ impl AddressingMode {
             },
             AddressingMode::IndexedIndirect => {
                 let lo = cpu.mem.read(pc + 1)
-                    .expect("IndexedIndirect arg 1");
+                    .expect("IndexedIndirect addr");
                 let addr = lo.wrapping_add(cpu.x) as u16;
+
+                let lo = cpu.mem.read(addr)
+                    .expect("IndexedIndirect hi val") as u16;
+                let hi = cpu.mem.read(addr + 1)
+                    .expect("IndexedIndirect lo val") as u16;
+
+                let addr = (hi << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("IndexedIndirect val");
                 Ok((addr, val, false))
@@ -172,10 +179,12 @@ impl AddressingMode {
             AddressingMode::IndirectIndexed => {
                 let addr = cpu.mem.read(pc + 1)
                     .expect("IndirectIndexed addr") as u16;
-                let n_addr = addr + cpu.y as u16;
+                let n_addr = cpu.mem.read(addr)
+                    .expect("IndirectIndexed n_addr")
+                    .wrapping_add(cpu.y) as u16;
                 let val = cpu.mem.read(n_addr)
                     .expect("IndirectIndexed val");
-                Ok((addr, val, pages_differ(addr, n_addr)))
+                Ok((n_addr, val, pages_differ(addr, n_addr)))
             },
             _ => Err(())
         }
