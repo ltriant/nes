@@ -19,7 +19,7 @@ This is a NES emulator, aiming to be tiny in many ways, from its resource footpr
   5. ~~iNES parser in its own module~~
   6. figure out how the mappers will fit into this design
   7. complete the iNES parser
-  8. calculate cycle counts
+  8. ~~calculate cycle counts~~
   9. implement the rest of the instructions
 5. something something PPU
 6. something something APU
