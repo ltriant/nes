@@ -153,7 +153,7 @@ impl AddressingMode {
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageX addr");
-                Ok((0, val, false))
+                Ok((addr, val, false))
             },
             AddressingMode::ZeroPageY => {
                 let lo = cpu.mem.read(pc + 1)
@@ -162,7 +162,7 @@ impl AddressingMode {
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageY addr");
-                Ok((0, val, false))
+                Ok((addr, val, false))
             },
             AddressingMode::IndexedIndirect => {
                 let lo = cpu.mem.read(pc + 1)
