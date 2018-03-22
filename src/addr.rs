@@ -114,7 +114,7 @@ impl AddressingMode {
                 let hi = cpu.mem.read(pc + 2)
                     .expect("AbsoluteY arg 2") as u16;
                 let addr = (hi << 8) | lo;
-                let n_addr = addr + cpu.y as u16;
+                let n_addr = addr.wrapping_add(cpu.y as u16);
                 let val = cpu.mem.read(n_addr)
                     .expect("AbsoluteY addr");
                 Ok((0, val, pages_differ(addr, n_addr)))
