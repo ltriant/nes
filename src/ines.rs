@@ -15,6 +15,7 @@ pub enum CartridgeError {
     IO(io::Error),
     InvalidMagic,
     InvalidZeroes,
+    UnsupportedCartridge,
 }
 
 impl Cartridge {
@@ -55,6 +56,9 @@ impl Cartridge {
         // Get the cartridge type, 1 for PAL, anything else means NTSC
         let cartridge_type = header[9] >> 7;
         println!("cartridge type: {}", cartridge_type);
+        if cartridge_type == 1 {
+            return Err(CartridgeError::UnsupportedCartridge);
+        }
 
         // Reserved bytes, must all be zeroes
         let zeroes = &header[10 .. 16];
