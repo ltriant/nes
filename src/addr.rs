@@ -103,10 +103,10 @@ impl AddressingMode {
                 let hi = cpu.mem.read(pc + 2)
                     .expect("AbsoluteX arg 2") as u16;
                 let addr = (hi << 8) | lo;
-                let n_addr = addr + cpu.x as u16;
+                let n_addr = addr.wrapping_add(cpu.x as u16);
                 let val = cpu.mem.read(n_addr)
                     .expect("AbsoluteX addr");
-                Ok((0, val, pages_differ(addr, n_addr)))
+                Ok((n_addr, val, pages_differ(addr, n_addr)))
             },
             AddressingMode::AbsoluteY => {
                 let lo = cpu.mem.read(pc + 1)
@@ -117,7 +117,7 @@ impl AddressingMode {
                 let n_addr = addr.wrapping_add(cpu.y as u16);
                 let val = cpu.mem.read(n_addr)
                     .expect("AbsoluteY addr");
-                Ok((0, val, pages_differ(addr, n_addr)))
+                Ok((n_addr, val, pages_differ(addr, n_addr)))
             },
             AddressingMode::Indirect => {
                 let lo = cpu.mem.read(pc + 1)
