@@ -122,7 +122,7 @@ impl CPU {
 
         let ppu_dots = self.cycles * 3 % PPU_DOTS_PER_SCANLINE;
 
-        println!("{:4X}  {:8}  {:32?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{:-3}",
+        println!("{:04X}  {:8}  {:32?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{:-3}",
                  self.pc,
                  bytes,
                  inst,
