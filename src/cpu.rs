@@ -175,6 +175,11 @@ impl CPU {
         (hi << 8) | lo
     }
 
+    pub fn update_sz(&mut self, val: u8) {
+        self.s = val & 0x80 != 0;
+        self.z = val == 0;
+    }
+
     pub fn add_branch_cycles(&mut self, pc: ProgramCounter, addr: u16) {
         self.cycles += 1;
 

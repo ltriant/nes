@@ -124,16 +124,11 @@ impl Instruction {
     }
 }
 
-fn update_sz(cpu: &mut CPU, val: u8) {
-    cpu.s = val & 0x80 != 0;
-    cpu.z = val == 0;
-}
-
 fn adc(cpu: &mut CPU, _: u16, val: u8) {
     let n = (val as u16) + (cpu.a as u16) + (cpu.c as u16);
 
     let a = (n & 0xff) as u8;
-    update_sz(cpu, a);
+    cpu.update_sz(a);
 
     cpu.c = n > 0xff;
 
@@ -149,7 +144,7 @@ fn adc(cpu: &mut CPU, _: u16, val: u8) {
 fn and(cpu: &mut CPU, _: u16, val: u8) {
     cpu.a &= val;
     let a = cpu.a;
-    update_sz(cpu, a);
+    cpu.update_sz(a);
 }
 
 fn asl(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
@@ -161,7 +156,7 @@ fn asl(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
         _ => { cpu.mem.write(addr, n).expect("ASL failed"); }
     };
 
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn bcc(cpu: &mut CPU, addr: u16, _: u8) {
@@ -250,24 +245,24 @@ fn clv(cpu: &mut CPU, _: u16, _: u8) {
 fn cmp(cpu: &mut CPU, _: u16, val: u8) {
     let n = cpu.a.wrapping_sub(val);
     cpu.c = cpu.a >= val;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn cpx(cpu: &mut CPU, _: u16, val: u8) {
     let n = cpu.x.wrapping_sub(val);
-    update_sz(cpu, n);
+    cpu.update_sz(n);
     cpu.c = cpu.x >= val;
 }
 
 fn cpy(cpu: &mut CPU, _: u16, val: u8) {
     let n = cpu.y.wrapping_sub(val);
-    update_sz(cpu, n);
+    cpu.update_sz(n);
     cpu.c = cpu.y >= val;
 }
 
 fn dec(cpu: &mut CPU, addr: u16, val: u8) {
     let n = val.wrapping_sub(1);
-    update_sz(cpu, n);
+    cpu.update_sz(n);
     cpu.mem.write(addr, n)
         .expect("DEC failed");
 }
@@ -275,38 +270,38 @@ fn dec(cpu: &mut CPU, addr: u16, val: u8) {
 fn dex(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.x.wrapping_sub(1);
     cpu.x = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn dey(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.y.wrapping_sub(1);
     cpu.y = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn eor(cpu: &mut CPU, _: u16, val: u8) {
     let val = val ^ cpu.a;
     cpu.a = val;
-    update_sz(cpu, val);
+    cpu.update_sz(val);
 }
 
 fn inc(cpu: &mut CPU, addr: u16, val: u8) {
     let n = val.wrapping_add(1);
     cpu.mem.write(addr, n)
         .expect("INC failed");
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn inx(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.x.wrapping_add(1);
     cpu.x = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn iny(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.y.wrapping_add(1);
     cpu.y = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn jmp(cpu: &mut CPU, addr: u16, _: u8) {
@@ -321,23 +316,23 @@ fn jsr(cpu: &mut CPU, addr: u16, _: u8) {
 
 fn lda(cpu: &mut CPU, _: u16, val: u8) {
     cpu.a = val;
-    update_sz(cpu, val);
+    cpu.update_sz(val);
 }
 
 fn ldx(cpu: &mut CPU, _: u16, val: u8) {
     cpu.x = val;
-    update_sz(cpu, val);
+    cpu.update_sz(val);
 }
 
 fn ldy(cpu: &mut CPU, _: u16, val: u8) {
     cpu.y = val;
-    update_sz(cpu, val);
+    cpu.update_sz(val);
 }
 
 fn lsr(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
     cpu.c = val & 0x01 == 1;
     let n = val >> 1;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 
     match *addr_mode {
         AddressingMode::Accumulator => { cpu.a = n; },
@@ -350,7 +345,7 @@ fn nop(_: &mut CPU, _: u16, _: u8) { }
 fn ora(cpu: &mut CPU, _: u16, val: u8) {
     let na = cpu.a | val;
     cpu.a = na;
-    update_sz(cpu, na);
+    cpu.update_sz(na);
 }
 
 fn pha(cpu: &mut CPU, _: u16, _: u8) {
@@ -370,7 +365,7 @@ fn php(cpu: &mut CPU, _: u16, _: u8) {
 fn pla(cpu: &mut CPU, _: u16, _: u8) {
     let rv = cpu.stack_pop8();
     cpu.a = rv;
-    update_sz(cpu, rv);
+    cpu.update_sz(rv);
 }
 
 fn plp(cpu: &mut CPU, _: u16, _: u8) {
@@ -382,7 +377,7 @@ fn rol(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
     let c = cpu.c;
     cpu.c = val & 0x80 != 0;
     let n = (val << 1) | (c as u8);
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 
     match *addr_mode {
         AddressingMode::Accumulator => { cpu.a = n; },
@@ -394,7 +389,7 @@ fn ror(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
     let c = cpu.c;
     cpu.c = val & 0x01 == 1;
     let n = (val >> 1) | ((c as u8) << 7);
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 
     match *addr_mode {
         AddressingMode::Accumulator => { cpu.a = n; },
@@ -421,7 +416,7 @@ fn sbc(cpu: &mut CPU, _: u16, val: u8) {
         .wrapping_sub(1 - cpu.c as i8) ;
 
     let a = n as u8;
-    update_sz(cpu, a);
+    cpu.update_sz(a);
     cpu.c = n >= 0;
     cpu.v = ((cpu.a ^ val) & 0x80 > 0) && ((cpu.a ^ n as u8) & 0x80 > 0);
     cpu.a = a;
@@ -457,25 +452,25 @@ fn sty(cpu: &mut CPU, addr: u16, _: u8) {
 fn tax(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.a;
     cpu.x = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn tay(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.a;
     cpu.y = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn tsx(cpu: &mut CPU, _: u16, _: u8) {
     let s = cpu.sp;
-    update_sz(cpu, s);
+    cpu.update_sz(s);
     cpu.x = s;
 }
 
 fn txa(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.x;
     cpu.a = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
 
 fn txs(cpu: &mut CPU, _: u16, _: u8) {
@@ -485,5 +480,5 @@ fn txs(cpu: &mut CPU, _: u16, _: u8) {
 fn tya(cpu: &mut CPU, _: u16, _: u8) {
     let n = cpu.y;
     cpu.a = n;
-    update_sz(cpu, n);
+    cpu.update_sz(n);
 }
