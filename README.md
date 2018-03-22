@@ -1,4 +1,4 @@
-## toad
+## ...
 
 A tiny NES emulator
 
@@ -10,7 +10,7 @@ This is a NES emulator, aiming to be tiny in many ways, from its resource footpr
 
 1. ~~read 6502 docs~~
 2. ~~read how NES used the 6502~~
-3. ~~come up with a better name~~
+3. come up with a better name
 4. implement 6502 CPU
   1. ~~memory mapping (RAM)~~
   2. ~~registers + PC~~
@@ -20,7 +20,8 @@ This is a NES emulator, aiming to be tiny in many ways, from its resource footpr
   6. figure out how the mappers will fit into this design
   7. complete the iNES parser
   8. ~~calculate cycle counts~~
-  9. implement the rest of the instructions
+  9. ~~implement the rest of the instructions~~
+  10. illegal opcodes
 5. something something PPU
 6. something something APU
 7. ???
