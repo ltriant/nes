@@ -22,7 +22,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::ASL, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::BPL, AddressingMode::Relative, 2, 0),
-    Opcode(Instruction::ORA, AddressingMode::IndexedIndirect, 5, 0),
+    Opcode(Instruction::ORA, AddressingMode::IndirectIndexed, 5, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
