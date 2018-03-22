@@ -94,12 +94,15 @@ impl Instruction {
             Instruction::LDA => lda(cpu, addr, val),
             Instruction::LDX => ldx(cpu, addr, val),
             Instruction::LDY => ldy(cpu, addr, val),
+            Instruction::LSR => lsr(cpu, addr, val, addr_mode),
             Instruction::NOP => nop(cpu, addr, val),
             Instruction::ORA => ora(cpu, addr, val),
             Instruction::PHA => pha(cpu, addr, val),
             Instruction::PHP => php(cpu, addr, val),
             Instruction::PLA => pla(cpu, addr, val),
             Instruction::PLP => plp(cpu, addr, val),
+            Instruction::ROL => rol(cpu, addr, val, addr_mode),
+            Instruction::ROR => ror(cpu, addr, val, addr_mode),
             Instruction::RTI => rti(cpu, addr, val),
             Instruction::RTS => rts(cpu, addr, val),
             Instruction::SBC => sbc(cpu, addr, val),
@@ -281,7 +284,7 @@ fn eor(cpu: &mut CPU, _: u16, val: u8) {
 }
 
 fn inc(cpu: &mut CPU, addr: u16, val: u8) {
-    let n = (val + 1) & 0xff;
+    let n = val.wrapping_add(1);
     cpu.mem.write(addr, n)
         .expect("INC failed");
     update_sz(cpu, n);
@@ -324,6 +327,17 @@ fn ldy(cpu: &mut CPU, _: u16, val: u8) {
     update_sz(cpu, val);
 }
 
+fn lsr(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
+    cpu.c = val & 0x01 == 1;
+    let n = val >> 1;
+    update_sz(cpu, n);
+
+    match *addr_mode {
+        AddressingMode::Accumulator => { cpu.a = n; },
+        _ => { cpu.mem.write(addr, n).expect("LSR failed"); }
+    };
+}
+
 fn nop(_: &mut CPU, _: u16, _: u8) { }
 
 fn ora(cpu: &mut CPU, _: u16, val: u8) {
@@ -355,6 +369,30 @@ fn pla(cpu: &mut CPU, _: u16, _: u8) {
 fn plp(cpu: &mut CPU, _: u16, _: u8) {
     let p = cpu.stack_pop8() & 0xef | 0x20;
     cpu.set_flags(p);
+}
+
+fn rol(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
+    let c = cpu.c;
+    cpu.c = val & 0x80 != 0;
+    let n = (val << 1) | (c as u8);
+    update_sz(cpu, n);
+
+    match *addr_mode {
+        AddressingMode::Accumulator => { cpu.a = n; },
+        _ => { cpu.mem.write(addr, n).expect("ROR failed"); }
+    };
+}
+
+fn ror(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
+    let c = cpu.c;
+    cpu.c = val & 0x01 == 1;
+    let n = (val >> 1) | ((c as u8) << 7);
+    update_sz(cpu, n);
+
+    match *addr_mode {
+        AddressingMode::Accumulator => { cpu.a = n; },
+        _ => { cpu.mem.write(addr, n).expect("ROR failed"); }
+    };
 }
 
 fn rti(cpu: &mut CPU, _: u16, _: u8) {
