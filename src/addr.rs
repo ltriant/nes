@@ -10,8 +10,8 @@ pub enum AddressingMode {
     AbsoluteX,
     AbsoluteY,
     ZeroPageIndexed,
-    ZeroPageAbsoluteX,
-    ZeroPageAbsoluteY,
+    ZeroPageX,
+    ZeroPageY,
     Indirect,
     IndexedIndirect,
     IndirectIndexed,
@@ -31,8 +31,8 @@ impl AddressingMode {
               AddressingMode::Immediate
             | AddressingMode::ZeroPageIndexed
             | AddressingMode::Relative
-            | AddressingMode::ZeroPageAbsoluteX
-            | AddressingMode::ZeroPageAbsoluteY
+            | AddressingMode::ZeroPageX
+            | AddressingMode::ZeroPageY
             | AddressingMode::IndexedIndirect
             | AddressingMode::IndirectIndexed => Ok(2),
 
@@ -146,20 +146,20 @@ impl AddressingMode {
 
                 Ok((addr, val, false))
             }
-            AddressingMode::ZeroPageAbsoluteX => {
+            AddressingMode::ZeroPageX => {
                 let lo = cpu.mem.read(pc + 1)
-                    .expect("ZeroPageAbsoluteX arg 1") as u16;
+                    .expect("ZeroPageX arg 1") as u16;
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
-                    .expect("ZeroPageAbsoluteX addr");
+                    .expect("ZeroPageX addr");
                 Ok((0, val.wrapping_add(cpu.x), false))
             },
-            AddressingMode::ZeroPageAbsoluteY => {
+            AddressingMode::ZeroPageY => {
                 let lo = cpu.mem.read(pc + 1)
-                    .expect("ZeroPageAbsoluteY arg 1") as u16;
+                    .expect("ZeroPageY arg 1") as u16;
                 let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
-                    .expect("ZeroPageAbsoluteY addr");
+                    .expect("ZeroPageY addr");
                 Ok((0, val.wrapping_add(cpu.y), false))
             },
             AddressingMode::IndexedIndirect => {
