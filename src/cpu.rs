@@ -2,6 +2,7 @@ use mem::Memory;
 use opcode::{Opcode, OPCODES};
 
 const STACK_INIT: u8 = 0xfd;
+const PPU_DOTS_PER_SCANLINE: usize = 341;
 
 // A, X, and Y are 8-bit registers
 type Register = u8;
@@ -103,7 +104,7 @@ impl CPU {
     }
 
     fn debug(&self, op: &Opcode) {
-        let Opcode(ref inst, ref addr_mode) = *op;
+        let Opcode(ref inst, ref addr_mode, _, _) = *op;
 
         if let Err(_) = addr_mode.n_bytes() {
             let opcode = self.mem.read(self.pc).unwrap();
@@ -119,6 +120,8 @@ impl CPU {
             .collect::<Vec<_>>()
             .join(" ");
 
+        let ppu_dots = self.cycles * 3 % PPU_DOTS_PER_SCANLINE;
+
         println!("{:4X}  {:8}  {:32?} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{:-3}",
                  self.pc,
                  bytes,
@@ -128,7 +131,7 @@ impl CPU {
                  self.y,
                  self.flags(),
                  self.sp,
-                 self.cycles);
+                 ppu_dots);
     }
 
     pub fn stack_push8(&mut self, val: u8) {
@@ -172,6 +175,14 @@ impl CPU {
         (hi << 8) | lo
     }
 
+    pub fn add_branch_cycles(&mut self, pc: ProgramCounter, addr: u16) {
+        self.cycles += 1;
+
+        if (pc & 0xff00) != (addr & 0xff00) {
+            self.cycles += 1;
+        }
+    }
+
     pub fn step(&mut self) {
         let opcode = self.mem.read(self.pc)
             .expect("unable to read next opcode");
@@ -179,13 +190,18 @@ impl CPU {
         let op = &OPCODES[opcode as usize];
         self.debug(&op);
 
-        let &Opcode(ref inst, ref addr_mode) = op;
+        let &Opcode(ref inst, ref addr_mode, ref cycles, ref extra_cycles) = op;
 
         if let Ok(bytes) = addr_mode.n_bytes() {
             self.pc += bytes as u16;
+            self.cycles += cycles;
 
-            if let Ok((addr, val, pages_crossed)) = addr_mode.get_data(self) {
+            if let Ok((addr, val, page_crossed)) = addr_mode.get_data(self) {
                 inst.run(self, addr, val, addr_mode);
+
+                if page_crossed {
+                    self.cycles += extra_cycles;
+                }
             }
             else {
                 panic!("unable to get data");

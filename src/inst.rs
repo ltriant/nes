@@ -14,14 +14,17 @@ pub enum Instruction {
     BMI,
     BNE,
     BPL,
+    BRK,
     BVC,
     BVS,
     CLC,
     CLD,
+    CLI,
     CLV,
     CMP,
     CPX,
     CPY,
+    DEC,
     DEX,
     DEY,
     EOR,
@@ -40,6 +43,8 @@ pub enum Instruction {
     PHP,
     PLA,
     PLP,
+    ROL,
+    ROR,
     RTI,
     RTS,
     SBC,
@@ -158,18 +163,24 @@ fn asl(cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
 
 fn bcc(cpu: &mut CPU, addr: u16, _: u8) {
     if !cpu.c {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
 
 fn bcs(cpu: &mut CPU, addr: u16, _: u8) {
     if cpu.c {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
 
 fn beq(cpu: &mut CPU, addr: u16, _: u8) {
     if cpu.z {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
@@ -183,30 +194,40 @@ fn bit(cpu: &mut CPU, _: u16, val: u8) {
 
 fn bmi(cpu: &mut CPU, addr: u16, _: u8) {
     if cpu.s {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
 
 fn bne(cpu: &mut CPU, addr: u16, _: u8) {
     if !cpu.z {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
 
 fn bpl(cpu: &mut CPU, addr: u16, _: u8) {
     if !cpu.s {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
 
 fn bvc(cpu: &mut CPU, addr: u16, _: u8) {
     if !cpu.v {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
 
 fn bvs(cpu: &mut CPU, addr: u16, _: u8) {
     if cpu.v {
+        let pc = cpu.pc;
+        cpu.add_branch_cycles(pc, addr);
         cpu.pc = addr;
     }
 }
