@@ -38,7 +38,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::ASL, AddressingMode::AbsoluteX, 7, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::JSR, AddressingMode::Absolute, 6, 0),
-    Opcode(Instruction::AND, AddressingMode::IndirectIndexed, 6, 0),
+    Opcode(Instruction::AND, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::BIT, AddressingMode::ZeroPageIndexed, 3, 0),
