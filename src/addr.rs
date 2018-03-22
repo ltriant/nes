@@ -187,11 +187,26 @@ impl AddressingMode {
             AddressingMode::IndirectIndexed => {
                 let addr = cpu.mem.read(pc + 1)
                     .expect("IndirectIndexed addr") as u16;
-                let n_addr = cpu.mem.read(addr)
-                    .expect("IndirectIndexed n_addr")
-                    .wrapping_add(cpu.y) as u16;
+
+                let lo = cpu.mem.read(addr)
+                    .expect("IndirectIndexed lo val") as u16;
+
+                let hi =
+                    if addr & 0xff == 0xff {
+                        cpu.mem.read(addr & 0xff00)
+                            .expect("IndexedIndirect hi val bug") as u16
+                    }
+                    else {
+                        cpu.mem.read(addr + 1)
+                            .expect("IndexedIndirect hi val") as u16
+                    };
+
+                let addr = (hi << 8) | lo;
+                let n_addr = addr.wrapping_add(cpu.y as u16);
+
                 let val = cpu.mem.read(n_addr)
-                    .expect("IndirectIndexed val");
+                    .expect("IndexedIndirect val");
+
                 Ok((n_addr, val, pages_differ(addr, n_addr)))
             },
             _ => Err(())
