@@ -83,6 +83,7 @@ impl Instruction {
             Instruction::CMP => cmp(cpu, addr, val),
             Instruction::CPX => cpx(cpu, addr, val),
             Instruction::CPY => cpy(cpu, addr, val),
+            Instruction::DEC => dec(cpu, addr, val),
             Instruction::DEX => dex(cpu, addr, val),
             Instruction::DEY => dey(cpu, addr, val),
             Instruction::EOR => eor(cpu, addr, val),
@@ -263,6 +264,13 @@ fn cpy(cpu: &mut CPU, _: u16, val: u8) {
     let n = cpu.y.wrapping_sub(val);
     update_sz(cpu, n);
     cpu.c = cpu.y >= val;
+}
+
+fn dec(cpu: &mut CPU, addr: u16, val: u8) {
+    let n = val.wrapping_sub(1);
+    update_sz(cpu, n);
+    cpu.mem.write(addr, n)
+        .expect("DEC failed");
 }
 
 fn dex(cpu: &mut CPU, _: u16, _: u8) {
