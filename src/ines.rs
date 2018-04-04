@@ -1,4 +1,4 @@
-use mem::Memory;
+use mem::CPUMemory;
 
 use std::fs::File;
 use std::io::Read;
@@ -19,7 +19,7 @@ pub enum CartridgeError {
 }
 
 impl Cartridge {
-    pub fn load_file_into_memory(fh: &mut File, mem: &mut Memory) -> Result<Cartridge, CartridgeError> {
+    pub fn load_file_into_memory(fh: &mut File, mem: &mut CPUMemory) -> Result<Cartridge, CartridgeError> {
         let mut header = [0; 16];
         let _ = fh.read(&mut header)
             .map_err(CartridgeError::IO)?;

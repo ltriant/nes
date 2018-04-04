@@ -1,11 +1,11 @@
-pub struct Memory {
+pub struct CPUMemory {
     pub ram: [u8; 0x800],
     rom: Vec<u8>,
 }
 
-impl Memory {
-    pub fn new_nes_mem() -> Memory {
-        Memory {
+impl CPUMemory {
+    pub fn new_nes_mem() -> CPUMemory {
+        CPUMemory {
             ram: [0; 0x800],
             rom: vec![],
         }
@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_read_write() {
-        let mut mem = Memory::new_nes_mem();
+        let mut mem = CPUMemory::new_nes_mem();
 
         // RAM
         assert_eq!(mem.read(0x1000), Ok(0));
@@ -77,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_load_rom() {
-        let mut mem = Memory::new_nes_mem();
+        let mut mem = CPUMemory::new_nes_mem();
         mem.load_rom(&vec![0; 0x8000]);
         assert_eq!(mem.read(0x8000), Ok(0));
         assert_eq!(mem.read(0xffff), Ok(0));
