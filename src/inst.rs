@@ -1,3 +1,4 @@
+use mem::Memory;
 use cpu::CPU;
 use addr::AddressingMode;
 

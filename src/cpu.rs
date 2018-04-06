@@ -1,4 +1,4 @@
-use mem::CPUMemory;
+use mem::{Memory, CPUMemory};
 use opcode::{Opcode, OPCODES};
 
 const STACK_INIT: u8 = 0xfd;

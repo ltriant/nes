@@ -1,21 +1,15 @@
+pub trait Memory {
+    fn read(&self, address: u16) -> Result<u8, String>;
+    fn write(&mut self, address: u16, val: u8) -> Result<u8, String>;
+}
+
 pub struct CPUMemory {
     pub ram: [u8; 0x800],
     rom: Vec<u8>,
 }
 
-impl CPUMemory {
-    pub fn new_nes_mem() -> CPUMemory {
-        CPUMemory {
-            ram: [0; 0x800],
-            rom: vec![],
-        }
-    }
-
-    pub fn load_rom(&mut self, data: &Vec<u8>) {
-        self.rom.clone_from(data)
-    }
-
-    pub fn read(&self, address: u16) -> Result<u8, String> {
+impl Memory for CPUMemory {
+    fn read(&self, address: u16) -> Result<u8, String> {
         match address {
             // The first 0x2000 bytes are RAM, but there's only 2KB (0x800) of
             // actual RAM, and the rest is just a mirror of the first 2KB.
@@ -38,7 +32,7 @@ impl CPUMemory {
         }
     }
 
-    pub fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
         match address {
             // See comments in read() for explanations of the address ranges
             0 ... 0x1fff => {
@@ -50,6 +44,19 @@ impl CPUMemory {
 
             _ => Err(format!("out of bounds 0x{:04X}", address)),
         }
+    }
+}
+
+impl CPUMemory {
+    pub fn new_nes_mem() -> CPUMemory {
+        CPUMemory {
+            ram: [0; 0x800],
+            rom: vec![],
+        }
+    }
+
+    pub fn load_rom(&mut self, data: &Vec<u8>) {
+        self.rom.clone_from(data)
     }
 }
 
