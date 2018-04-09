@@ -4,25 +4,25 @@ A tiny NES emulator
 
 ## Summary
 
-This is a NES emulator, aiming to be tiny in many ways, from its resource footprint, to its code and design.
+This is a NES emulator, aiming to be tiny in many ways, from its resource footprint, to its code and design. We'll see how that pans out...
 
 ## To Do
 
-1. ~~read 6502 docs~~
-2. ~~read how NES used the 6502~~
-3. come up with a better name
-4. implement 6502 CPU
- * ~~memory mapping (RAM)~~
- * ~~registers + PC~~
- * ~~iNES parser~~
- * ~~opcodes + addressing modes structure~~
- * ~~iNES parser in its own module~~
- * figure out how the mappers will fit into this design
- * complete the iNES parser
- * ~~calculate cycle counts~~
- * ~~implement the rest of the instructions~~
- * illegal opcodes
-5. something something PPU
-6. something something APU
-7. ???
-8. profit
+* [x] read 6502 docs
+* [x] read how NES used the 6502
+* [ ] come up with a better name
+* [ ] implement 6502 CPU
+ * [x] memory mapping (RAM)
+ * [x] registers + PC
+ * [x] basic iNES parser
+ * [x] opcodes + addressing modes structure
+ * [x] iNES parser in its own module
+ * [ ] figure out how the mappers will fit into this design
+ * [ ] complete the iNES parser
+ * [x] calculate cycle counts
+ * [x] implement the rest of the instructions
+ * [ ] illegal opcodes
+* [ ] something something PPU
+* [ ] something something APU
+* [ ] ???
+* [ ] profit
