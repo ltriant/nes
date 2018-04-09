@@ -12,16 +12,16 @@ This is a NES emulator, aiming to be tiny in many ways, from its resource footpr
 2. ~~read how NES used the 6502~~
 3. come up with a better name
 4. implement 6502 CPU
-  1. ~~memory mapping (RAM)~~
-  2. ~~registers + PC~~
-  3. ~~iNES parser~~
-  4. ~~opcodes + addressing modes structure~~
-  5. ~~iNES parser in its own module~~
-  6. figure out how the mappers will fit into this design
-  7. complete the iNES parser
-  8. ~~calculate cycle counts~~
-  9. ~~implement the rest of the instructions~~
-  10. illegal opcodes
+ * ~~memory mapping (RAM)~~
+ * ~~registers + PC~~
+ * ~~iNES parser~~
+ * ~~opcodes + addressing modes structure~~
+ * ~~iNES parser in its own module~~
+ * figure out how the mappers will fit into this design
+ * complete the iNES parser
+ * ~~calculate cycle counts~~
+ * ~~implement the rest of the instructions~~
+ * illegal opcodes
 5. something something PPU
 6. something something APU
 7. ???
