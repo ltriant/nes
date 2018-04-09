@@ -1,4 +1,4 @@
-## ...
+## nes
 
 A tiny NES emulator
 
