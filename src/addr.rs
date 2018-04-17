@@ -217,14 +217,3 @@ impl AddressingMode {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_addr_mode_immediate() {
-        let _cpu = CPU::new_nes_cpu();
-        // write ROM data
-    }
-}

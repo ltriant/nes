@@ -213,11 +213,14 @@ impl CPU {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ppu::PPU;
 
     #[test]
     #[should_panic]
     fn test_stack_pop_empty() {
-        let mut cpu = CPU::new_nes_cpu();
+        let ppu = PPU::new_nes_ppu();
+        let mem = NESMemory::new_nes_mem(ppu);
+        let mut cpu = CPU::new_nes_cpu(mem);
         let _ = cpu.stack_pop8();
         assert!(false);
     }
@@ -225,7 +228,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_stack_push_full() {
-        let mut cpu = CPU::new_nes_cpu();
+        let ppu = PPU::new_nes_ppu();
+        let mem = NESMemory::new_nes_mem(ppu);
+        let mut cpu = CPU::new_nes_cpu(mem);
         for _ in 0 .. 255 {
             cpu.stack_push8(0xff);
         }
@@ -234,7 +239,9 @@ mod tests {
 
     #[test]
     fn test_stack() {
-        let mut cpu = CPU::new_nes_cpu();
+        let ppu = PPU::new_nes_ppu();
+        let mem = NESMemory::new_nes_mem(ppu);
+        let mut cpu = CPU::new_nes_cpu(mem);
 
         cpu.stack_push8(0xff);
         assert_eq!(cpu.sp, 0xfc);
@@ -256,7 +263,9 @@ mod tests {
 
     #[test]
     fn test_flags() {
-        let mut cpu = CPU::new_nes_cpu();
+        let ppu = PPU::new_nes_ppu();
+        let mem = NESMemory::new_nes_mem(ppu);
+        let mut cpu = CPU::new_nes_cpu(mem);
 
         assert_eq!(cpu.flags(), 0x00);
 
