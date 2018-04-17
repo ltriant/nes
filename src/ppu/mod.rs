@@ -1,10 +1,13 @@
 mod ctrl;
+mod mask;
 
 use mem::Memory;
 use ppu::ctrl::PPUCtrl;
+use ppu::mask::PPUMask;
 
 pub struct PPU {
     ctrl: PPUCtrl,
+    mask: PPUMask,
 }
 
 impl Memory for PPU {
@@ -12,6 +15,10 @@ impl Memory for PPU {
         match address % 0x08 {
             0 => {
                 let PPUCtrl(n) = self.ctrl;
+                Ok(n)
+            },
+            1 => {
+                let PPUMask(n) = self.mask;
                 Ok(n)
             },
             _ => panic!("bad PPU address {}", address)
@@ -27,6 +34,10 @@ impl Memory for PPU {
 
                 Ok(val)
             },
+            1 => {
+                self.mask = PPUMask(val);
+                Ok(val)
+            },
             _ => panic!("bad PPU address {}", address)
         }
     }
@@ -35,7 +46,8 @@ impl Memory for PPU {
 impl PPU {
     pub fn new_nes_ppu() -> PPU {
         PPU {
-            ctrl: PPUCtrl(0)
+            ctrl: PPUCtrl(0),
+            mask: PPUMask(0),
         }
     }
 
