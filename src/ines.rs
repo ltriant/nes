@@ -4,10 +4,8 @@ use std::fs::File;
 use std::io::Read;
 use std::io;
 
-type Mapper = u8;
-
 pub struct Cartridge {
-    mapper: Mapper,
+    mapper: u8,
 }
 
 #[derive(Debug)]
