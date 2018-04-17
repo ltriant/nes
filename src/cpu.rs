@@ -199,7 +199,7 @@ impl CPU {
 
         if let Ok(bytes) = addr_mode.n_bytes() {
             self.pc += bytes as u16;
-            self.cycles += cycles;
+            self.cycles = (self.cycles + cycles) % PPU_DOTS_PER_SCANLINE;
 
             if let Ok((addr, val, page_crossed)) = addr_mode.get_data(self) {
                 inst.run(self, addr, val, addr_mode);
