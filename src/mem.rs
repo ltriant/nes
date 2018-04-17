@@ -18,7 +18,8 @@ impl Memory for NESMemory {
             // actual RAM, and the rest is just a mirror of the first 2KB.
             0 ... 0x1fff => Ok(self.ram[address as usize % 0x800]),
 
-            // IO registers
+            // The PPU registers exist from 0x2000 to 0x2007, the rest of the
+            // address space is just a mirror of these first eight bytes.
             0x2000 ... 0x3fff => self.ppu.read(address % 0x08),
 
             // Expansion ROM
@@ -43,7 +44,6 @@ impl Memory for NESMemory {
                 Ok(val)
             },
 
-            // IO registers
             0x2000 ... 0x3fff => self.ppu.write(address % 0x08, val),
 
             0x8000 ... 0xffff => Err(String::from("cannot write to ROM")),
