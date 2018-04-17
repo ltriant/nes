@@ -38,4 +38,6 @@ impl PPU {
             ctrl: PPUCtrl(0)
         }
     }
+
+    pub fn step(&self) {}
 }

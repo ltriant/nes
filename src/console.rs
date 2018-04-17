@@ -30,6 +30,7 @@ impl Console {
         self.cpu.init();
         loop {
             self.cpu.step();
+            self.cpu.mem.ppu.step();
         }
     }
 }
