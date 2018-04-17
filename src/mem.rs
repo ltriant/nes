@@ -20,7 +20,7 @@ impl Memory for NESMemory {
 
             // The PPU registers exist from 0x2000 to 0x2007, the rest of the
             // address space is just a mirror of these first eight bytes.
-            0x2000 ... 0x3fff => self.ppu.read(address % 0x08),
+            0x2000 ... 0x3fff => self.ppu.read(address),
 
             // Expansion ROM
             // 0x4000 ... 0x5fff
@@ -44,7 +44,7 @@ impl Memory for NESMemory {
                 Ok(val)
             },
 
-            0x2000 ... 0x3fff => self.ppu.write(address % 0x08, val),
+            0x2000 ... 0x3fff => self.ppu.write(address, val),
 
             0x8000 ... 0xffff => Err(String::from("cannot write to ROM")),
 
