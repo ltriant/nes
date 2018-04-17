@@ -1,6 +1,4 @@
-use mem::Memory;
-
-struct PPUCtrl(u8);
+pub struct PPUCtrl(pub u8);
 
 enum SpriteSize {
     Small, // 8x8
@@ -8,13 +6,13 @@ enum SpriteSize {
 }
 
 impl PPUCtrl {
-    fn generate_nmi(&self) -> bool {
+    pub fn generate_nmi(&self) -> bool {
         let PPUCtrl(val) = *self;
 
         (val & 0b10000000) != 0
     }
 
-    fn sprite_size(&self) -> SpriteSize {
+    pub fn sprite_size(&self) -> SpriteSize {
         let PPUCtrl(val) = *self;
 
         if (val & 0b00100000) == 0 {
@@ -25,7 +23,7 @@ impl PPUCtrl {
         }
     }
 
-    fn background_pattern_table_addr(&self) -> u16 {
+    pub fn background_pattern_table_addr(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
         if (val & 0b00010000) == 0 {
@@ -36,7 +34,7 @@ impl PPUCtrl {
         }
     }
 
-    fn sprite_pattern_table_addr(&self) -> u16 {
+    pub fn sprite_pattern_table_addr(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
         if (val & 0b00001000) == 0 {
@@ -47,7 +45,7 @@ impl PPUCtrl {
         }
     }
 
-    fn vram_addr_increment(&self) -> u16 {
+    pub fn vram_addr_increment(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
         if (val & 0b00000100) == 0 {
@@ -58,7 +56,7 @@ impl PPUCtrl {
         }
     }
 
-    fn base_nametable_addr(&self) -> u16 {
+    pub fn base_nametable_addr(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
         match val & 0b00000011 {
@@ -71,46 +69,12 @@ impl PPUCtrl {
     }
 }
 
-pub struct PPU {
-    ctrl: PPUCtrl,
-}
-
-impl Memory for PPU {
-    fn read(&self, address: u16) -> Result<u8, String> {
-        match address % 0x08 {
-            0 => {
-                let PPUCtrl(n) = self.ctrl;
-                Ok(n)
-            },
-            _ => panic!("bad PPU address {}", address)
-        }
-    }
-
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
-        match address % 0x08 {
-            0 => {
-                self.ctrl = PPUCtrl(val);
-                Ok(val)
-            },
-            _ => panic!("bad PPU address {}", address)
-        }
-    }
-}
-
-impl PPU {
-    pub fn new_nes_ppu() -> PPU {
-        PPU {
-            ctrl: PPUCtrl(0)
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_ppuctrl() {
+    fn test_the_thing() {
         let ctrl = PPUCtrl(1);
         assert_eq!(ctrl.base_nametable_addr(), 0x2400);
 
