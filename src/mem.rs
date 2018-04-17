@@ -1,14 +1,17 @@
+use ppu::PPU;
+
 pub trait Memory {
     fn read(&self, address: u16) -> Result<u8, String>;
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String>;
 }
 
-pub struct CPUMemory {
+pub struct NESMemory {
+    pub ppu: PPU,
     pub ram: [u8; 0x800],
     rom: Vec<u8>,
 }
 
-impl Memory for CPUMemory {
+impl Memory for NESMemory {
     fn read(&self, address: u16) -> Result<u8, String> {
         match address {
             // The first 0x2000 bytes are RAM, but there's only 2KB (0x800) of
@@ -16,10 +19,10 @@ impl Memory for CPUMemory {
             0 ... 0x1fff => Ok(self.ram[address as usize % 0x800]),
 
             // IO registers
-            // 0x2000 ... 0x401f
+            0x2000 ... 0x3fff => self.ppu.read(address % 0x08),
 
             // Expansion ROM
-            // 0x4020 ... 0x5fff
+            // 0x4000 ... 0x5fff
 
             // SRAM
             // 0x6000 ... 0x7fff
@@ -40,6 +43,9 @@ impl Memory for CPUMemory {
                 Ok(val)
             },
 
+            // IO registers
+            0x2000 ... 0x3fff => self.ppu.write(address % 0x08, val),
+
             0x8000 ... 0xffff => Err(String::from("cannot write to ROM")),
 
             _ => Err(format!("out of bounds 0x{:04X}", address)),
@@ -47,9 +53,10 @@ impl Memory for CPUMemory {
     }
 }
 
-impl CPUMemory {
-    pub fn new_nes_mem() -> CPUMemory {
-        CPUMemory {
+impl NESMemory {
+    pub fn new_nes_mem(ppu: PPU) -> NESMemory {
+        NESMemory {
+            ppu: ppu,
             ram: [0; 0x800],
             rom: vec![],
         }
@@ -66,7 +73,7 @@ mod tests {
 
     #[test]
     fn test_read_write() {
-        let mut mem = CPUMemory::new_nes_mem();
+        let mut mem = NESMemory::new_nes_mem();
 
         // RAM
         assert_eq!(mem.read(0x1000), Ok(0));
@@ -84,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_load_rom() {
-        let mut mem = CPUMemory::new_nes_mem();
+        let mut mem = NESMemory::new_nes_mem();
         mem.load_rom(&vec![0; 0x8000]);
         assert_eq!(mem.read(0x8000), Ok(0));
         assert_eq!(mem.read(0xffff), Ok(0));

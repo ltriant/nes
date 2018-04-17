@@ -1,18 +1,20 @@
 use cpu::CPU;
+use mem::NESMemory;
+use ppu::PPU;
 use ines::{Cartridge, CartridgeError};
 
 use std::fs::File;
 
 pub struct Console {
     cpu: CPU,
-
-    // TODO PPU, APU, controllers, etc
 }
 
 impl Console {
     pub fn new_nes_console() -> Console {
+        let ppu = PPU::new_nes_ppu();
+        let mem = NESMemory::new_nes_mem(ppu);
         Console {
-            cpu: CPU::new_nes_cpu(),
+            cpu: CPU::new_nes_cpu(mem),
         }
     }
 

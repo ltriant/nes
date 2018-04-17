@@ -1,4 +1,4 @@
-use mem::{Memory, CPUMemory};
+use mem::{Memory, NESMemory};
 use opcode::{Opcode, OPCODES};
 
 const STACK_INIT: u8 = 0xfd;
@@ -17,7 +17,7 @@ type ProgramCounter = u16;
 type StackPointer = u8;
 
 pub struct CPU {
-    pub mem: CPUMemory,
+    pub mem: NESMemory,
 
     // Main registers
     pub a: Register,  // Accumulator
@@ -44,9 +44,9 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new_nes_cpu() -> CPU {
+    pub fn new_nes_cpu(mem: NESMemory) -> CPU {
         CPU {
-            mem: CPUMemory::new_nes_mem(),
+            mem: mem,
 
             a: 0,
             x: 0,

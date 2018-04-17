@@ -5,6 +5,7 @@ mod inst;
 mod mem;
 mod ines;
 mod addr;
+mod ppu;
 
 use console::Console;
 
