@@ -1,10 +1,6 @@
-## nes
+## twnes
 
-A tiny NES emulator
-
-## Summary
-
-This is a NES emulator, aiming to be tiny in many ways, from its resource footprint, to its code and design. We'll see how that pans out...
+The time-wasting NES emulator
 
 ## To Do
 
@@ -24,5 +20,6 @@ This is a NES emulator, aiming to be tiny in many ways, from its resource footpr
  * [ ] illegal opcodes
 * [ ] something something PPU
 * [ ] something something APU
+* [ ] document high-level design
 * [ ] ???
 * [ ] profit
