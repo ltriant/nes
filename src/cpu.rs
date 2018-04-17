@@ -4,41 +4,29 @@ use opcode::{Opcode, OPCODES};
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: usize = 341;
 
-// A, X, and Y are 8-bit registers
-type Register = u8;
-
-// Status flags
-type Flag = bool;
-
-// 16-bit register
-type ProgramCounter = u16;
-
-// 8-bit register
-type StackPointer = u8;
-
 pub struct CPU {
     pub mem: NESMemory,
 
     // Main registers
-    pub a: Register,  // Accumulator
-    pub x: Register,  // X Index
-    pub y: Register,  // Y Index
+    pub a: u8,  // Accumulator
+    pub x: u8,  // X Index
+    pub y: u8,  // Y Index
 
     // Status register flags
-    pub c: Flag,  // Carry
-    pub z: Flag,  // Zero
-    pub i: Flag,  // Interrupt
-    pub d: Flag,  // Decimal mode
-    pub b: Flag,  // Software interrupt (BRK)
-    pub u: Flag,  // Unused flag
-    pub v: Flag,  // Overflow
-    pub s: Flag,  // Sign
+    pub c: bool,  // Carry
+    pub z: bool,  // Zero
+    pub i: bool,  // Interrupt
+    pub d: bool,  // Decimal mode
+    pub b: bool,  // Software interrupt (BRK)
+    pub u: bool,  // Unused flag
+    pub v: bool,  // Overflow
+    pub s: bool,  // Sign
 
     // Program counter
-    pub pc: ProgramCounter,
+    pub pc: u16,
 
     // Stack pointer
-    pub sp: StackPointer,
+    pub sp: u8,
 
     cycles: usize,
 }
@@ -180,7 +168,7 @@ impl CPU {
         self.z = val == 0;
     }
 
-    pub fn add_branch_cycles(&mut self, pc: ProgramCounter, addr: u16) {
+    pub fn add_branch_cycles(&mut self, pc: u16, addr: u16) {
         self.cycles += 1;
 
         if (pc & 0xff00) != (addr & 0xff00) {
