@@ -1,6 +1,6 @@
-## twnes
+## nes
 
-The time-wasting NES emulator
+A NES emulator, so that I can waste a lot of time playing old games, but also feel like I did something constructive.
 
 ## To Do
 
