@@ -1,13 +1,16 @@
 mod ctrl;
 mod mask;
+mod status;
 
 use mem::Memory;
 use ppu::ctrl::PPUCtrl;
 use ppu::mask::PPUMask;
+use ppu::status::PPUStatus;
 
 pub struct PPU {
     ctrl: PPUCtrl,
     mask: PPUMask,
+    status: PPUStatus,
 }
 
 impl Memory for PPU {
@@ -19,6 +22,13 @@ impl Memory for PPU {
             },
             1 => {
                 let PPUMask(n) = self.mask;
+                Ok(n)
+            },
+            2 => {
+                let PPUStatus(n) = self.status;
+
+                // TODO reset the latch, whatever that means
+
                 Ok(n)
             },
             _ => panic!("bad PPU address {}", address)
@@ -38,6 +48,7 @@ impl Memory for PPU {
                 self.mask = PPUMask(val);
                 Ok(val)
             },
+            2 => Err(String::from("PPUStatus is readonly")),
             _ => panic!("bad PPU address {}", address)
         }
     }
@@ -48,6 +59,7 @@ impl PPU {
         PPU {
             ctrl: PPUCtrl(0),
             mask: PPUMask(0),
+            status: PPUStatus(0),
         }
     }
 
