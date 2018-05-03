@@ -1,6 +1,6 @@
 pub struct PPUCtrl(pub u8);
 
-enum SpriteSize {
+pub enum SpriteSize {
     Small, // 8x8
     Large, // 8x16
 }
@@ -9,13 +9,13 @@ impl PPUCtrl {
     pub fn generate_nmi(&self) -> bool {
         let PPUCtrl(val) = *self;
 
-        (val & 0b10000000) != 0
+        (val & 0x80) != 0
     }
 
     pub fn sprite_size(&self) -> SpriteSize {
         let PPUCtrl(val) = *self;
 
-        if (val & 0b00100000) == 0 {
+        if (val & 0x20) == 0 {
             SpriteSize::Small
         }
         else {
@@ -26,7 +26,7 @@ impl PPUCtrl {
     pub fn background_pattern_table_addr(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
-        if (val & 0b00010000) == 0 {
+        if (val & 0x10) == 0 {
             0x0000
         }
         else {
@@ -37,7 +37,7 @@ impl PPUCtrl {
     pub fn sprite_pattern_table_addr(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
-        if (val & 0b00001000) == 0 {
+        if (val & 0x08) == 0 {
             0x0000
         }
         else {
@@ -48,7 +48,7 @@ impl PPUCtrl {
     pub fn vram_addr_increment(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
-        if (val & 0b00000100) == 0 {
+        if (val & 0x04) == 0 {
             1
         }
         else {
@@ -59,7 +59,7 @@ impl PPUCtrl {
     pub fn base_nametable_addr(&self) -> u16 {
         let PPUCtrl(val) = *self;
 
-        match val & 0b00000011 {
+        match val & 0x03 {
             0 => 0x2000,
             1 => 0x2400,
             2 => 0x2800,
