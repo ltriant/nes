@@ -15,16 +15,16 @@ pub struct PPU {
 
 impl Memory for PPU {
     fn read(&self, address: u16) -> Result<u8, String> {
-        match address % 0x08 {
-            0 => {
+        match address % 8 {
+            0x2000 => {
                 let PPUCtrl(n) = self.ctrl;
                 Ok(n)
             },
-            1 => {
+            0x2001 => {
                 let PPUMask(n) = self.mask;
                 Ok(n)
             },
-            2 => {
+            0x2002 => {
                 let PPUStatus(n) = self.status;
 
                 // TODO reset the latch, whatever that means
@@ -36,19 +36,19 @@ impl Memory for PPU {
     }
 
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
-        match address % 0x08 {
-            0 => {
+        match address % 8 {
+            0x2000 => {
                 self.ctrl = PPUCtrl(val);
 
                 // TODO bits 0 and 1 update the X and Y scroll positions
 
                 Ok(val)
             },
-            1 => {
+            0x2001 => {
                 self.mask = PPUMask(val);
                 Ok(val)
             },
-            2 => Err(String::from("PPUStatus is readonly")),
+            0x2002 => Err(String::from("PPUStatus is readonly")),
             _ => panic!("bad PPU address {}", address)
         }
     }
