@@ -11,6 +11,7 @@ pub struct PPU {
     ctrl: PPUCtrl,
     mask: PPUMask,
     status: PPUStatus,
+    oam_addr: u8,
 }
 
 impl Memory for PPU {
@@ -31,6 +32,7 @@ impl Memory for PPU {
 
                 Ok(n)
             },
+            0x2003 => Ok(0), // OAMADDR is write-only
             _ => panic!("bad PPU address {}", address)
         }
     }
@@ -49,6 +51,10 @@ impl Memory for PPU {
                 Ok(val)
             },
             0x2002 => Err(String::from("PPUStatus is readonly")),
+            0x2003 => {
+                self.oam_addr = val;
+                Ok(val)
+            },
             _ => panic!("bad PPU address {}", address)
         }
     }
@@ -60,6 +66,7 @@ impl PPU {
             ctrl: PPUCtrl(0),
             mask: PPUMask(0),
             status: PPUStatus(0),
+            oam_addr: 0,
         }
     }
 
