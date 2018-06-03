@@ -22,7 +22,7 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] PPUMASK
 * [x] PPUSTATUS
 * [x] OAMADDR
-* [ ] OAMDATA
+* [x] OAMDATA
 * [ ] PPUSCROLL
 * [ ] PPUADDR
 * [ ] PPUDATA
