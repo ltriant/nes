@@ -6,6 +6,7 @@ use addr::AddressingMode;
 pub enum Instruction {
     None,
     ADC,
+    ANC,
     AND,
     ASL,
     BCC,
@@ -67,6 +68,7 @@ impl Instruction {
     pub fn run(&self, cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
         match *self {
             Instruction::ADC => adc(cpu, addr, val),
+            Instruction::ANC => anc(cpu, addr, val),
             Instruction::AND => and(cpu, addr, val),
             Instruction::ASL => asl(cpu, addr, val, addr_mode),
             Instruction::BCC => bcc(cpu, addr, val),
@@ -483,3 +485,6 @@ fn tya(cpu: &mut CPU, _: u16, _: u8) {
     cpu.a = n;
     cpu.update_sz(n);
 }
+
+// Illegal opcodes
+fn anc(_: &mut CPU, _: u16, _: u8) { }
