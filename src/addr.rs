@@ -87,17 +87,17 @@ impl AddressingMode {
                 let offset = cpu.mem.read(pc + 1)
                     .expect("Relative arg") as u16;
 
-                let is_neg = (offset as i16) < 0;
-                if is_neg {
-                    panic!("negatory");
-                }
-
-                // TODO negative offset?
-
                 // NOTE This has to be based off the current program counter,
                 // _after_ it has been advanced, but before the instruction is
                 // being executed. I don't know why though?
-                Ok((cpu.pc + offset, 0, false))
+
+                let is_neg = (offset as i8) < 0;
+                if is_neg {
+                    Ok((((cpu.pc as i16) + (offset as i8 as i16)) as u16, 0, false))
+                }
+                else {
+                    Ok((cpu.pc + offset, 0, false))
+                }
             },
             AddressingMode::AbsoluteX => {
                 let lo = cpu.mem.read(pc + 1)
