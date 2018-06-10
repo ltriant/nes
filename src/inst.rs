@@ -35,6 +35,7 @@ pub enum Instruction {
     INY,
     JMP,
     JSR,
+    LAX,
     LDA,
     LDX,
     LDY,
@@ -95,6 +96,7 @@ impl Instruction {
             Instruction::INY => iny(cpu, addr, val),
             Instruction::JMP => jmp(cpu, addr, val),
             Instruction::JSR => jsr(cpu, addr, val),
+            Instruction::LAX => lax(cpu, addr, val),
             Instruction::LDA => lda(cpu, addr, val),
             Instruction::LDX => ldx(cpu, addr, val),
             Instruction::LDY => ldy(cpu, addr, val),
@@ -488,3 +490,9 @@ fn tya(cpu: &mut CPU, _: u16, _: u8) {
 
 // Illegal opcodes
 fn anc(_: &mut CPU, _: u16, _: u8) { }
+
+fn lax(cpu: &mut CPU, _: u16, val: u8) {
+    cpu.a = val;
+    cpu.x = val;
+    cpu.update_sz(val);
+}
