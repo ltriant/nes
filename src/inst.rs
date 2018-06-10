@@ -50,6 +50,7 @@ pub enum Instruction {
     ROR,
     RTI,
     RTS,
+    SAX,
     SBC,
     SEC,
     SED,
@@ -111,6 +112,7 @@ impl Instruction {
             Instruction::ROR => ror(cpu, addr, val, addr_mode),
             Instruction::RTI => rti(cpu, addr, val),
             Instruction::RTS => rts(cpu, addr, val),
+            Instruction::SAX => sax(cpu, addr, val),
             Instruction::SBC => sbc(cpu, addr, val),
             Instruction::SEC => sec(cpu, addr, val),
             Instruction::SED => sed(cpu, addr, val),
@@ -495,4 +497,10 @@ fn lax(cpu: &mut CPU, _: u16, val: u8) {
     cpu.a = val;
     cpu.x = val;
     cpu.update_sz(val);
+}
+
+fn sax(cpu: &mut CPU, addr: u16, _: u8) {
+    let val = cpu.x & cpu.a;
+    cpu.mem.write(addr, val)
+        .expect("SAX failed");
 }
