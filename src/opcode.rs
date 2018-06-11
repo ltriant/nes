@@ -240,7 +240,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::INX, AddressingMode::Implied, 2, 0),
     Opcode(Instruction::SBC, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::NOP, AddressingMode::Implied, 2, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::SBC, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::CPX, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::SBC, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::INC, AddressingMode::Absolute, 6, 0),
