@@ -26,6 +26,7 @@ pub enum Instruction {
     CMP,
     CPX,
     CPY,
+    DCP,
     DEC,
     DEX,
     DEY,
@@ -88,6 +89,7 @@ impl Instruction {
             Instruction::CMP => cmp(cpu, addr, val),
             Instruction::CPX => cpx(cpu, addr, val),
             Instruction::CPY => cpy(cpu, addr, val),
+            Instruction::DCP => dcp(cpu, addr, val),
             Instruction::DEC => dec(cpu, addr, val),
             Instruction::DEX => dex(cpu, addr, val),
             Instruction::DEY => dey(cpu, addr, val),
@@ -503,4 +505,17 @@ fn sax(cpu: &mut CPU, addr: u16, _: u8) {
     let val = cpu.x & cpu.a;
     cpu.mem.write(addr, val)
         .expect("SAX failed");
+}
+
+fn dcp(cpu: &mut CPU, addr: u16, val: u8) {
+    // dec value
+    let n = val.wrapping_sub(1);
+    cpu.update_sz(n);
+    cpu.mem.write(addr, n)
+        .expect("DEC failed");
+
+    // cmp with A register
+    let n = cpu.a.wrapping_sub(n);
+    cpu.c = cpu.a >= n;
+    cpu.update_sz(n);
 }
