@@ -1,3 +1,4 @@
+use addr::AddressingMode;
 use mem::{Memory, NESMemory};
 use opcode::{Opcode, OPCODES};
 
@@ -69,7 +70,7 @@ impl CPU {
         println!("initial flags: 0x{:02X}", self.flags());
     }
 
-    pub fn flags(&self) -> u8 {
+    fn flags(&self) -> u8 {
            (self.c as u8)
         | ((self.z as u8) << 1)
         | ((self.i as u8) << 2)
@@ -80,7 +81,7 @@ impl CPU {
         | ((self.s as u8) << 7)
     }
 
-    pub fn set_flags(&mut self, val: u8) {
+    fn set_flags(&mut self, val: u8) {
         self.c = val & 0x01 == 1;
         self.z = (val >> 1 & 0x01) == 1;
         self.i = (val >> 2 & 0x01) == 1;
@@ -122,7 +123,7 @@ impl CPU {
                  ppu_dots);
     }
 
-    pub fn stack_push8(&mut self, val: u8) {
+    fn stack_push8(&mut self, val: u8) {
         if self.sp == 0 {
             panic!("cannot push onto a full stack");
         }
@@ -134,7 +135,7 @@ impl CPU {
         self.sp -= 1;
     }
 
-    pub fn stack_pop8(&mut self) -> u8 {
+    fn stack_pop8(&mut self) -> u8 {
         if self.sp == STACK_INIT {
             panic!("cannot pop from an empty stack");
         }
@@ -149,7 +150,7 @@ impl CPU {
         val
     }
 
-    pub fn stack_push16(&mut self, val: u16) {
+    fn stack_push16(&mut self, val: u16) {
         let hi = (val >> 8) as u8;
         self.stack_push8(hi);
 
@@ -157,18 +158,18 @@ impl CPU {
         self.stack_push8(lo);
     }
 
-    pub fn stack_pop16(&mut self) -> u16 {
+    fn stack_pop16(&mut self) -> u16 {
         let lo = self.stack_pop8() as u16;
         let hi = self.stack_pop8() as u16;
         (hi << 8) | lo
     }
 
-    pub fn update_sz(&mut self, val: u8) {
+    fn update_sz(&mut self, val: u8) {
         self.s = val & 0x80 != 0;
         self.z = val == 0;
     }
 
-    pub fn add_branch_cycles(&mut self, pc: u16, addr: u16) {
+    fn add_branch_cycles(&mut self, pc: u16, addr: u16) {
         self.cycles += 1;
 
         if (pc & 0xff00) != (addr & 0xff00) {
@@ -207,6 +208,400 @@ impl CPU {
                    self.pc,
                    opcode);
         }
+    }
+
+    //
+    // Legal instructions
+    //
+
+    pub fn adc(&mut self, _: u16, val: u8) {
+        let n = (val as u16) + (self.a as u16) + (self.c as u16);
+
+        let a = (n & 0xff) as u8;
+        self.update_sz(a);
+
+        self.c = n > 0xff;
+
+        // I took this from the NesDev forums.
+        // It's only concerned with the 8th bit, which indicates the sign of each
+        // value. The overflow bit is set if adding two positive numbers results
+        // in a negative, or if adding two negative numbers results in a positive.
+        self.v = ((self.a ^ val) & 0x80 == 0) && ((self.a ^ n as u8) & 0x80 > 0);
+
+        self.a = a;
+    }
+
+    pub fn and(&mut self, _: u16, val: u8) {
+        self.a &= val;
+        let a = self.a;
+        self.update_sz(a);
+    }
+
+    pub fn asl(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+        self.c = val & 0x80 != 0;
+        let n = (val << 1) & 0xff;
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.mem.write(addr, n).expect("ASL failed"); }
+        };
+
+        self.update_sz(n);
+    }
+
+    pub fn bcc(&mut self, addr: u16, _: u8) {
+        if !self.c {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn bcs(&mut self, addr: u16, _: u8) {
+        if self.c {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn beq(&mut self, addr: u16, _: u8) {
+        if self.z {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn bit(&mut self, _: u16, val: u8) {
+        self.s = val & 0x80 != 0;
+        self.v = (val >> 0x06 & 0x01) == 1;
+        let f = self.a & val;
+        self.z = f == 0;
+    }
+
+    pub fn bmi(&mut self, addr: u16, _: u8) {
+        if self.s {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn bne(&mut self, addr: u16, _: u8) {
+        if !self.z {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn bpl(&mut self, addr: u16, _: u8) {
+        if !self.s {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn bvc(&mut self, addr: u16, _: u8) {
+        if !self.v {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn bvs(&mut self, addr: u16, _: u8) {
+        if self.v {
+            let pc = self.pc;
+            self.add_branch_cycles(pc, addr);
+            self.pc = addr;
+        }
+    }
+
+    pub fn clc(&mut self, _: u16, _: u8) {
+        self.c = false;
+    }
+
+    pub fn cld(&mut self, _: u16, _: u8) {
+        self.d = false;
+    }
+
+    pub fn clv(&mut self, _: u16, _: u8) {
+        self.v = false;
+    }
+
+    pub fn cmp(&mut self, _: u16, val: u8) {
+        let n = self.a.wrapping_sub(val);
+        self.c = self.a >= val;
+        self.update_sz(n);
+    }
+
+    pub fn cpx(&mut self, _: u16, val: u8) {
+        let n = self.x.wrapping_sub(val);
+        self.update_sz(n);
+        self.c = self.x >= val;
+    }
+
+    pub fn cpy(&mut self, _: u16, val: u8) {
+        let n = self.y.wrapping_sub(val);
+        self.update_sz(n);
+        self.c = self.y >= val;
+    }
+
+    pub fn dec(&mut self, addr: u16, val: u8) {
+        let n = val.wrapping_sub(1);
+        self.update_sz(n);
+        self.mem.write(addr, n)
+            .expect("DEC failed");
+    }
+
+    pub fn dex(&mut self, _: u16, _: u8) {
+        let n = self.x.wrapping_sub(1);
+        self.x = n;
+        self.update_sz(n);
+    }
+
+    pub fn dey(&mut self, _: u16, _: u8) {
+        let n = self.y.wrapping_sub(1);
+        self.y = n;
+        self.update_sz(n);
+    }
+
+    pub fn eor(&mut self, _: u16, val: u8) {
+        let val = val ^ self.a;
+        self.a = val;
+        self.update_sz(val);
+    }
+
+    pub fn inc(&mut self, addr: u16, val: u8) {
+        let n = val.wrapping_add(1);
+        self.mem.write(addr, n)
+            .expect("INC failed");
+        self.update_sz(n);
+    }
+
+    pub fn inx(&mut self, _: u16, _: u8) {
+        let n = self.x.wrapping_add(1);
+        self.x = n;
+        self.update_sz(n);
+    }
+
+    pub fn iny(&mut self, _: u16, _: u8) {
+        let n = self.y.wrapping_add(1);
+        self.y = n;
+        self.update_sz(n);
+    }
+
+    pub fn jmp(&mut self, addr: u16, _: u8) {
+        self.pc = addr;
+    }
+
+    pub fn jsr(&mut self, addr: u16, _: u8) {
+        let retaddr = self.pc - 1;
+        self.stack_push16(retaddr);
+        self.pc = addr;
+    }
+
+    pub fn lda(&mut self, _: u16, val: u8) {
+        self.a = val;
+        self.update_sz(val);
+    }
+
+    pub fn ldx(&mut self, _: u16, val: u8) {
+        self.x = val;
+        self.update_sz(val);
+    }
+
+    pub fn ldy(&mut self, _: u16, val: u8) {
+        self.y = val;
+        self.update_sz(val);
+    }
+
+    pub fn lsr(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+        self.c = val & 0x01 == 1;
+        let n = val >> 1;
+        self.update_sz(n);
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.mem.write(addr, n).expect("LSR failed"); }
+        };
+    }
+
+    pub fn nop(&mut self, _: u16, _: u8) { }
+
+    pub fn ora(&mut self, _: u16, val: u8) {
+        let na = self.a | val;
+        self.a = na;
+        self.update_sz(na);
+    }
+
+    pub fn pha(&mut self, _: u16, _: u8) {
+        let a = self.a;
+        self.stack_push8(a);
+    }
+
+    pub fn php(&mut self, _: u16, _: u8) {
+        // https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+        // According to the above link, the PHP instruction sets bits 4 and 5 on
+        // the value it pushes onto the stack.
+        // The PLP call later will ignore these bits.
+        let flags = self.flags() | 0x10;
+        self.stack_push8(flags);
+    }
+
+    pub fn pla(&mut self, _: u16, _: u8) {
+        let rv = self.stack_pop8();
+        self.a = rv;
+        self.update_sz(rv);
+    }
+
+    pub fn plp(&mut self, _: u16, _: u8) {
+        let p = self.stack_pop8() & 0xef | 0x20;
+        self.set_flags(p);
+    }
+
+    pub fn rol(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+        let c = self.c;
+        self.c = val & 0x80 != 0;
+        let n = (val << 1) | (c as u8);
+        self.update_sz(n);
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.mem.write(addr, n).expect("ROR failed"); }
+        };
+    }
+
+    pub fn ror(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+        let c = self.c;
+        self.c = val & 0x01 == 1;
+        let n = (val >> 1) | ((c as u8) << 7);
+        self.update_sz(n);
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.mem.write(addr, n).expect("ROR failed"); }
+        };
+    }
+
+    pub fn rti(&mut self, _: u16, _: u8) {
+        let flags = self.stack_pop8() & 0xef | 0x20;
+        self.set_flags(flags);
+
+        let retaddr = self.stack_pop16();
+        self.pc = retaddr;
+    }
+
+    pub fn rts(&mut self, _: u16, _: u8) {
+        let retaddr = self.stack_pop16();
+        self.pc = retaddr + 1;
+    }
+
+    pub fn sbc(&mut self, _: u16, val: u8) {
+        let n: i8 = (self.a as i8)
+            .wrapping_sub(val as i8)
+            .wrapping_sub(1 - self.c as i8) ;
+
+        let a = n as u8;
+        self.update_sz(a);
+        self.c = n >= 0;
+        self.v = ((self.a ^ val) & 0x80 > 0) && ((self.a ^ n as u8) & 0x80 > 0);
+        self.a = a;
+    }
+
+    pub fn sec(&mut self, _: u16, _: u8) {
+        self.c = true;
+    }
+
+    pub fn sed(&mut self, _: u16, _: u8) {
+        self.d = true;
+    }
+
+    pub fn sei(&mut self, _: u16, _: u8) {
+        self.i = true;
+    }
+
+    pub fn sta(&mut self, addr: u16, _: u8) {
+        self.mem.write(addr, self.a)
+            .expect("STA failed");
+    }
+
+    pub fn stx(&mut self, addr: u16, _: u8) {
+        self.mem.write(addr, self.x)
+            .expect("STX failed");
+    }
+
+    pub fn sty(&mut self, addr: u16, _: u8) {
+        self.mem.write(addr, self.y)
+            .expect("STY failed");
+    }
+
+    pub fn tax(&mut self, _: u16, _: u8) {
+        let n = self.a;
+        self.x = n;
+        self.update_sz(n);
+    }
+
+    pub fn tay(&mut self, _: u16, _: u8) {
+        let n = self.a;
+        self.y = n;
+        self.update_sz(n);
+    }
+
+    pub fn tsx(&mut self, _: u16, _: u8) {
+        let s = self.sp;
+        self.update_sz(s);
+        self.x = s;
+    }
+
+    pub fn txa(&mut self, _: u16, _: u8) {
+        let n = self.x;
+        self.a = n;
+        self.update_sz(n);
+    }
+
+    pub fn txs(&mut self, _: u16, _: u8) {
+        self.sp = self.x;
+    }
+
+    pub fn tya(&mut self, _: u16, _: u8) {
+        let n = self.y;
+        self.a = n;
+        self.update_sz(n);
+    }
+
+    //
+    // Illegal instructions
+    //
+
+    pub fn anc(&mut self, _: u16, _: u8) { }
+
+    pub fn lax(&mut self, _: u16, val: u8) {
+        self.a = val;
+        self.x = val;
+        self.update_sz(val);
+    }
+
+    pub fn sax(&mut self, addr: u16, _: u8) {
+        let val = self.x & self.a;
+        self.mem.write(addr, val)
+            .expect("SAX failed");
+    }
+
+    pub fn dcp(&mut self, addr: u16, val: u8) {
+        // dec value
+        let n = val.wrapping_sub(1);
+        self.update_sz(n);
+        self.mem.write(addr, n)
+            .expect("DEC failed");
+
+        // cmp with A register
+        let n = self.a.wrapping_sub(n);
+        self.c = self.a >= n;
+        self.update_sz(n);
     }
 }
 
