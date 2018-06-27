@@ -22,23 +22,26 @@ my $i = 0;
 while (($i < @txt) and ($i < @nestest)) {
 	my $txt = $txt[$i];
 	my ($txt_pc)  = $txt =~ /^([0-9A-F]{4}) /;
+	my ($txt_ins) = $txt =~ / ([A-Z]+) A:/;
 	my ($txt_a)   = $txt =~ / (A:[0-9A-f]{2}) /;
 	my ($txt_x)   = $txt =~ / (X:[0-9A-f]{2}) /;
 	my ($txt_y)   = $txt =~ / (Y:[0-9A-f]{2}) /;
 	my ($txt_p)   = $txt =~ / (P:[0-9A-f]{2}) /;
 	my ($txt_sp)  = $txt =~ / (SP:[0-9A-f]{2}) /;
 	my ($txt_cyc) = $txt =~ / (CYC:\s*[0-9]{1,3})$/;
-	my $txt_data = join ' ', $txt_pc, $txt_a, $txt_x, $txt_y, $txt_p, $txt_sp, $txt_cyc;
+	my $txt_data = join ' ', $txt_pc, $txt_ins, $txt_a, $txt_x, $txt_y, $txt_p, $txt_sp, $txt_cyc;
 
 	my $nes = $nestest[$i];
 	my ($nes_pc)  = $nes =~ /^([0-9A-F]{4}) /;
+	my ($nes_ins) = $nes =~ /^[0-9A-F]{4}\s+(?:[A-F0-9]+\s){1,3}\s*([A-Z\*]+)/;
+	$nes_ins =~ s/[^A-Z]//g;
 	my ($nes_a)   = $nes =~ / (A:[0-9A-f]{2}) /;
 	my ($nes_x)   = $nes =~ / (X:[0-9A-f]{2}) /;
 	my ($nes_y)   = $nes =~ / (Y:[0-9A-f]{2}) /;
 	my ($nes_p)   = $nes =~ / (P:[0-9A-f]{2}) /;
 	my ($nes_sp)  = $nes =~ / (SP:[0-9A-f]{2}) /;
 	my ($nes_cyc) = $nes =~ / (CYC:\s*[0-9]{1,3})$/;
-	my $nes_data = join ' ', $nes_pc, $nes_a, $nes_x, $nes_y, $nes_p, $nes_sp, $nes_cyc;
+	my $nes_data = join ' ', $nes_pc, $nes_ins, $nes_a, $nes_x, $nes_y, $nes_p, $nes_sp, $nes_cyc;
 
 	if ($txt_data ne $nes_data) {
 		my $idx = $i + 1;
