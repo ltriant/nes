@@ -18,6 +18,8 @@ while ($txt[0] !~ /^[0-9A-Fa-f]{4}/) {
 	shift @txt;
 }
 
+my $txt_prev;
+
 my $i = 0;
 while (($i < @txt) and ($i < @nestest)) {
 	my $txt = $txt[$i];
@@ -45,10 +47,16 @@ while (($i < @txt) and ($i < @nestest)) {
 
 	if ($txt_data ne $nes_data) {
 		my $idx = $i + 1;
+		my $prev_idx = $idx - 1;
+
+		say "$prev_idx < $txt_prev";
 		say "$idx - $nes_data";
 		say "$idx + $txt_data";
+
 		last;
 	}
 
 	$i += 1;
+
+	$txt_prev = $txt_data;
 }
