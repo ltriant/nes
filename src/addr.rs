@@ -91,13 +91,8 @@ impl AddressingMode {
                 // _after_ it has been advanced, but before the instruction is
                 // being executed. I don't know why though?
 
-                let is_neg = (offset as i8) < 0;
-                if is_neg {
-                    Ok((((cpu.pc as i16) + (offset as i8 as i16)) as u16, 0, false))
-                }
-                else {
-                    Ok((cpu.pc + offset, 0, false))
-                }
+                // All of this casting is to handle negative offsets
+                Ok((((cpu.pc as i16) + (offset as i8 as i16)) as u16, 0, false))
             },
             AddressingMode::AbsoluteX => {
                 let lo = cpu.mem.read(pc + 1)
