@@ -19,7 +19,7 @@ pub struct PPU {
 
 impl Memory for PPU {
     fn read(&self, address: u16) -> Result<u8, String> {
-        match address % 8 {
+        match address {
             0x2000 => {
                 let PPUCtrl(n) = self.ctrl;
                 Ok(n)
@@ -37,12 +37,12 @@ impl Memory for PPU {
             },
             0x2003 => Ok(0), // OAMADDR is write-only
             0x2004 => panic!("OAMData is unreadable... I think. Double check if this panic happens."),
-            _ => panic!("bad PPU address {}", address)
+            _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
 
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
-        match address % 8 {
+        match address {
             0x2000 => {
                 self.ctrl = PPUCtrl(val);
 
@@ -64,7 +64,7 @@ impl Memory for PPU {
                 self.oam_addr += 1;
                 Ok(val)
             },
-            _ => panic!("bad PPU address {}", address)
+            _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
 }
