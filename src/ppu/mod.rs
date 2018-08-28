@@ -2,11 +2,13 @@ mod ctrl;
 mod mask;
 mod status;
 mod oam;
+mod scroll;
 
 use mem::Memory;
 use ppu::ctrl::PPUCtrl;
 use ppu::mask::PPUMask;
 use ppu::status::PPUStatus;
+use ppu::scroll::PPUScroll;
 use ppu::oam::OAM;
 
 pub struct PPU {
@@ -15,6 +17,7 @@ pub struct PPU {
     status: PPUStatus,
     oam_addr: u8,
     oam: OAM,
+    scroll: PPUScroll,
 }
 
 impl Memory for PPU {
@@ -37,6 +40,7 @@ impl Memory for PPU {
             },
             0x2003 => Ok(0), // OAMADDR is write-only
             0x2004 => panic!("OAMData is unreadable... I think. Double check if this panic happens."),
+            0x2005 => panic!("PPUScroll is unreadable... I think"),
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
@@ -64,6 +68,10 @@ impl Memory for PPU {
                 self.oam_addr += 1;
                 Ok(val)
             },
+            0x2005 => {
+                self.scroll.write(val);
+                Ok(val)
+            },
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
@@ -77,6 +85,7 @@ impl PPU {
             status: PPUStatus(0),
             oam: OAM::new_nes_oam(),
             oam_addr: 0,
+            scroll: PPUScroll::new_ppu_scroll(),
         }
     }
 
