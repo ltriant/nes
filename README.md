@@ -12,7 +12,6 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] basic iNES parser
 * [x] opcodes + addressing modes structure
 * [x] iNES parser in its own module
-* [ ] figure out how the mappers will fit in
 * [ ] complete the iNES parser
 * [x] calculate cycle counts
 * [x] implement the rest of the instructions

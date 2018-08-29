@@ -4,9 +4,7 @@ use std::fs::File;
 use std::io::Read;
 use std::io;
 
-pub struct Cartridge {
-    mapper: u8,
-}
+pub struct Cartridge;
 
 #[derive(Debug)]
 pub enum CartridgeError {
@@ -44,8 +42,10 @@ impl Cartridge {
         let mapper_high = header[7] & 0xf0 >> 4;
 
         let mapper = (mapper_high << 4) | mapper_low;
-        // only support mapper 0 for now
         println!("mapper: {}", mapper);
+
+        // only support mapper 0
+        assert!(mapper == 0);
 
         // Get the number of 8KB RAM banks
         let n_ram_banks = header[8];
@@ -82,6 +82,6 @@ impl Cartridge {
             println!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
         }
 
-        Ok(Cartridge { mapper: mapper })
+        Ok(Cartridge)
     }
 }
