@@ -19,7 +19,7 @@ impl Console {
     }
 
     pub fn insert_cartridge(&mut self, filename: &str) -> Result<(), CartridgeError> {
-        println!("loading {}", filename);
+        debug!("loading {}", filename);
         let mut fh = File::open(filename)
             .map_err(CartridgeError::IO)?;
         let _ = Cartridge::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;

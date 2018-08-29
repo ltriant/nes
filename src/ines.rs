@@ -28,11 +28,11 @@ impl Cartridge {
 
         // Get the number of 16KB ROM banks
         let n_rom_banks = header[4] as usize;
-        println!("16KB ROM banks: {}", n_rom_banks);
+        debug!("16KB ROM banks: {}", n_rom_banks);
 
         // Get the number of 8KB VROM banks
         let n_vrom_banks = header[5] as usize;
-        println!("8KB VROM banks: {}", n_vrom_banks);
+        debug!("8KB VROM banks: {}", n_vrom_banks);
 
         // Get the mapper
         // TODO the low 4 bits are for things?
@@ -42,18 +42,18 @@ impl Cartridge {
         let mapper_high = header[7] & 0xf0 >> 4;
 
         let mapper = (mapper_high << 4) | mapper_low;
-        println!("mapper: {}", mapper);
+        debug!("mapper: {}", mapper);
 
         // only support mapper 0
         assert!(mapper == 0);
 
         // Get the number of 8KB RAM banks
         let n_ram_banks = header[8];
-        println!("8KB RAM banks: {}", n_ram_banks);
+        debug!("8KB RAM banks: {}", n_ram_banks);
 
         // Get the cartridge type, 1 for PAL, anything else means NTSC
         let cartridge_type = header[9] >> 7;
-        println!("cartridge type: {}", cartridge_type);
+        debug!("cartridge type: {}", cartridge_type);
         if cartridge_type == 1 {
             return Err(CartridgeError::UnsupportedCartridge);
         }
@@ -69,7 +69,7 @@ impl Cartridge {
             let mut rom = vec![0; n_rom_banks * 16 * 1024];
             let bytes = fh.read(&mut rom)
                 .map_err(CartridgeError::IO)?;
-            println!("read {} banks ({} bytes) of 16KB ROM data", n_rom_banks, bytes);
+            debug!("read {} banks ({} bytes) of 16KB ROM data", n_rom_banks, bytes);
 
             mem.load_rom(&rom);
         }
@@ -79,7 +79,7 @@ impl Cartridge {
             let mut vrom = vec![0; n_vrom_banks * 8 * 1024];
             let bytes = fh.read(&mut vrom)
                 .map_err(CartridgeError::IO)?;
-            println!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
+            debug!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
         }
 
         Ok(Cartridge)

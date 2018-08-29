@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Luke Triantafyllidis <ltriant@cpan.org>"]
 
 [dependencies]
+log = "0.4.4"
+env_logger = "0.5.13"

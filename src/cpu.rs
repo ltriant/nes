@@ -63,11 +63,11 @@ impl CPU {
         let hi = self.mem.read(0xFFFD).expect("high PC byte") as u16;
         let addr = (hi << 8) | lo;
         self.pc = addr;
-        self.pc = 0xc000;
-        println!("starting program counter: 0x{:04X}", self.pc);
+        //self.pc = 0xc000;
+        debug!("starting program counter: 0x{:04X}", self.pc);
 
         self.set_flags(0x24);
-        println!("initial flags: 0x{:02X}", self.flags());
+        debug!("initial flags: 0x{:02X}", self.flags());
     }
 
     fn flags(&self) -> u8 {
