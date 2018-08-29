@@ -31,3 +31,25 @@ impl PPUScroll {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ppu_scroll() {
+        let mut ppu_scroll = PPUScroll::new_ppu_scroll();
+
+        ppu_scroll.write(0x20);
+        assert!(ppu_scroll.x == 0x20);
+        assert!(ppu_scroll.y == 0x00);
+
+        ppu_scroll.write(0x4a);
+        assert!(ppu_scroll.x == 0x20);
+        assert!(ppu_scroll.y == 0x4a);
+
+        ppu_scroll.write(0x32);
+        assert!(ppu_scroll.x == 0x32);
+        assert!(ppu_scroll.y == 0x4a);
+    }
+}
