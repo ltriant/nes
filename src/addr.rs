@@ -46,13 +46,13 @@ impl AddressingMode {
         }
     }
 
-    pub fn get_bytes(&self, cpu: &CPU) -> Vec<u8> {
+    pub fn get_bytes(&self, cpu: &mut CPU) -> Vec<u8> {
         let n_bytes = self.n_bytes().unwrap() as u16;
         (0 .. n_bytes).map(|n| cpu.mem.read(cpu.pc + n).unwrap())
             .collect::<Vec<_>>()
     }
 
-    pub fn get_data(&self, cpu: &CPU) -> Result<(u16, u8, bool), ()> {
+    pub fn get_data(&self, cpu: &mut CPU) -> Result<(u16, u8, bool), ()> {
         // At this point, cpu.pc points to the next instruction.
         let pc = cpu.pc - self.n_bytes().unwrap() as u16;
 

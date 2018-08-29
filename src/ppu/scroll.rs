@@ -18,6 +18,10 @@ impl PPUScroll {
         }
     }
 
+    pub fn reset_latch(&mut self) {
+        self.dir = PPUScrollDir::X;
+    }
+
     pub fn write(&mut self, val: u8) {
         match self.dir {
             PPUScrollDir::X => {

@@ -92,7 +92,7 @@ impl CPU {
         self.s = (val >> 7 & 0x01) == 1;
     }
 
-    fn debug(&self, op: &Opcode) {
+    fn debug(&mut self, op: &Opcode) {
         let Opcode(ref inst, ref addr_mode, _, _) = *op;
 
         if let Err(_) = addr_mode.n_bytes() {

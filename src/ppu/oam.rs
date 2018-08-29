@@ -5,7 +5,7 @@ pub struct OAM {
 }
 
 impl Memory for OAM {
-    fn read(&self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> Result<u8, String> {
         Ok(self.data[address as usize])
     }
 

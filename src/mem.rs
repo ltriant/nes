@@ -1,7 +1,7 @@
 use ppu::PPU;
 
 pub trait Memory {
-    fn read(&self, address: u16) -> Result<u8, String>;
+    fn read(&mut self, address: u16) -> Result<u8, String>;
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String>;
 }
 
@@ -12,7 +12,7 @@ pub struct NESMemory {
 }
 
 impl Memory for NESMemory {
-    fn read(&self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> Result<u8, String> {
         match address {
             // The first 0x2000 bytes are RAM, but there's only 2KB (0x800) of
             // actual RAM, and the rest is just a mirror of the first 2KB.

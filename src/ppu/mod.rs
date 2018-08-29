@@ -24,7 +24,7 @@ pub struct PPU {
 }
 
 impl Memory for PPU {
-    fn read(&self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> Result<u8, String> {
         match address {
             0x2000 => {
                 let PPUCtrl(n) = self.ctrl;
@@ -37,7 +37,9 @@ impl Memory for PPU {
             0x2002 => {
                 let PPUStatus(n) = self.status;
 
-                // TODO reset the latch, whatever that means
+                // reset the latch
+                self.scroll.reset_latch();
+                self.ppu_addr.reset_latch();
 
                 Ok(n)
             },

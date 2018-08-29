@@ -16,6 +16,14 @@ impl PPUAddr {
         }
     }
 
+    pub fn reset_latch(&mut self) {
+        self.nyb = PPUAddrNybble::Hi;
+    }
+
+    pub fn address(&self) -> u16 {
+        self.val
+    }
+
     pub fn write(&mut self, val: u8) {
         match self.nyb {
             PPUAddrNybble::Lo => {
