@@ -23,8 +23,8 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] PPUSTATUS
 * [x] OAMADDR
 * [x] OAMDATA
-* [ ] PPUSCROLL
-* [ ] PPUADDR
+* [x] PPUSCROLL
+* [x] PPUADDR
 * [ ] PPUDATA
 * [ ] OAMDMA
 * [ ] put more PPU stuff here
