@@ -12,7 +12,7 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] basic iNES parser
 * [x] opcodes + addressing modes structure
 * [x] iNES parser in its own module
-* [ ] complete the iNES parser
+* [x] complete the iNES parser
 * [x] calculate cycle counts
 * [x] implement the rest of the instructions
 * [ ] illegal opcodes
@@ -26,8 +26,12 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] PPUADDR
 * [ ] PPUDATA
 * [ ] OAMDMA
-* [ ] put more PPU stuff here
+* [ ] is it time for rendering yet?
+* [ ] keyboard input
+* [ ] DK
+* [ ] something something save state
 * [ ] something something APU
+* [ ] refactor CPU
 * [ ] document high-level design
 * [ ] ???
 * [ ] profit
