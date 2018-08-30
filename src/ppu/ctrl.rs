@@ -77,9 +77,11 @@ mod tests {
     fn test_the_thing() {
         let ctrl = PPUCtrl(1);
         assert_eq!(ctrl.base_nametable_addr(), 0x2400);
+        assert_eq!(ctrl.vram_addr_increment(), 1);
 
         let ctrl = PPUCtrl(3);
         assert_eq!(ctrl.base_nametable_addr(), 0x2c00);
+        assert_eq!(ctrl.vram_addr_increment(), 1);
 
         let ctrl = PPUCtrl(5);
         assert_eq!(ctrl.base_nametable_addr(), 0x2400);
@@ -87,5 +89,6 @@ mod tests {
 
         let ctrl = PPUCtrl(0xff);
         assert_eq!(ctrl.generate_nmi(), true);
+        assert_eq!(ctrl.vram_addr_increment(), 32);
     }
 }
