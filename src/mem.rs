@@ -46,6 +46,8 @@ impl Memory for NESMemory {
 
             0x2000 ... 0x3fff => self.ppu.write(address, val),
 
+            0x4014 => self.dma(val),
+
             0x8000 ... 0xffff => Err(String::from("cannot write to ROM")),
 
             _ => Err(format!("out of bounds 0x{:04X}", address)),
@@ -64,6 +66,18 @@ impl NESMemory {
 
     pub fn load_rom(&mut self, data: &Vec<u8>) {
         self.rom.clone_from(data)
+    }
+
+    fn dma(&mut self, val: u8) -> Result<u8, String> {
+        let addr_base = (val as u16) << 8;
+
+        for lo_nyb in 0x00 .. 0xff {
+            let addr = addr_base | lo_nyb;
+            let val = self.read(addr)?;
+            self.ppu.write(0x2004, val)?;
+        }
+
+        Ok(val)
     }
 }
 

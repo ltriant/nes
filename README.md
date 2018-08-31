@@ -25,7 +25,7 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] PPUSCROLL
 * [x] PPUADDR
 * [x] PPUDATA
-* [ ] OAMDMA
+* [x] OAMDMA
 * [ ] is it time for rendering yet?
 * [ ] keyboard input
 * [ ] DK
