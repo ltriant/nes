@@ -24,6 +24,10 @@ impl PPUAddr {
         self.val
     }
 
+    pub fn increment(&mut self, val: u16) {
+        self.val += val;
+    }
+
     pub fn write(&mut self, val: u8) {
         match self.nyb {
             PPUAddrNybble::Lo => {

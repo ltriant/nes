@@ -80,6 +80,8 @@ impl Cartridge {
             let bytes = fh.read(&mut vrom)
                 .map_err(CartridgeError::IO)?;
             debug!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
+
+            mem.ppu.load_vrom(&vrom);
         }
 
         Ok(Cartridge)

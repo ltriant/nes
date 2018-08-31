@@ -4,6 +4,7 @@ mod status;
 mod oam;
 mod scroll;
 mod addr;
+mod data;
 
 use mem::Memory;
 use ppu::ctrl::PPUCtrl;
@@ -12,6 +13,7 @@ use ppu::status::PPUStatus;
 use ppu::scroll::PPUScroll;
 use ppu::addr::PPUAddr;
 use ppu::oam::OAM;
+use ppu::data::PPUData;
 
 pub struct PPU {
     ctrl: PPUCtrl,
@@ -21,6 +23,7 @@ pub struct PPU {
     oam: OAM,
     scroll: PPUScroll,
     ppu_addr: PPUAddr,
+    data: PPUData,
 }
 
 impl Memory for PPU {
@@ -47,6 +50,11 @@ impl Memory for PPU {
             0x2004 => panic!("OAMData is unreadable... I think. Double check if this panic happens."),
             0x2005 => panic!("PPUScroll is unreadable... I think"),
             0x2006 => panic!("PPUAddr is unreadable... I think"),
+            0x2007 => {
+                let rv = self.data.read(self.ppu_addr.address())?;
+                self.ppu_addr.increment(self.ctrl.vram_addr_increment());
+                Ok(rv)
+            },
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
@@ -82,6 +90,11 @@ impl Memory for PPU {
                 self.ppu_addr.write(val);
                 Ok(val)
             },
+            0x2007 => {
+                let rv = self.data.write(self.ppu_addr.address(), val)?;
+                self.ppu_addr.increment(self.ctrl.vram_addr_increment());
+                Ok(rv)
+            },
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
@@ -97,7 +110,12 @@ impl PPU {
             oam_addr: 0,
             scroll: PPUScroll::new_ppu_scroll(),
             ppu_addr: PPUAddr::new_ppu_addr(),
+            data: PPUData::new_ppu_data(),
         }
+    }
+
+    pub fn load_vrom(&mut self, data: &Vec<u8>) {
+        self.data.load_vrom(data);
     }
 
     pub fn step(&self) {}
