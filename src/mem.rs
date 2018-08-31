@@ -20,7 +20,7 @@ impl Memory for NESMemory {
 
             // The PPU registers exist from 0x2000 to 0x2007, the rest of the
             // address space is just a mirror of these first eight bytes.
-            0x2000 ... 0x3fff => self.ppu.read(address),
+            0x2000 ... 0x3fff => self.ppu.read(address % 8 + 0x2000),
 
             // Expansion ROM
             // 0x4000 ... 0x5fff
