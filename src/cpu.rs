@@ -177,7 +177,7 @@ impl CPU {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self) -> usize {
         let opcode = self.mem.read(self.pc)
             .expect("unable to read next opcode");
 
@@ -186,15 +186,19 @@ impl CPU {
 
         let &Opcode(ref inst, ref addr_mode, ref cycles, ref extra_cycles) = op;
 
+        let mut n_cycles = 0;
+
         if let Ok(bytes) = addr_mode.n_bytes() {
             self.pc += bytes as u16;
             self.cycles = (self.cycles + cycles) % PPU_DOTS_PER_SCANLINE;
+            n_cycles += cycles;
 
             if let Ok((addr, val, page_crossed)) = addr_mode.get_data(self) {
                 inst.run(self, addr, val, addr_mode);
 
                 if page_crossed {
                     self.cycles += extra_cycles;
+                    n_cycles += extra_cycles;
                 }
             }
             else {
@@ -208,6 +212,8 @@ impl CPU {
                    self.pc,
                    opcode);
         }
+
+        n_cycles
     }
 
     //

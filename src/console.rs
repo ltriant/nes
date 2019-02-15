@@ -29,8 +29,10 @@ impl Console {
     pub fn power_up(&mut self) {
         self.cpu.init();
         loop {
-            self.cpu.step();
-            self.cpu.mem.ppu.step();
+            let cpu_cycles = self.cpu.step();
+            let ppu_cycles = cpu_cycles * 3;
+
+            (1 .. ppu_cycles).for_each(|_| self.cpu.mem.ppu.step());
         }
     }
 }
