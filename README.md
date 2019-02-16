@@ -26,7 +26,11 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] PPUADDR
 * [x] PPUDATA
 * [x] OAMDMA
-* [ ] is it time for rendering yet?
+* [ ] PPU warm-up state
+* [ ] ...
+* [ ] SDL integration
+* [ ] render nestest
+* [ ] refactor using static lifetimes
 * [ ] keyboard input
 * [ ] DK
 * [ ] something something save state
