@@ -220,7 +220,7 @@ impl CPU {
     // Legal instructions
     //
 
-    pub fn adc(&mut self, _: u16, val: u8) {
+    pub fn adc(&mut self, val: u8) {
         let n = (val as u16) + (self.a as u16) + (self.c as u16);
 
         let a = (n & 0xff) as u8;
@@ -237,7 +237,7 @@ impl CPU {
         self.a = a;
     }
 
-    pub fn and(&mut self, _: u16, val: u8) {
+    pub fn and(&mut self, val: u8) {
         self.a &= val;
         let a = self.a;
         self.update_sz(a);
@@ -255,7 +255,7 @@ impl CPU {
         self.update_sz(n);
     }
 
-    pub fn bcc(&mut self, addr: u16, _: u8) {
+    pub fn bcc(&mut self, addr: u16) {
         if !self.c {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -263,7 +263,7 @@ impl CPU {
         }
     }
 
-    pub fn bcs(&mut self, addr: u16, _: u8) {
+    pub fn bcs(&mut self, addr: u16) {
         if self.c {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -271,7 +271,7 @@ impl CPU {
         }
     }
 
-    pub fn beq(&mut self, addr: u16, _: u8) {
+    pub fn beq(&mut self, addr: u16) {
         if self.z {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -279,14 +279,14 @@ impl CPU {
         }
     }
 
-    pub fn bit(&mut self, _: u16, val: u8) {
+    pub fn bit(&mut self, val: u8) {
         self.s = val & 0x80 != 0;
         self.v = (val >> 0x06 & 0x01) == 1;
         let f = self.a & val;
         self.z = f == 0;
     }
 
-    pub fn bmi(&mut self, addr: u16, _: u8) {
+    pub fn bmi(&mut self, addr: u16) {
         if self.s {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -294,7 +294,7 @@ impl CPU {
         }
     }
 
-    pub fn bne(&mut self, addr: u16, _: u8) {
+    pub fn bne(&mut self, addr: u16) {
         if !self.z {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -302,7 +302,7 @@ impl CPU {
         }
     }
 
-    pub fn bpl(&mut self, addr: u16, _: u8) {
+    pub fn bpl(&mut self, addr: u16) {
         if !self.s {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -310,7 +310,7 @@ impl CPU {
         }
     }
 
-    pub fn bvc(&mut self, addr: u16, _: u8) {
+    pub fn bvc(&mut self, addr: u16) {
         if !self.v {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -318,7 +318,7 @@ impl CPU {
         }
     }
 
-    pub fn bvs(&mut self, addr: u16, _: u8) {
+    pub fn bvs(&mut self, addr: u16) {
         if self.v {
             let pc = self.pc;
             self.add_branch_cycles(pc, addr);
@@ -326,31 +326,31 @@ impl CPU {
         }
     }
 
-    pub fn clc(&mut self, _: u16, _: u8) {
+    pub fn clc(&mut self) {
         self.c = false;
     }
 
-    pub fn cld(&mut self, _: u16, _: u8) {
+    pub fn cld(&mut self) {
         self.d = false;
     }
 
-    pub fn clv(&mut self, _: u16, _: u8) {
+    pub fn clv(&mut self) {
         self.v = false;
     }
 
-    pub fn cmp(&mut self, _: u16, val: u8) {
+    pub fn cmp(&mut self, val: u8) {
         let n = self.a.wrapping_sub(val);
         self.c = self.a >= val;
         self.update_sz(n);
     }
 
-    pub fn cpx(&mut self, _: u16, val: u8) {
+    pub fn cpx(&mut self, val: u8) {
         let n = self.x.wrapping_sub(val);
         self.update_sz(n);
         self.c = self.x >= val;
     }
 
-    pub fn cpy(&mut self, _: u16, val: u8) {
+    pub fn cpy(&mut self, val: u8) {
         let n = self.y.wrapping_sub(val);
         self.update_sz(n);
         self.c = self.y >= val;
@@ -363,19 +363,19 @@ impl CPU {
             .expect("DEC failed");
     }
 
-    pub fn dex(&mut self, _: u16, _: u8) {
+    pub fn dex(&mut self) {
         let n = self.x.wrapping_sub(1);
         self.x = n;
         self.update_sz(n);
     }
 
-    pub fn dey(&mut self, _: u16, _: u8) {
+    pub fn dey(&mut self) {
         let n = self.y.wrapping_sub(1);
         self.y = n;
         self.update_sz(n);
     }
 
-    pub fn eor(&mut self, _: u16, val: u8) {
+    pub fn eor(&mut self, val: u8) {
         let val = val ^ self.a;
         self.a = val;
         self.update_sz(val);
@@ -388,39 +388,39 @@ impl CPU {
         self.update_sz(n);
     }
 
-    pub fn inx(&mut self, _: u16, _: u8) {
+    pub fn inx(&mut self) {
         let n = self.x.wrapping_add(1);
         self.x = n;
         self.update_sz(n);
     }
 
-    pub fn iny(&mut self, _: u16, _: u8) {
+    pub fn iny(&mut self) {
         let n = self.y.wrapping_add(1);
         self.y = n;
         self.update_sz(n);
     }
 
-    pub fn jmp(&mut self, addr: u16, _: u8) {
+    pub fn jmp(&mut self, addr: u16) {
         self.pc = addr;
     }
 
-    pub fn jsr(&mut self, addr: u16, _: u8) {
+    pub fn jsr(&mut self, addr: u16) {
         let retaddr = self.pc - 1;
         self.stack_push16(retaddr);
         self.pc = addr;
     }
 
-    pub fn lda(&mut self, _: u16, val: u8) {
+    pub fn lda(&mut self, val: u8) {
         self.a = val;
         self.update_sz(val);
     }
 
-    pub fn ldx(&mut self, _: u16, val: u8) {
+    pub fn ldx(&mut self, val: u8) {
         self.x = val;
         self.update_sz(val);
     }
 
-    pub fn ldy(&mut self, _: u16, val: u8) {
+    pub fn ldy(&mut self, val: u8) {
         self.y = val;
         self.update_sz(val);
     }
@@ -436,20 +436,20 @@ impl CPU {
         };
     }
 
-    pub fn nop(&mut self, _: u16, _: u8) { }
+    pub fn nop(&self) { }
 
-    pub fn ora(&mut self, _: u16, val: u8) {
+    pub fn ora(&mut self, val: u8) {
         let na = self.a | val;
         self.a = na;
         self.update_sz(na);
     }
 
-    pub fn pha(&mut self, _: u16, _: u8) {
+    pub fn pha(&mut self) {
         let a = self.a;
         self.stack_push8(a);
     }
 
-    pub fn php(&mut self, _: u16, _: u8) {
+    pub fn php(&mut self) {
         // https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
         // According to the above link, the PHP instruction sets bits 4 and 5 on
         // the value it pushes onto the stack.
@@ -458,13 +458,13 @@ impl CPU {
         self.stack_push8(flags);
     }
 
-    pub fn pla(&mut self, _: u16, _: u8) {
+    pub fn pla(&mut self) {
         let rv = self.stack_pop8();
         self.a = rv;
         self.update_sz(rv);
     }
 
-    pub fn plp(&mut self, _: u16, _: u8) {
+    pub fn plp(&mut self) {
         let p = self.stack_pop8() & 0xef | 0x20;
         self.set_flags(p);
     }
@@ -493,7 +493,7 @@ impl CPU {
         };
     }
 
-    pub fn rti(&mut self, _: u16, _: u8) {
+    pub fn rti(&mut self) {
         let flags = self.stack_pop8() & 0xef | 0x20;
         self.set_flags(flags);
 
@@ -501,12 +501,12 @@ impl CPU {
         self.pc = retaddr;
     }
 
-    pub fn rts(&mut self, _: u16, _: u8) {
+    pub fn rts(&mut self) {
         let retaddr = self.stack_pop16();
         self.pc = retaddr + 1;
     }
 
-    pub fn sbc(&mut self, _: u16, val: u8) {
+    pub fn sbc(&mut self, val: u8) {
         let n: i8 = (self.a as i8)
             .wrapping_sub(val as i8)
             .wrapping_sub(1 - self.c as i8) ;
@@ -518,62 +518,62 @@ impl CPU {
         self.a = a;
     }
 
-    pub fn sec(&mut self, _: u16, _: u8) {
+    pub fn sec(&mut self) {
         self.c = true;
     }
 
-    pub fn sed(&mut self, _: u16, _: u8) {
+    pub fn sed(&mut self) {
         self.d = true;
     }
 
-    pub fn sei(&mut self, _: u16, _: u8) {
+    pub fn sei(&mut self) {
         self.i = true;
     }
 
-    pub fn sta(&mut self, addr: u16, _: u8) {
+    pub fn sta(&mut self, addr: u16) {
         self.mem.write(addr, self.a)
             .expect("STA failed");
     }
 
-    pub fn stx(&mut self, addr: u16, _: u8) {
+    pub fn stx(&mut self, addr: u16) {
         self.mem.write(addr, self.x)
             .expect("STX failed");
     }
 
-    pub fn sty(&mut self, addr: u16, _: u8) {
+    pub fn sty(&mut self, addr: u16) {
         self.mem.write(addr, self.y)
             .expect("STY failed");
     }
 
-    pub fn tax(&mut self, _: u16, _: u8) {
+    pub fn tax(&mut self) {
         let n = self.a;
         self.x = n;
         self.update_sz(n);
     }
 
-    pub fn tay(&mut self, _: u16, _: u8) {
+    pub fn tay(&mut self) {
         let n = self.a;
         self.y = n;
         self.update_sz(n);
     }
 
-    pub fn tsx(&mut self, _: u16, _: u8) {
+    pub fn tsx(&mut self) {
         let s = self.sp;
         self.update_sz(s);
         self.x = s;
     }
 
-    pub fn txa(&mut self, _: u16, _: u8) {
+    pub fn txa(&mut self) {
         let n = self.x;
         self.a = n;
         self.update_sz(n);
     }
 
-    pub fn txs(&mut self, _: u16, _: u8) {
+    pub fn txs(&mut self) {
         self.sp = self.x;
     }
 
-    pub fn tya(&mut self, _: u16, _: u8) {
+    pub fn tya(&mut self) {
         let n = self.y;
         self.a = n;
         self.update_sz(n);
@@ -583,15 +583,15 @@ impl CPU {
     // Illegal instructions
     //
 
-    pub fn anc(&mut self, _: u16, _: u8) { }
+    pub fn anc(&mut self) { }
 
-    pub fn lax(&mut self, _: u16, val: u8) {
+    pub fn lax(&mut self, val: u8) {
         self.a = val;
         self.x = val;
         self.update_sz(val);
     }
 
-    pub fn sax(&mut self, addr: u16, _: u8) {
+    pub fn sax(&mut self, addr: u16) {
         let val = self.x & self.a;
         self.mem.write(addr, val)
             .expect("SAX failed");
