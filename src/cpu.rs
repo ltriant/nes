@@ -123,6 +123,18 @@ impl CPU {
                  ppu_dots);
     }
 
+    fn nmi(&mut self) {
+        let pc = self.pc;
+        self.stack_push16(pc);
+        self.php();
+
+        let lo = self.mem.read(0xFFFA).expect("low NMI byte") as u16;
+        let hi = self.mem.read(0xFFFB).expect("high NMI byte") as u16;
+        let addr = (hi << 8) | lo;
+
+        self.pc = addr;
+    }
+
     fn stack_push8(&mut self, val: u8) {
         if self.sp == 0 {
             panic!("cannot push onto a full stack");
@@ -678,5 +690,19 @@ mod tests {
 
         cpu.c = true;
         assert_eq!(cpu.flags(), 0x01);
+    }
+
+    #[test]
+    fn test_nmi() {
+        let ppu = PPU::new_nes_ppu();
+        let mem = NESMemory::new_nes_mem(ppu);
+        let mut cpu = CPU::new_nes_cpu(mem);
+
+        let mut rom = vec![0; 0xffff];
+        rom[0xfffa] = 0xad;
+        rom[0xfffb] = 0xde;
+        cpu.mem.load_rom(&rom);
+        cpu.nmi();
+        assert_eq!(cpu.pc, 0xdead);
     }
 }
