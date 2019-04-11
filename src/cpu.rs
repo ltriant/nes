@@ -64,10 +64,10 @@ impl CPU {
         let addr = (hi << 8) | lo;
         self.pc = addr;
         //self.pc = 0xc000;
-        debug!("starting program counter: 0x{:04X}", self.pc);
+        debug!("PC: 0x{:04X}", self.pc);
 
         self.set_flags(0x24);
-        debug!("initial flags: 0x{:02X}", self.flags());
+        debug!("flags: 0x{:02X}", self.flags());
     }
 
     fn flags(&self) -> u8 {
@@ -123,7 +123,7 @@ impl CPU {
                  ppu_dots);
     }
 
-    fn nmi(&mut self) {
+    pub fn nmi(&mut self) {
         let pc = self.pc;
         self.stack_push16(pc);
         self.php();
@@ -132,6 +132,7 @@ impl CPU {
         let hi = self.mem.read(0xFFFB).expect("high NMI byte") as u16;
         let addr = (hi << 8) | lo;
 
+        debug!("NMI: {:04X}", addr);
         self.pc = addr;
     }
 
