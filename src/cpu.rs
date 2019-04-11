@@ -322,6 +322,23 @@ impl CPU {
         }
     }
 
+    pub fn brk(&mut self) {
+        let pc = self.pc + 1;
+        self.stack_push16(pc);
+
+        self.b = true;
+
+        let flags = self.flags() | 0x10;
+        self.stack_push8(flags);
+
+        self.i = true;
+
+        let lo = self.mem.read(0xFFFE).expect("BRK read low byte") as u16;
+        let hi = self.mem.read(0xFFFF).expect("BRK read high byte") as u16;
+        let pc = (hi << 8) | lo;
+        self.pc = pc;
+    }
+
     pub fn bvc(&mut self, addr: u16) {
         if !self.v {
             let pc = self.pc;

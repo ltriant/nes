@@ -80,6 +80,7 @@ impl Instruction {
             Instruction::BMI => cpu.bmi(addr),
             Instruction::BNE => cpu.bne(addr),
             Instruction::BPL => cpu.bpl(addr),
+            Instruction::BRK => cpu.brk(),
             Instruction::BVC => cpu.bvc(addr),
             Instruction::BVS => cpu.bvs(addr),
             Instruction::CLC => cpu.clc(),
