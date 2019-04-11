@@ -29,7 +29,6 @@ impl Memory for NESMemory {
             // 0x6000 ... 0x7fff
 
             // PRG-ROM
-            // TODO this will depend on which mapper is being used
             0x8000 ... 0xffff => Ok(self.rom[address as usize % self.rom.len()]),
 
             _ => Err(format!("out of bounds 0x{:04X}", address)),
