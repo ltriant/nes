@@ -137,23 +137,18 @@ impl CPU {
     }
 
     fn stack_push8(&mut self, val: u8) {
-        if self.sp == 0 {
-            panic!("cannot push onto a full stack");
-        }
-
         // The stack page exists from 0x0100 to 0x01FF
         let addr = (0x01 << 8) | self.sp as u16;
         self.mem.write(addr, val)
             .expect("unable to write to stack");
-        self.sp -= 1;
+
+        let n = self.sp.wrapping_sub(1);
+        self.sp = n;
     }
 
     fn stack_pop8(&mut self) -> u8 {
-        if self.sp == STACK_INIT {
-            panic!("cannot pop from an empty stack");
-        }
-
-        self.sp += 1;
+        let n = self.sp.wrapping_add(1);
+        self.sp = n;
 
         // The stack page exists from 0x0100 to 0x01FF
         let addr = (0x01 << 8) | self.sp as u16;
@@ -647,25 +642,38 @@ mod tests {
     use ppu::PPU;
 
     #[test]
-    #[should_panic]
     fn test_stack_pop_empty() {
         let ppu = PPU::new_nes_ppu();
         let mem = NESMemory::new_nes_mem(ppu);
         let mut cpu = CPU::new_nes_cpu(mem);
         let _ = cpu.stack_pop8();
-        assert!(false);
+        assert_eq!(cpu.sp, STACK_INIT + 1);
+
+        let _ = cpu.stack_pop8();
+        assert_eq!(cpu.sp, STACK_INIT + 2);
+
+        // The stack pointer should wrap around from 0xff to 0x00
+        // TODO verify this behaviour
+        let _ = cpu.stack_pop8();
+        assert_eq!(cpu.sp, 0x00);
     }
 
     #[test]
-    #[should_panic]
     fn test_stack_push_full() {
         let ppu = PPU::new_nes_ppu();
         let mem = NESMemory::new_nes_mem(ppu);
         let mut cpu = CPU::new_nes_cpu(mem);
-        for _ in 0 .. 255 {
+
+        for _ in 0 .. STACK_INIT {
             cpu.stack_push8(0xff);
         }
-        assert!(false);
+
+        assert_eq!(cpu.sp, 0x00);
+
+        // The stack pointer should wrap around from 0x00 to 0xff
+        // TODO verify this behaviour
+        cpu.stack_push8(0xee);
+        assert_eq!(cpu.sp, 0xff);
     }
 
     #[test]
