@@ -16,14 +16,23 @@ impl Memory for NESMemory {
         match address {
             // The first 0x2000 bytes are RAM, but there's only 2KB (0x800) of
             // actual RAM, and the rest is just a mirror of the first 2KB.
-            0 ... 0x1fff => Ok(self.ram[address as usize % 0x800]),
+            0x0000 ... 0x1fff => Ok(self.ram[address as usize % 0x800]),
 
             // The PPU registers exist from 0x2000 to 0x2007, the rest of the
             // address space is just a mirror of these first eight bytes.
             0x2000 ... 0x3fff => self.ppu.read(address % 8 + 0x2000),
 
+            // APU sound channel
+            0x4015            => Ok(0),
+
+            // Controller 1
+            0x4016            => Ok(0),
+
+            // Controller 2
+            0x4017            => Ok(0),
+
             // Expansion ROM
-            // 0x4000 ... 0x5fff
+            //0x4000 ... 0x5fff => Ok(0),
 
             // SRAM
             // 0x6000 ... 0x7fff
@@ -31,7 +40,7 @@ impl Memory for NESMemory {
             // PRG-ROM
             0x8000 ... 0xffff => Ok(self.rom[address as usize % self.rom.len()]),
 
-            _ => Err(format!("out of bounds 0x{:04X}", address)),
+            _ => Err(format!("read out of bounds 0x{:04X}", address)),
         }
     }
 
@@ -45,11 +54,20 @@ impl Memory for NESMemory {
 
             0x2000 ... 0x3fff => self.ppu.write(address, val),
 
-            0x4014 => self.dma(val),
+            0x4014            => self.dma(val),
+
+            // APU sound channel
+            0x4015            => Ok(0),
+
+            // Controller 1
+            0x4016            => Ok(0),
+
+            // Controller 2
+            0x4017            => Ok(0),
 
             0x8000 ... 0xffff => Err(String::from("cannot write to ROM")),
 
-            _ => Err(format!("out of bounds 0x{:04X}", address)),
+            _ => Err(format!("write out of bounds 0x{:04X}", address)),
         }
     }
 }
