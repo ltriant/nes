@@ -1,52 +1,52 @@
 pub struct PPUStatus(pub u8);
 
 impl PPUStatus {
+    // Vertical blank status
     pub fn vblank_started(&self) -> bool {
         let &PPUStatus(val) = self;
         (val & 0x80) != 0
     }
 
-    pub fn set_vblank_started(&mut self, val: bool) {
+    pub fn set_vblank(&mut self) {
         let PPUStatus(old) = *self;
-
-        if val {
-            *self = PPUStatus(old | 0x80);
-        }
-        else {
-            *self = PPUStatus(old & !0x80);
-        }
+        *self = PPUStatus(old | 0x80);
     }
 
+    pub fn clear_vblank(&mut self) {
+        let PPUStatus(old) = *self;
+        *self = PPUStatus(old & !0x80);
+    }
+
+    // Sprite zero hit status
     pub fn sprite_zero_hit(&self) -> bool {
         let &PPUStatus(val) = self;
         (val & 0x40) != 0
     }
 
-    pub fn set_sprite_zero_hit(&mut self, val: bool) {
+    pub fn set_sprite_zero_hit(&mut self) {
         let PPUStatus(old) = *self;
-
-        if val {
-            *self = PPUStatus(old | 0x40);
-        }
-        else {
-            *self = PPUStatus(old & !0x40);
-        }
+        *self = PPUStatus(old | 0x40);
     }
 
+    pub fn clear_sprite_zero_hit(&mut self) {
+        let PPUStatus(old) = *self;
+        *self = PPUStatus(old & !0x40);
+    }
+
+    // Sprite overflow status
     pub fn sprite_overflow(&self) -> bool {
         let &PPUStatus(val) = self;
         (val & 0x20) != 0
     }
 
-    pub fn set_sprite_overflow(&mut self, val: bool) {
+    pub fn set_sprite_overflow(&mut self) {
         let PPUStatus(old) = *self;
+        *self = PPUStatus(old | 0x20);
+    }
 
-        if val {
-            *self = PPUStatus(old | 0x20);
-        }
-        else {
-            *self = PPUStatus(old & !0x20);
-        }
+    pub fn clear_sprite_overflow(&mut self) {
+        let PPUStatus(old) = *self;
+        *self = PPUStatus(old & !0x20);
     }
 }
 
@@ -61,9 +61,9 @@ mod tests {
 
         let mut status = PPUStatus(0x00);
         assert!(!status.vblank_started());
-        status.set_vblank_started(true);
+        status.set_vblank();
         assert!(status.vblank_started());
-        status.set_vblank_started(false);
+        status.clear_vblank();
         assert!(!status.vblank_started());
     }
 
@@ -74,9 +74,9 @@ mod tests {
 
         let mut status = PPUStatus(0x00);
         assert!(!status.sprite_zero_hit());
-        status.set_sprite_zero_hit(true);
+        status.set_sprite_zero_hit();
         assert!(status.sprite_zero_hit());
-        status.set_sprite_zero_hit(false);
+        status.clear_sprite_zero_hit();
         assert!(!status.sprite_zero_hit());
     }
 
@@ -87,9 +87,9 @@ mod tests {
 
         let mut status = PPUStatus(0x00);
         assert!(!status.sprite_overflow());
-        status.set_sprite_overflow(true);
+        status.set_sprite_overflow();
         assert!(status.sprite_overflow());
-        status.set_sprite_overflow(false);
+        status.clear_sprite_overflow();
         assert!(!status.sprite_overflow());
     }
 }
