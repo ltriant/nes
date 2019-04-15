@@ -26,16 +26,20 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] PPUADDR
 * [x] PPUDATA
 * [x] OAMDMA
-* [ ] PPU warm-up state
+* [x] PPU warm-up state
+* [x] vblank + NMI
+* [ ] PPU scanline + cycle logic
 * [ ] ...
+* [ ] backgrounds vs sprites
+* [ ] generate RGB values for pixels
 * [ ] SDL integration
-* [ ] render nestest
-* [ ] refactor using static lifetimes
 * [ ] keyboard input
+* [ ] render nestest
+* [ ] refactor using lifetimes
 * [ ] DK
+* [ ] scrolling
+* [ ] document high-level design
 * [ ] something something save state
 * [ ] something something APU
-* [ ] refactor CPU
-* [ ] document high-level design
 * [ ] ???
 * [ ] profit

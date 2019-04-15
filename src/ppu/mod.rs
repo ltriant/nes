@@ -24,6 +24,9 @@ pub struct PPU {
     scroll: PPUScroll,
     ppu_addr: PPUAddr,
     data: PPUData,
+
+    dot: u16,
+    scanline: u16,
 }
 
 impl Memory for PPU {
@@ -48,8 +51,8 @@ impl Memory for PPU {
             },
             0x2003 => Ok(0), // OAMADDR is write-only
             0x2004 => panic!("OAMData is unreadable... I think. Double check if this panic happens."),
-            0x2005 => panic!("PPUScroll is unreadable... I think"),
-            0x2006 => panic!("PPUAddr is unreadable... I think"),
+            0x2005 => Ok(0), // PPUSCROLL is write-only
+            0x2006 => Ok(0), // PPUADDR is write-only
             0x2007 => {
                 let rv = self.data.read(self.ppu_addr.address())?;
                 self.ppu_addr.increment(self.ctrl.vram_addr_increment());
@@ -100,6 +103,10 @@ impl Memory for PPU {
     }
 }
 
+pub struct StepResult {
+    pub vblank_nmi: bool,
+}
+
 impl PPU {
     pub fn new_nes_ppu() -> PPU {
         PPU {
@@ -111,6 +118,9 @@ impl PPU {
             scroll: PPUScroll::new_ppu_scroll(),
             ppu_addr: PPUAddr::new_ppu_addr(),
             data: PPUData::new_ppu_data(),
+
+            dot: 0,
+            scanline: 0,
         }
     }
 
@@ -118,5 +128,53 @@ impl PPU {
         self.data.load_vrom(data);
     }
 
-    pub fn step(&self) {}
+    fn rendering_enabled(&self) -> bool {
+        self.mask.show_background() || self.mask.show_sprites()
+    }
+
+    pub fn step(&mut self) -> StepResult {
+        // http://wiki.nesdev.com/w/index.php/PPU_rendering#Line-by-line_timing
+        //
+        // There are a total of 262 scanlines per frame
+        //   Scanlines 0 to 239 are for display (i.e. the NES is 256 x _240_)
+        //   Scanline  240 is a post-render scanline (idle)
+        //   Scanlines 241 to 260 are the vblank interval
+        //   Scanline  261 is a pre-render scanline (idle?)
+        //
+        // There are a total of 341 dots per scanline
+        //   The first 256 dots are displayable (i.e. the NES is _256_ x 240)
+
+        let mut res = StepResult{vblank_nmi: false};
+
+        self.dot += 1;
+        if self.dot == 341 {
+            self.scanline += 1;
+            self.dot = 0;
+        }
+
+        if self.scanline <= 239 && self.rendering_enabled() {
+            // render something?
+        }
+
+        if self.scanline == 240 {
+            // do nothing... this is an idle scanline
+        }
+
+        if self.scanline == 241 && self.dot == 1 {
+            debug!("vblank started");
+            self.status.set_vblank();
+
+            if self.ctrl.generate_nmi() {
+                res.vblank_nmi = true;
+            }
+        }
+
+        if self.scanline == 261 && self.dot == 1 {
+            debug!("vblank ended");
+            self.scanline = 0;
+            self.status.clear_vblank();
+        }
+
+        res
+    }
 }

@@ -19,7 +19,7 @@ impl Console {
     }
 
     pub fn insert_cartridge(&mut self, filename: &str) -> Result<(), CartridgeError> {
-        debug!("loading {}", filename);
+        debug!("loading cartridge: {}", filename);
         let mut fh = File::open(filename)
             .map_err(CartridgeError::IO)?;
         let _ = Cartridge::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
@@ -27,12 +27,21 @@ impl Console {
     }
 
     pub fn power_up(&mut self) {
+        debug!("powering up");
+
         self.cpu.init();
+
         loop {
             let cpu_cycles = self.cpu.step();
             let ppu_cycles = cpu_cycles * 3;
 
-            (1 .. ppu_cycles).for_each(|_| self.cpu.mem.ppu.step());
+            for _ in 1 .. ppu_cycles {
+                let res = self.cpu.mem.ppu.step();
+
+                if res.vblank_nmi {
+                    self.cpu.nmi()
+                }
+            }
         }
     }
 }
