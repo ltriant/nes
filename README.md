@@ -28,11 +28,12 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] OAMDMA
 * [x] PPU warm-up state
 * [x] vblank + NMI
-* [ ] PPU scanline + cycle logic
-* [ ] ...
-* [ ] backgrounds vs sprites
-* [ ] generate RGB values for pixels
-* [ ] SDL integration
+* [ ] accurate PPU frame timing
+* [ ] backgrounds vs sprites?
+* [ ] calculate RGB? values for pixels
+* [ ] super simple SDL integration
+* [ ] display the current pallette (for debugging)
+* [ ] display the current available sprites (for debugging)
 * [ ] keyboard input
 * [ ] render nestest
 * [ ] refactor using lifetimes
