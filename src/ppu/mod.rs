@@ -173,6 +173,8 @@ impl PPU {
             debug!("vblank ended");
             self.scanline = 0;
             self.status.clear_vblank();
+            self.status.clear_sprite_zero_hit();
+            self.status.clear_sprite_overflow();
         }
 
         res
