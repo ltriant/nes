@@ -31,7 +31,9 @@ pub struct PPU {
 
 impl Memory for PPU {
     fn read(&mut self, address: u16) -> Result<u8, String> {
-        match address {
+        // The PPU registers exist from 0x2000 to 0x2007, the rest of the
+        // address space is just a mirror of these first eight bytes.
+        match address % 8 + 0x2000 {
             0x2000 => {
                 let PPUCtrl(n) = self.ctrl;
                 Ok(n)

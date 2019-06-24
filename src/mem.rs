@@ -20,7 +20,7 @@ impl Memory for NESMemory {
 
             // The PPU registers exist from 0x2000 to 0x2007, the rest of the
             // address space is just a mirror of these first eight bytes.
-            0x2000 ... 0x3fff => self.ppu.read(address % 8 + 0x2000),
+            0x2000 ... 0x3fff => self.ppu.read(address),
 
             // APU sound channel
             0x4015            => Ok(0),
