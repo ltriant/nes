@@ -1,5 +1,5 @@
-use addr::AddressingMode;
-use cpu::CPU;
+use crate::addr::AddressingMode;
+use crate::cpu::CPU;
 
 #[derive(Debug)]
 pub enum Instruction {

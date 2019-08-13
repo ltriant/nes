@@ -1,4 +1,4 @@
-use ppu::PPU;
+use crate::ppu::PPU;
 
 pub trait Memory {
     fn read(&mut self, address: u16) -> Result<u8, String>;

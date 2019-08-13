@@ -1,6 +1,4 @@
-#[macro_use]
-extern crate log;
-extern crate env_logger;
+#[macro_use] extern crate log;
 
 mod console;
 mod cpu;
@@ -11,7 +9,7 @@ mod ines;
 mod addr;
 mod ppu;
 
-use console::Console;
+use crate::console::Console;
 
 fn main() {
     env_logger::init();

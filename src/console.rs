@@ -1,7 +1,7 @@
-use cpu::CPU;
-use mem::NESMemory;
-use ppu::PPU;
-use ines::{Cartridge, CartridgeError};
+use crate::cpu::CPU;
+use crate::mem::NESMemory;
+use crate::ppu::PPU;
+use crate::ines::{Cartridge, CartridgeError};
 
 use std::fs::File;
 

@@ -1,6 +1,6 @@
-use addr::AddressingMode;
-use mem::{Memory, NESMemory};
-use opcode::{Opcode, OPCODES};
+use crate::addr::AddressingMode;
+use crate::mem::{Memory, NESMemory};
+use crate::opcode::{Opcode, OPCODES};
 
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: usize = 341;

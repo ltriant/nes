@@ -1,5 +1,5 @@
-use mem::Memory;
-use cpu::CPU;
+use crate::mem::Memory;
+use crate::cpu::CPU;
 
 #[derive(Debug)]
 pub enum AddressingMode {

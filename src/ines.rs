@@ -1,4 +1,4 @@
-use mem::NESMemory;
+use crate::mem::NESMemory;
 
 use std::fs::File;
 use std::io::Read;

@@ -1,4 +1,4 @@
-use mem::Memory;
+use crate::mem::Memory;
 
 pub struct OAM {
     data: [u8; 0x100],

@@ -1,4 +1,4 @@
-use mem::Memory;
+use crate::mem::Memory;
 
 pub struct PPUData {
     chr_rom: Vec<u8>,

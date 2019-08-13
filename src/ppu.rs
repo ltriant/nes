@@ -6,14 +6,14 @@ mod scroll;
 mod addr;
 mod data;
 
-use mem::Memory;
-use ppu::ctrl::PPUCtrl;
-use ppu::mask::PPUMask;
-use ppu::status::PPUStatus;
-use ppu::scroll::PPUScroll;
-use ppu::addr::PPUAddr;
-use ppu::oam::OAM;
-use ppu::data::PPUData;
+use crate::mem::Memory;
+use crate::ppu::ctrl::PPUCtrl;
+use crate::ppu::mask::PPUMask;
+use crate::ppu::status::PPUStatus;
+use crate::ppu::scroll::PPUScroll;
+use crate::ppu::addr::PPUAddr;
+use crate::ppu::oam::OAM;
+use crate::ppu::data::PPUData;
 
 pub struct PPU {
     // PPU registers

@@ -1,5 +1,5 @@
-use inst::Instruction;
-use addr::AddressingMode;
+use crate::inst::Instruction;
+use crate::addr::AddressingMode;
 
 #[derive(Debug)]
 pub struct Opcode(pub Instruction, pub AddressingMode, pub usize, pub usize);
