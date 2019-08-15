@@ -6,6 +6,7 @@ mod scroll;
 mod addr;
 mod data;
 
+use crate::palette::PALETTE;
 use crate::mem::Memory;
 use crate::ppu::ctrl::PPUCtrl;
 use crate::ppu::mask::PPUMask;
@@ -14,6 +15,10 @@ use crate::ppu::scroll::PPUScroll;
 use crate::ppu::addr::PPUAddr;
 use crate::ppu::oam::OAM;
 use crate::ppu::data::PPUData;
+
+use sdl2::rect::Rect;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
 
 pub struct PPU {
     // PPU registers
@@ -78,7 +83,15 @@ impl Memory for PPU {
             0x2000 => {
                 self.ctrl = PPUCtrl(val);
 
-                // TODO bits 0 and 1 update the X and Y scroll positions
+                if (val & 0x01) != 0 {
+                    let old_x = self.scroll.x;
+                    self.scroll.x = (old_x + 256) & 0xff;
+                }
+
+                if (val & 0x02) != 0 {
+                    let old_y = self.scroll.y;
+                    self.scroll.y = (old_y + 240) & 0xff;
+                }
 
                 Ok(val)
             },
@@ -158,56 +171,74 @@ impl PPU {
         }
     }
 
-    fn background_pixel(&self) -> u8 {
+    fn background_pixel(&self) -> Option<u8> {
         if !self.mask.show_background() {
-            return 0;
+            return None;
         }
 
-        (self.fetch_tile_data() & 0x0f) as u8
+        let tile_data = self.fetch_tile_data() >> ((7 - self.scroll.x) * 4);
+        let pixel = (tile_data & 0x0f) as u8;
+
+        Some(pixel)
     }
 
-    fn render_pixel(&self) {
-        let x = self.dot;
+    fn render_pixel(&mut self, canvas: &mut Canvas<Window>) {
+        let x = self.dot - 1;
         let y = self.scanline;
-        let background_pixel = self.background_pixel();
+
+        if let Some(background_pixel) = self.background_pixel() {
+            let addr = (background_pixel as u16) | 0x3f00;
+
+            let color_index = self.data.read(addr)
+                .expect("unable to read palette data") % 64;
+            let color = PALETTE[color_index as usize];
+            let rect = Rect::new((x as i32) * 2, (y as i32) * 2, 2, 2);
+
+            debug!("background_pixel = {}, color_addr = 0x{:04x}, color_index = {}, color = {:?}",
+                   background_pixel, addr, color_index, color);
+
+            canvas.set_draw_color(color);
+            canvas.fill_rect(rect).expect("unable to draw pixel");
+        }
 
         // TODO sprite logic
     }
 
-    fn fetch_nametable_byte(&mut self) {
+    fn fetch_nametable_byte(&mut self) -> u8 {
         let v = self.ppu_addr.address();
         let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
-        self.nametable_byte = self.read(addr)
-            .expect("unable to fetch nametable byte");
+        self.read(addr).expect("unable to fetch NT byte")
     }
 
-    fn fetch_attrtable_byte(&mut self) {
+    fn fetch_attrtable_byte(&mut self) -> u8 {
         let v = self.ppu_addr.address();
-        let addr = 0x23c0 | (v & 0x0c00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07);
+
+        let addr =
+            0x23c0 | (v & 0x0c00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07);
+        let attrbyte = self.read(addr).expect("unable to fetch AT byte");
+
         let shift = ((v >> 4) & 4) | (v & 2);
-        let attrbyte = self.read(addr)
-            .expect("unable to fetch attrtable byte");
-        self.attrtable_byte = ((attrbyte >> shift) & 3) << 2;
+        ((attrbyte >> shift) & 3) << 2
     }
 
-    fn fetch_low_tile_byte(&mut self) {
+    fn fetch_low_tile_byte(&mut self) -> u8 {
+        let fine_y = (self.ppu_addr.address() >> 12) & 7;
+        let tile = self.nametable_byte;
+        let addr = self.ctrl.background_pattern_table_addr()
+            + ((tile as u16) * 16)
+            + fine_y;
+
+        self.read(addr).expect("unable to fetch low tile byte")
+    }
+
+    fn fetch_high_tile_byte(&mut self) -> u8 {
         let fine_y = (self.ppu_addr.address() >> 12) & 7;
         let tile = self.nametable_byte;
         let addr = self.ctrl.background_pattern_table_addr()
             + (tile as u16) * 16
             + fine_y;
-        self.low_tile_byte = self.read(addr)
-            .expect("unable to fetch low tile byte");
-    }
 
-    fn fetch_high_tile_byte(&mut self) {
-        let fine_y = (self.ppu_addr.address() >> 12) & 7;
-        let tile = self.nametable_byte;
-        let addr = self.ctrl.background_pattern_table_addr()
-            + (tile as u16) * 16
-            + fine_y;
-        self.high_tile_byte = self.read(addr + 8)
-            .expect("unable to fetch high tile byte");
+        self.read(addr + 8).expect("unable to fetch high tile byte")
     }
 
     fn fetch_tile_data(&self) -> u32 {
@@ -215,20 +246,23 @@ impl PPU {
     }
 
     fn store_tile_data(&mut self) {
-        let mut data: u32 = 0;
-        for _ in 0 .. 8 {
-            let a = self.attrtable_byte;
+        let data: u32 = (0 .. 8).fold(0, |acc, _| {
             let p1 = (self.low_tile_byte & 0x80) >> 7;
             let p2 = (self.high_tile_byte & 0x80) >> 6;
+
             self.low_tile_byte <<= 1;
             self.high_tile_byte <<= 1;
-            data <<= 4;
-            data |= (a | p1 | p2) as u32;
-        }
+
+            let a = self.attrtable_byte;
+            let b = (a | p1 | p2) as u32;
+
+            (acc << 4) | b
+        } );
+
         self.tile_data |= data as u64;
     }
 
-    pub fn step(&mut self) -> StepResult {
+    pub fn step(&mut self, canvas: &mut Canvas<Window>) -> StepResult {
         // http://wiki.nesdev.com/w/index.php/PPU_rendering#Line-by-line_timing
         //
         // There are a total of 262 scanlines per frame
@@ -244,9 +278,10 @@ impl PPU {
 
         // All of this logic has been borrowed from github.com/foglemen/nes
 
-        let pre_line        = self.scanline == 261;
-        let visible_line    = self.scanline <= 239;
-        let render_line     = pre_line || visible_line;
+        let pre_line         = self.scanline == 261;
+        let visible_line     = self.scanline <= 239;
+        let render_line      = pre_line || visible_line;
+        let post_render_line = self.scanline == 240;
 
         let pre_fetch_cycle = self.dot >= 321 && self.dot <= 336;
         let visible_cycle   = self.dot >= 1   && self.dot <= 256;
@@ -255,17 +290,29 @@ impl PPU {
         // background logic
         if self.rendering_enabled() {
             if visible_line && visible_cycle {
-                self.render_pixel();
+                self.render_pixel(canvas);
             }
 
             if render_line && fetch_cycle {
                 self.tile_data <<= 4;
 
                 match self.dot % 8 {
-                    1 => self.fetch_nametable_byte(),
-                    3 => self.fetch_attrtable_byte(),
-                    5 => self.fetch_low_tile_byte(),
-                    7 => self.fetch_high_tile_byte(),
+                    1 => {
+                        let b = self.fetch_nametable_byte();
+                        self.nametable_byte = b;
+                    },
+                    3 => {
+                        let b = self.fetch_attrtable_byte();
+                        self.attrtable_byte = b;
+                    },
+                    5 => {
+                        let b = self.fetch_low_tile_byte();
+                        self.low_tile_byte = b;
+                    },
+                    7 => {
+                        let b = self.fetch_high_tile_byte();
+                        self.high_tile_byte = b;
+                    },
                     0 => self.store_tile_data(),
                     _ => { }, // do nothing
                 }
@@ -310,6 +357,7 @@ impl PPU {
                 res.vblank_nmi = true;
             }
 
+            canvas.present();
             self.inc_dot();
             return res;
         }

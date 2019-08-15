@@ -1,4 +1,5 @@
 #[macro_use] extern crate log;
+#[macro_use] extern crate lazy_static;
 
 mod console;
 mod cpu;
@@ -8,6 +9,7 @@ mod mem;
 mod ines;
 mod addr;
 mod ppu;
+mod palette;
 
 use std::env;
 

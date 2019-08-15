@@ -4,8 +4,8 @@ enum PPUScrollDir {
 }
 
 pub struct PPUScroll {
-    x: u8,
-    y: u8,
+    pub x: u16,
+    pub y: u16,
     dir: PPUScrollDir,
 }
 
@@ -25,11 +25,11 @@ impl PPUScroll {
     pub fn write(&mut self, val: u8) {
         match self.dir {
             PPUScrollDir::X => {
-                self.x = val;
+                self.x = val as u16;
                 self.dir = PPUScrollDir::Y;
             },
             PPUScrollDir::Y => {
-                self.y = val;
+                self.y = val as u16;
                 self.dir = PPUScrollDir::X;
             },
         }
