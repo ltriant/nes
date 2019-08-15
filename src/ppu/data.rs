@@ -3,7 +3,7 @@ use crate::mem::Memory;
 pub struct PPUData {
     chr_rom: Vec<u8>,
     nametables: [u8; 0x800],
-    pallette: [u8; 0xff],
+    palette: [u8; 0xff],
 }
 
 impl Memory for PPUData {
@@ -12,11 +12,11 @@ impl Memory for PPUData {
             0 ... 0x1fff => {
                 Ok(self.chr_rom[address as usize])
             },
-            0x2000 ... 0x3f00 => {
+            0x2000 ... 0x3eff => {
                 Ok(self.nametables[address as usize & 0x7ff])
             },
-            0x3f01 ... 0x3fff => {
-                Ok(self.pallette[address as usize & 0x1f])
+            0x3f00 ... 0x3fff => {
+                Ok(self.palette[address as usize & 0x1f])
             },
             _ => Err(format!("out of bounds 0x{:04X}", address))
         }
@@ -29,14 +29,16 @@ impl Memory for PPUData {
                 self.chr_rom[address as usize] = val;
                 Ok(val)
             },
-            0x2000 ... 0x3f00 => {
+            0x2000 ... 0x3eff => {
                 //debug!("writing to nametable");
                 self.nametables[address as usize & 0x7ff] = val;
                 Ok(val)
             },
-            0x3f01 ... 0x3fff => {
-                //debug!("writing to pallette");
-                self.pallette[address as usize & 0x1f] = val;
+            0x3f00 ... 0x3fff => {
+                let i = address as usize & 0x1f;
+                debug!("writing {:02X} to palette {}", val, i);
+
+                self.palette[i] = val;
                 Ok(val)
             },
             _ => Err(format!("out of bounds 0x{:04X}", address))
@@ -49,7 +51,7 @@ impl PPUData {
         PPUData {
             chr_rom: vec![],
             nametables: [0; 0x800],
-            pallette: [0; 0xff],
+            palette: [0; 0xff],
         }
     }
 
