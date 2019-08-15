@@ -22,6 +22,21 @@ impl Memory for NESMemory {
             // address space is just a mirror of these first eight bytes.
             0x2000 ... 0x3fff => self.ppu.read(address),
 
+            // APU pulses
+            0x4000 ... 0x4007 => Ok(0),
+
+            // APU triangle
+            0x4008 ... 0x400b => Ok(0),
+
+            // APU noise
+            0x400c ... 0x400f => Ok(0),
+
+            // APU DMC
+            0x4010 ... 0x4013 => Ok(0),
+
+            // OAM DMA
+            0x4014            => Ok(0),  // TODO is this right?
+
             // APU sound channel
             0x4015            => Ok(0),
 
@@ -54,6 +69,19 @@ impl Memory for NESMemory {
 
             0x2000 ... 0x3fff => self.ppu.write(address, val),
 
+            // APU pulses
+            0x4000 ... 0x4007 => Ok(0),
+
+            // APU triangle
+            0x4008 ... 0x400b => Ok(0),
+
+            // APU noise
+            0x400c ... 0x400f => Ok(0),
+
+            // APU DMC
+            0x4010 ... 0x4013 => Ok(0),
+
+            // OAM DMA
             0x4014            => self.dma(val),
 
             // APU sound channel
