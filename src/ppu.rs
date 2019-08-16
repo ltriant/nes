@@ -430,7 +430,7 @@ impl PPU {
     fn fetch_nametable_byte(&mut self) -> u8 {
         let v = self.ppu_addr.address();
         let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
-        //debug!("fetching NT byte from 0x{:04X}", addr);
+        debug!("fetching NT byte from 0x{:04X}", addr);
         self.data.read(addr).expect("unable to fetch NT byte")
     }
 
@@ -439,7 +439,7 @@ impl PPU {
 
         let addr =
             0x23c0 | (v & 0x0c00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07);
-        //debug!("fetching AT byte from 0x{:04X}", addr);
+        debug!("fetching AT byte from 0x{:04X}", addr);
         let attrbyte = self.data.read(addr).expect("unable to fetch AT byte");
 
         let shift = ((v >> 4) & 4) | (v & 2);
