@@ -14,7 +14,7 @@ use crate::ppu::status::PPUStatus;
 use crate::ppu::scroll::PPUScroll;
 use crate::ppu::addr::PPUAddr;
 use crate::ppu::oam::OAM;
-use crate::ppu::data::PPUData;
+use crate::ppu::data::{PPUData, PALETTE_ADDRESSES};
 
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
@@ -41,6 +41,8 @@ pub struct PPU {
     low_tile_byte: u8,
     high_tile_byte: u8,
     tile_data: u64,
+
+    vram_temp: u16,
 }
 
 impl Memory for PPU {
@@ -92,6 +94,9 @@ impl Memory for PPU {
                     let old_y = self.scroll.y;
                     self.scroll.y = (old_y + 240) & 0xff;
                 }
+
+                self.vram_temp = (self.vram_temp & 0xf3ff)
+                               | (((val as u16) & 0x03) << 10);
 
                 Ok(val)
             },
@@ -151,6 +156,8 @@ impl PPU {
             low_tile_byte: 0,
             high_tile_byte: 0,
             tile_data: 0,
+
+            vram_temp: 0,
         }
     }
 
@@ -171,6 +178,50 @@ impl PPU {
         }
     }
 
+    fn increment_x(&mut self) {
+        if self.ppu_addr.val & 0x001f == 31 {
+            self.ppu_addr.val &= 0xffe0;
+            self.ppu_addr.val ^= 0x0400;
+        }
+        else {
+            self.ppu_addr.val += 1;
+        }
+    }
+
+    fn increment_y(&mut self) {
+        if self.ppu_addr.val & 0x7000 != 0x7000 {
+            self.ppu_addr.val += 0x1000;
+        }
+        else {
+            self.ppu_addr.val &= 0x8fff;
+
+            let mut y = (self.ppu_addr.val & 0x03e0) >> 5;
+
+            if y == 29 {
+                y = 0;
+                self.ppu_addr.val ^= 0x0800;
+            }
+            else if y == 31 {
+                y = 0;
+            }
+            else {
+                y += 1;
+            }
+
+            self.ppu_addr.val = (self.ppu_addr.val & 0xfc1f) | (y << 5);
+        }
+    }
+
+    fn copy_x(&mut self) {
+        self.ppu_addr.val = (self.ppu_addr.val & 0xfbe0)
+                          | (self.vram_temp & 0x041f);
+    }
+
+    fn copy_y(&mut self) {
+        self.ppu_addr.val = (self.ppu_addr.val & 0x841f)
+            | (self.vram_temp & 0x7be0);
+    }
+
     fn background_pixel(&self) -> Option<u8> {
         if !self.mask.show_background() {
             return None;
@@ -189,16 +240,16 @@ impl PPU {
         if let Some(background_pixel) = self.background_pixel() {
             let addr = (background_pixel as u16) | 0x3f00;
 
-            let color_index = self.data.read(addr)
-                .expect("unable to read palette data") % 64;
-            let color = PALETTE[color_index as usize];
+            let palette_index = self.data.read(addr)
+                .expect("unable to read palette index") % 64;
+            let color = PALETTE[palette_index as usize];
             let rect = Rect::new((x as i32) * 2, (y as i32) * 2, 2, 2);
 
-            debug!("background_pixel = {}, color_addr = 0x{:04x}, color_index = {}, color = {:?}",
-                   background_pixel, addr, color_index, color);
+            debug!("color_addr = 0x{:04x}, palette_index = {}, color = {:?}",
+                   addr, palette_index, color);
 
             canvas.set_draw_color(color);
-            canvas.fill_rect(rect).expect("unable to draw pixel");
+            canvas.fill_rect(rect).expect("unable to fill rectangle");
         }
 
         // TODO sprite logic
@@ -207,7 +258,8 @@ impl PPU {
     fn fetch_nametable_byte(&mut self) -> u8 {
         let v = self.ppu_addr.address();
         let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
-        self.read(addr).expect("unable to fetch NT byte")
+        debug!("fetching NT byte from 0x{:04X}", addr);
+        self.data.read(addr).expect("unable to fetch NT byte")
     }
 
     fn fetch_attrtable_byte(&mut self) -> u8 {
@@ -215,7 +267,8 @@ impl PPU {
 
         let addr =
             0x23c0 | (v & 0x0c00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07);
-        let attrbyte = self.read(addr).expect("unable to fetch AT byte");
+        debug!("fetching AT byte from 0x{:04X}", addr);
+        let attrbyte = self.data.read(addr).expect("unable to fetch AT byte");
 
         let shift = ((v >> 4) & 4) | (v & 2);
         ((attrbyte >> shift) & 3) << 2
@@ -228,7 +281,8 @@ impl PPU {
             + ((tile as u16) * 16)
             + fine_y;
 
-        self.read(addr).expect("unable to fetch low tile byte")
+        debug!("fetching low tile byte from 0x{:04X}", addr);
+        self.data.read(addr).expect("unable to fetch low tile byte")
     }
 
     fn fetch_high_tile_byte(&mut self) -> u8 {
@@ -238,7 +292,8 @@ impl PPU {
             + (tile as u16) * 16
             + fine_y;
 
-        self.read(addr + 8).expect("unable to fetch high tile byte")
+        debug!("fetching high tile byte from 0x{:04X}", addr + 8);
+        self.data.read(addr + 8).expect("unable to fetch high tile byte")
     }
 
     fn fetch_tile_data(&self) -> u32 {
@@ -260,6 +315,26 @@ impl PPU {
         } );
 
         self.tile_data |= data as u64;
+    }
+
+    fn render_palettes(&mut self, canvas: &mut Canvas<Window>) {
+        let x = 256 * 2 + 1;
+        let width = 12;
+        let height = 12;
+
+        let mut y = 0;
+
+        for base in PALETTE_ADDRESSES.iter() {
+            for offset in 0 ..= 3 {
+                let i = self.data.read(*base + offset as u16).unwrap() as usize;
+                canvas.set_draw_color(PALETTE[i]);
+
+                let rect = Rect::new(x + (width as i32) * offset, y, width, height);
+                canvas.fill_rect(rect).unwrap();
+            }
+
+            y += 20;
+        }
     }
 
     pub fn step(&mut self, canvas: &mut Canvas<Window>) -> StepResult {
@@ -319,20 +394,20 @@ impl PPU {
             }
 
             if pre_line && self.dot >= 280 && self.dot <= 304 {
-                // copyY
+                self.copy_y();
             }
 
             if render_line {
                 if fetch_cycle && self.dot % 8 == 0 {
-                    // incrementX
+                    self.increment_x();
                 }
 
                 if self.dot == 256 {
-                    // incrementY
+                    self.increment_y();
                 }
 
                 if self.dot == 257 {
-                    // copyX
+                    self.copy_x();
                 }
             }
         }
@@ -357,6 +432,7 @@ impl PPU {
                 res.vblank_nmi = true;
             }
 
+            self.render_palettes(canvas);
             canvas.present();
             self.inc_dot();
             return res;
