@@ -5,6 +5,15 @@ pub enum SpriteSize {
     Large, // 8x16
 }
 
+impl SpriteSize {
+    pub fn size(&self) -> usize {
+        match *self {
+            SpriteSize::Small => 8,
+            SpriteSize::Large => 16,
+        }
+    }
+}
+
 impl PPUCtrl {
     pub fn generate_nmi(&self) -> bool {
         let PPUCtrl(val) = *self;
@@ -12,14 +21,14 @@ impl PPUCtrl {
         (val & 0x80) != 0
     }
 
-    pub fn sprite_size(&self) -> SpriteSize {
+    pub fn sprite_size(&self) -> usize {
         let PPUCtrl(val) = *self;
 
         if (val & 0x20) == 0 {
-            SpriteSize::Small
+            SpriteSize::Small.size()
         }
         else {
-            SpriteSize::Large
+            SpriteSize::Large.size()
         }
     }
 

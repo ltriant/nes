@@ -42,6 +42,13 @@ pub struct PPU {
     high_tile_byte: u8,
     tile_data: u64,
 
+    // Sprite data
+    sprite_count: usize,
+    sprite_patterns: [u32; 8],
+    sprite_positions: [u8; 8],
+    sprite_priorities: [u8; 8],
+    sprite_indexes: [u8; 8],
+
     vram_temp: u16,
 }
 
@@ -157,6 +164,12 @@ impl PPU {
             high_tile_byte: 0,
             tile_data: 0,
 
+            sprite_count: 0,
+            sprite_patterns: [0; 8],
+            sprite_positions: [0; 8],
+            sprite_priorities: [0; 8],
+            sprite_indexes: [0; 8],
+
             vram_temp: 0,
         }
     }
@@ -233,32 +246,191 @@ impl PPU {
         Some(pixel)
     }
 
+    fn sprite_pixel(&self) -> Option<(u8, u8)> {
+        if !self.mask.show_sprites() {
+            return None;
+        }
+
+        for i in 0 .. self.sprite_count {
+            let mut offset = (self.dot as i16 - 1) - self.sprite_positions[i] as i16;
+
+            if offset < 0 || offset > 7 {
+                continue;
+            }
+
+            offset = 7 - offset;
+
+            let color = ((self.sprite_patterns[i] >> (offset * 4)) & 0x0f) as u8;
+            if color % 4 == 0 {
+                continue;
+            }
+
+            return Some((i as u8, color));
+        }
+
+        None
+    }
+
+    fn fetch_sprite_pattern(&mut self, i: u16, row: i16) -> u32 {
+        let mut tile = self.oam.read(i * 4 + 1).unwrap() as u16;
+        let attributes = self.oam.read(i * 4 + 2).unwrap();
+
+        let mut address: u16 = 0;
+        let mut row = row;
+
+        if self.ctrl.sprite_size() == 8 {
+            if attributes & 0x80 == 0x80 {
+                row = 7 - row;
+            }
+
+            address = self.ctrl.sprite_pattern_table_addr()
+                + (tile * 16)
+                + row as u16;
+        }
+        else {
+            if attributes & 0x80 == 0x80 {
+                row = 15 - row;
+            }
+
+            let table = tile & 1;
+            tile &= 0xfe;
+
+            if row > 7 {
+                tile += 1;
+                row -= 8;
+            }
+
+            address = 0x1000 * table
+                + (tile * 16)
+                + row as u16;
+        }
+
+        let a = (attributes & 3) << 2;
+        let mut low_tile_byte = self.data.read(address).unwrap();
+        let mut high_tile_byte = self.data.read(address + 8).unwrap();
+
+        let mut data = 0;
+
+        for _ in 0 .. 8 {
+            let mut p1 = 0;
+            let mut p2 = 0;
+
+            if attributes & 0x40 == 0x40 {
+                p1 = (low_tile_byte & 1) << 0;
+                p2 = (high_tile_byte & 1) << 1;
+                low_tile_byte >>= 1;
+                high_tile_byte >>= 1;
+            }
+            else {
+                p1 = (low_tile_byte & 0x80) >> 7;
+                p2 = (high_tile_byte & 0x80) >> 6;
+                low_tile_byte <<= 1;
+                high_tile_byte <<= 1;
+            }
+
+            data <<= 4;
+            data |= (a | p1 | p2) as u32;
+        }
+
+        data
+    }
+
+    fn evaluate_sprites(&mut self) {
+        let sz = self.ctrl.sprite_size() as i16;
+
+        let mut count = 0;
+
+        for i in 0 .. 64 {
+            let y = self.oam.read(i * 4 + 0).unwrap();
+            let a = self.oam.read(i * 4 + 2).unwrap();
+            let x = self.oam.read(i * 4 + 3).unwrap();
+
+            let row: i16 = (self.scanline as i16) - (y as i16);
+
+            if row < 0 || row >= sz {
+                continue
+            }
+
+            if count < 8 {
+                self.sprite_patterns[count] = self.fetch_sprite_pattern(i, row);
+                self.sprite_positions[count] = x;
+                self.sprite_priorities[count] = (a >> 5) & 1;
+                self.sprite_indexes[count] = i as u8;
+            }
+
+            count += 1;
+        }
+
+        if count > 8 {
+            count = 8;
+            self.status.set_sprite_overflow();
+        }
+
+        self.sprite_count = count;
+    }
+
     fn render_pixel(&mut self, canvas: &mut Canvas<Window>) {
         let x = self.dot - 1;
         let y = self.scanline;
 
-        if let Some(background_pixel) = self.background_pixel() {
-            let addr = (background_pixel as u16) | 0x3f00;
+        let mut address = 0;
 
-            let palette_index = self.data.read(addr)
-                .expect("unable to read palette index") % 64;
-            let color = PALETTE[palette_index as usize];
-            let rect = Rect::new((x as i32) * 2, (y as i32) * 2, 2, 2);
+        let background = self.background_pixel();
+        let sprite     = self.sprite_pixel();
 
-            debug!("color_addr = 0x{:04x}, palette_index = {}, color = {:?}",
-                   addr, palette_index, color);
+        match (background, sprite) {
+            (None, None) => {
+                address = 0;
+            },
+            (Some(background), None) => {
+                address = background as u16;
 
-            canvas.set_draw_color(color);
-            canvas.fill_rect(rect).expect("unable to fill rectangle");
+                if x < 8 && !self.mask.show_background_leftmost() {
+                    address = 0;
+                }
+            },
+            (None, Some((_, sprite))) => {
+                address = sprite as u16 | 0x10;
+
+                if x < 8 && !self.mask.show_sprites_leftmost() {
+                    address = 0;
+                }
+            },
+            (Some(background), Some((i, sprite))) => {
+                if self.sprite_indexes[i as usize] == 0 && x < 255 {
+                    self.status.set_sprite_zero_hit();
+                }
+
+                if self.sprite_priorities[i as usize] == 0 {
+                    address = sprite as u16 | 0x10;
+                }
+                else {
+                    address = background as u16;
+                }
+            }
         }
 
-        // TODO sprite logic
+        // Set the base palette address
+        address |= 0x3f00;
+
+        let palette_index = self.data.read(address)
+            .expect("unable to read palette index") % 64;
+        let color = PALETTE[palette_index as usize];
+        let rect = Rect::new((x as i32) * 2, (y as i32) * 2, 2, 2);
+
+        /*
+        debug!("color_addr = 0x{:04x}, palette_index = {}, color = {:?}",
+               address, palette_index, color);
+           */
+
+        canvas.set_draw_color(color);
+        canvas.fill_rect(rect).expect("unable to fill rectangle");
     }
 
     fn fetch_nametable_byte(&mut self) -> u8 {
         let v = self.ppu_addr.address();
         let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
-        debug!("fetching NT byte from 0x{:04X}", addr);
+        //debug!("fetching NT byte from 0x{:04X}", addr);
         self.data.read(addr).expect("unable to fetch NT byte")
     }
 
@@ -267,7 +439,7 @@ impl PPU {
 
         let addr =
             0x23c0 | (v & 0x0c00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07);
-        debug!("fetching AT byte from 0x{:04X}", addr);
+        //debug!("fetching AT byte from 0x{:04X}", addr);
         let attrbyte = self.data.read(addr).expect("unable to fetch AT byte");
 
         let shift = ((v >> 4) & 4) | (v & 2);
@@ -415,10 +587,10 @@ impl PPU {
         // sprite logic
         if self.rendering_enabled() && self.dot == 257 {
             if visible_line {
-                // evaluateSprites
+                self.evaluate_sprites();
             }
             else {
-                // sprite_count = 0
+                self.sprite_count = 0;
             }
 
         }
