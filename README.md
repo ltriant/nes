@@ -29,15 +29,15 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] PPU warm-up state
 * [x] vblank + NMI
 * [ ] accurate PPU frame timing
-* [ ] backgrounds vs sprites?
-* [ ] calculate RGB values for pixels
+* [x] backgrounds vs sprites?
+* [x] calculate RGB values for pixels
 * [x] super simple SDL integration
 * [x] display the current pallette (for debugging)
 * [ ] display the current available sprites (for debugging)
 * [ ] keyboard input
-* [ ] render nestest
+* [x] render nestest
 * [ ] refactor using lifetimes
-* [ ] DK
+* [x] DK
 * [ ] scrolling
 * [ ] document high-level design
 * [ ] something something save state
