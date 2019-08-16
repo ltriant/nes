@@ -9,6 +9,7 @@ use sdl2::Sdl;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
@@ -22,12 +23,22 @@ impl Console {
     pub fn new_nes_console() -> Console {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
-        let window = video_subsystem.window("nes", 256 * 2, 240 * 2)
+
+        let width = 256 * 2 + 50;
+        let height = 240 * 2;
+        let window = video_subsystem.window("nes", width, height)
             .position_centered()
             .build()
             .unwrap();
 
-        let canvas = window.into_canvas().build().unwrap();
+        let mut canvas = window.into_canvas().build().unwrap();
+
+        for _ in 0 .. 2 {
+            canvas.clear();
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
+            canvas.fill_rect(Rect::new(0, 0, width, height)).unwrap();
+            canvas.present();
+        }
 
         let ppu = PPU::new_nes_ppu();
         let mem = NESMemory::new_nes_mem(ppu);
@@ -52,9 +63,6 @@ impl Console {
         debug!("powering up");
 
         self.cpu.init();
-        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
-        self.canvas.clear();
-        self.canvas.present();
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
 
