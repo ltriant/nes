@@ -73,7 +73,7 @@ impl Memory for PPU {
             0x2006 => Ok(0), // PPUADDR is write-only
             0x2007 => {
                 let rv = self.data.read(self.ppu_addr.address())?;
-                self.ppu_addr.increment(self.ctrl.vram_addr_increment());
+                //self.ppu_addr.increment(self.ctrl.vram_addr_increment());
                 Ok(rv)
             },
             _ => panic!("bad PPU address 0x{:04X}", address)
