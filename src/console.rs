@@ -53,14 +53,14 @@ impl Console {
     pub fn insert_cartridge(&mut self, filename: String)
         -> Result<(), CartridgeError>
     {
-        debug!("loading cartridge: {}", filename);
+        info!("loading cartridge: {}", filename);
         let mut fh = File::open(filename).map_err(CartridgeError::IO)?;
         Cartridge::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
         Ok(())
     }
 
     pub fn power_up(&mut self) {
-        debug!("powering up");
+        info!("powering up");
 
         self.cpu.init();
 
