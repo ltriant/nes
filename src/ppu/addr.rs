@@ -4,7 +4,7 @@ enum PPUAddrNybble {
 }
 
 pub struct PPUAddr {
-    val: u16,
+    pub val: u16,
     nyb: PPUAddrNybble,
 }
 
