@@ -1,5 +1,6 @@
 use std::fs::File;
 
+use crate::controller::Controller;
 use crate::cpu::CPU;
 use crate::mem::NESMemory;
 use crate::ppu::PPU;
@@ -41,7 +42,8 @@ impl Console {
         }
 
         let ppu = PPU::new_nes_ppu();
-        let mem = NESMemory::new_nes_mem(ppu);
+        let controller = Controller::new_controller();
+        let mem = NESMemory::new_nes_mem(ppu, controller);
 
         Console {
             sdl_ctx: sdl_context,
@@ -69,11 +71,46 @@ impl Console {
         'running: loop {
             for event in event_pump.poll_iter() {
                 match event {
-                      Event::Quit    { .. }
-                    | Event::KeyDown {
-                            keycode: Some(Keycode::Escape),
-                            ..
-                        } => { break 'running },
+                    Event::Quit { .. } => { break 'running },
+
+                    Event::KeyDown { keycode: Some(key), .. } => {
+                        debug!("keydown: {:?}", key);
+                        match key {
+                            Keycode::Escape => { break 'running },
+
+                            Keycode::W => { self.cpu.mem.controller.up(true) },
+                            Keycode::A => { self.cpu.mem.controller.left(true) },
+                            Keycode::S => { self.cpu.mem.controller.down(true) },
+                            Keycode::D => { self.cpu.mem.controller.right(true) },
+
+                            Keycode::Return => { self.cpu.mem.controller.start(true) },
+                            Keycode::K => { self.cpu.mem.controller.select(true) },
+
+                            Keycode::N => { self.cpu.mem.controller.a(true) },
+                            Keycode::M => { self.cpu.mem.controller.b(true) },
+
+                            _ => {},
+                        }
+                    },
+
+                    Event::KeyUp { keycode: Some(key), .. } => {
+                        debug!("keyup: {:?}", key);
+                        match key {
+                            Keycode::W => { self.cpu.mem.controller.up(false) },
+                            Keycode::A => { self.cpu.mem.controller.left(false) },
+                            Keycode::S => { self.cpu.mem.controller.down(false) },
+                            Keycode::D => { self.cpu.mem.controller.right(false) },
+
+                            Keycode::Return => { self.cpu.mem.controller.start(false) },
+                            Keycode::K => { self.cpu.mem.controller.select(false) },
+
+                            Keycode::N => { self.cpu.mem.controller.a(false) },
+                            Keycode::M => { self.cpu.mem.controller.b(false) },
+
+                            _ => {},
+                        }
+                    },
+
                     _ => {},
                 }
             }
@@ -81,7 +118,7 @@ impl Console {
             let cpu_cycles = self.cpu.step();
             let ppu_cycles = cpu_cycles * 3;
 
-            for _ in 1 .. ppu_cycles {
+            for _ in 0 .. ppu_cycles {
                 let res = self.cpu.mem.ppu.step(&mut self.canvas);
 
                 if res.vblank_nmi {

@@ -1,4 +1,5 @@
 use crate::ppu::PPU;
+use crate::controller::Controller;
 
 pub trait Memory {
     fn read(&mut self, address: u16) -> Result<u8, String>;
@@ -7,6 +8,7 @@ pub trait Memory {
 
 pub struct NESMemory {
     pub ppu: PPU,
+    pub controller: Controller,
     pub ram: [u8; 0x800],
     rom: Vec<u8>,
 }
@@ -41,7 +43,7 @@ impl Memory for NESMemory {
             0x4015            => Ok(0),
 
             // Controller 1
-            0x4016            => Ok(0),
+            0x4016            => self.controller.read(address),
 
             // Controller 2
             0x4017            => Ok(0),
@@ -88,7 +90,7 @@ impl Memory for NESMemory {
             0x4015            => Ok(0),
 
             // Controller 1
-            0x4016            => Ok(0),
+            0x4016            => self.controller.write(address, val),
 
             // Controller 2
             0x4017            => Ok(0),
@@ -101,9 +103,10 @@ impl Memory for NESMemory {
 }
 
 impl NESMemory {
-    pub fn new_nes_mem(ppu: PPU) -> NESMemory {
+    pub fn new_nes_mem(ppu: PPU, controller: Controller) -> NESMemory {
         NESMemory {
             ppu: ppu,
+            controller: controller,
             ram: [0; 0x800],
             rom: vec![],
         }

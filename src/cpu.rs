@@ -190,7 +190,7 @@ impl CPU {
             .expect("unable to read next opcode");
 
         let op = &OPCODES[opcode as usize];
-        self.debug(&op);
+        // self.debug(&op);  // TODO flag to turn off/on
 
         let &Opcode(ref inst, ref addr_mode, ref cycles, ref extra_cycles) = op;
 

@@ -2,6 +2,7 @@
 #[macro_use] extern crate lazy_static;
 
 mod console;
+mod controller;
 mod cpu;
 mod opcode;
 mod inst;
