@@ -34,7 +34,7 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] super simple SDL integration
 * [x] display the current pallette (for debugging)
 * [ ] display the current available sprites (for debugging)
-* [ ] keyboard input
+* [x] keyboard input
 * [x] render nestest
 * [ ] refactor using lifetimes
 * [x] DK
