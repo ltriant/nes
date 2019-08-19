@@ -13,8 +13,10 @@ mod ppu;
 mod palette;
 
 use std::env;
+use std::process;
 
 use crate::console::Console;
+use crate::ines::CartridgeError;
 
 fn main() {
     env_logger::init();
@@ -23,6 +25,25 @@ fn main() {
         .unwrap_or(String::from("roms/nestest.nes"));
 
     let mut console = Console::new_nes_console();
-    console.insert_cartridge(rom).expect("could not insert nestest");
+    if let Err(e) = console.insert_cartridge(&rom) {
+        match e {
+            CartridgeError::IO(io_e) => {
+                println!("There was an error reading ROM data from {}: {}",
+                         rom, io_e);
+            },
+            CartridgeError::InvalidMagic => {
+                println!("File {} is invalid. Expected iNES formatted ROM.", rom);
+            },
+            CartridgeError::UnsupportedCartridge => {
+                println!("Unsupported cartridge type. Only supports NTSC for now.");
+            },
+            CartridgeError::UnsupportedMapper(m) => {
+                println!("Unsupport mapper type: {}", m);
+            },
+        }
+
+        process::exit(1);
+    }
+
     console.power_up();
 }

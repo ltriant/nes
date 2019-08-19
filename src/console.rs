@@ -73,7 +73,7 @@ impl Console {
         }
     }
 
-    pub fn insert_cartridge(&mut self, filename: String)
+    pub fn insert_cartridge(&mut self, filename: &String)
         -> Result<(), CartridgeError>
     {
         info!("loading cartridge: {}", filename);

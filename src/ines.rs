@@ -4,14 +4,17 @@ use std::fs::File;
 use std::io::Read;
 use std::io;
 
+const INES_MAGIC: [u8; 4] = [0x4e, 0x45, 0x53, 0x1a];
+
 pub struct Cartridge;
 
 #[derive(Debug)]
 pub enum CartridgeError {
     IO(io::Error),
     InvalidMagic,
-    InvalidZeroes,
+    // InvalidZeroes,
     UnsupportedCartridge,
+    UnsupportedMapper(u8),
 }
 
 impl Cartridge {
@@ -22,7 +25,7 @@ impl Cartridge {
 
         // NES^Z
         let magic = &header[0 .. 4];
-        if magic != [0x4e, 0x45, 0x53, 0x1a] {
+        if magic != INES_MAGIC {
             return Err(CartridgeError::InvalidMagic);
         }
 
@@ -45,7 +48,9 @@ impl Cartridge {
         debug!("mapper: {}", mapper);
 
         // only support mapper 0
-        assert!(mapper == 0);
+        if mapper != 0 {
+            return Err(CartridgeError::UnsupportedMapper(mapper));
+        }
 
         // Get the number of 8KB RAM banks
         let n_ram_banks = header[8];
