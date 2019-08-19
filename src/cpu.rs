@@ -641,12 +641,14 @@ impl CPU {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ppu::PPU;
+    use crate::ppu::PPU;
+    use crate::controller::Controller;
 
     #[test]
     fn test_stack_pop_empty() {
         let ppu = PPU::new_nes_ppu();
-        let mem = NESMemory::new_nes_mem(ppu);
+        let ctrl = Controller::new_controller();
+        let mem = NESMemory::new_nes_mem(ppu, ctrl);
         let mut cpu = CPU::new_nes_cpu(mem);
         let _ = cpu.stack_pop8();
         assert_eq!(cpu.sp, STACK_INIT + 1);
@@ -663,7 +665,8 @@ mod tests {
     #[test]
     fn test_stack_push_full() {
         let ppu = PPU::new_nes_ppu();
-        let mem = NESMemory::new_nes_mem(ppu);
+        let ctrl = Controller::new_controller();
+        let mem = NESMemory::new_nes_mem(ppu, ctrl);
         let mut cpu = CPU::new_nes_cpu(mem);
 
         for _ in 0 .. STACK_INIT {
@@ -681,7 +684,8 @@ mod tests {
     #[test]
     fn test_stack() {
         let ppu = PPU::new_nes_ppu();
-        let mem = NESMemory::new_nes_mem(ppu);
+        let ctrl = Controller::new_controller();
+        let mem = NESMemory::new_nes_mem(ppu, ctrl);
         let mut cpu = CPU::new_nes_cpu(mem);
 
         cpu.stack_push8(0xff);
@@ -705,7 +709,8 @@ mod tests {
     #[test]
     fn test_flags() {
         let ppu = PPU::new_nes_ppu();
-        let mem = NESMemory::new_nes_mem(ppu);
+        let ctrl = Controller::new_controller();
+        let mem = NESMemory::new_nes_mem(ppu, ctrl);
         let mut cpu = CPU::new_nes_cpu(mem);
 
         assert_eq!(cpu.flags(), 0x00);
@@ -723,7 +728,8 @@ mod tests {
     #[test]
     fn test_nmi() {
         let ppu = PPU::new_nes_ppu();
-        let mem = NESMemory::new_nes_mem(ppu);
+        let ctrl = Controller::new_controller();
+        let mem = NESMemory::new_nes_mem(ppu, ctrl);
         let mut cpu = CPU::new_nes_cpu(mem);
 
         let mut rom = vec![0; 0xffff];

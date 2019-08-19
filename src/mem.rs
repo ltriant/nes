@@ -136,7 +136,8 @@ mod tests {
     #[test]
     fn test_read_write() {
         let ppu = PPU::new_nes_ppu();
-        let mut mem = NESMemory::new_nes_mem(ppu);
+        let ctrl = Controller::new_controller();
+        let mut mem = NESMemory::new_nes_mem(ppu, ctrl);
 
         // RAM
         assert_eq!(mem.read(0x1000), Ok(0));
@@ -155,7 +156,8 @@ mod tests {
     #[test]
     fn test_load_rom() {
         let ppu = PPU::new_nes_ppu();
-        let mut mem = NESMemory::new_nes_mem(ppu);
+        let ctrl = Controller::new_controller();
+        let mut mem = NESMemory::new_nes_mem(ppu, ctrl);
         mem.load_rom(&vec![0; 0x8000]);
         assert_eq!(mem.read(0x8000), Ok(0));
         assert_eq!(mem.read(0xffff), Ok(0));
