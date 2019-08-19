@@ -6,7 +6,6 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 
 * [x] read 6502 docs
 * [x] read how NES used the 6502
-* [ ] come up with a better name
 * [x] memory mapping (RAM)
 * [x] registers + PC
 * [x] basic iNES parser
@@ -15,7 +14,7 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] complete the iNES parser
 * [x] calculate cycle counts
 * [x] implement the rest of the instructions
-* [ ] illegal opcodes
+* [ ] illegal opcodes (that nestest tests)
 * [x] basic PPU design
 * [x] PPUCTRL
 * [x] PPUMASK
@@ -40,7 +39,5 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] DK
 * [ ] scrolling
 * [ ] document high-level design
-* [ ] something something save state
-* [ ] something something APU
-* [ ] ???
-* [ ] profit
+* [ ] write blog post
+* [ ] write a better README with some useful information
