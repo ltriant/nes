@@ -44,10 +44,6 @@ impl Controller {
         }
     }
 
-    pub fn clear(&mut self) {
-        self.buttons = [false; 8];
-    }
-
     pub fn a(&mut self, v: bool) { self.buttons[0] = v; }
     pub fn b(&mut self, v: bool) { self.buttons[1] = v; }
     pub fn select(&mut self, v: bool) { self.buttons[2] = v; }
