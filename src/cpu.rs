@@ -131,6 +131,8 @@ impl CPU {
         let lo = self.mem.read(0xFFFA).expect("low NMI byte") as u16;
         let hi = self.mem.read(0xFFFB).expect("high NMI byte") as u16;
         let addr = (hi << 8) | lo;
+        self.cycles += 7;
+        self.cycles %= PPU_DOTS_PER_SCANLINE;
 
         debug!("NMI: {:04X}", addr);
         self.pc = addr;
