@@ -1,18 +1,10 @@
-use std::env;
-
+use crate::console::NES_CPU_DEBUG;
 use crate::addr::AddressingMode;
 use crate::mem::{Memory, NESMemory};
 use crate::opcode::{Opcode, OPCODES};
 
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: usize = 341;
-
-lazy_static!{
-    static ref NES_DEBUG: bool = match env::var("NES_DEBUG") {
-        Ok(val) => val != "" && val != "0",
-        Err(_)  => false,
-    };
-}
 
 pub struct CPU {
     pub mem: NESMemory,
@@ -202,7 +194,7 @@ impl CPU {
 
         let op = &OPCODES[opcode as usize];
 
-        if *NES_DEBUG {
+        if *NES_CPU_DEBUG {
             self.debug(&op);
         }
 

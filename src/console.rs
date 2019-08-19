@@ -1,3 +1,4 @@
+use std::env;
 use std::fs::File;
 
 use crate::controller::Controller;
@@ -14,20 +15,38 @@ use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
+lazy_static!{
+    pub static ref NES_CPU_DEBUG: bool = match env::var("NES_CPU_DEBUG") {
+        Ok(val) => val != "" && val != "0",
+        Err(_)  => false,
+    };
+
+    pub static ref NES_PPU_DEBUG: bool = match env::var("NES_PPU_DEBUG") {
+        Ok(val) => val != "" && val != "0",
+        Err(_)  => false,
+    };
+}
+
+const CYCLES_PER_SCANLINE: usize = 1364 / 12;
+
 pub struct Console {
     sdl_ctx: Sdl,
     canvas:  Canvas<Window>,
     cpu:     CPU,
 }
 
-const CYCLES_PER_SCANLINE: usize = 1364 / 12;
-
 impl Console {
     pub fn new_nes_console() -> Console {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
-        let width = 256 * 2 + 50;
+        let mut width = 256 * 2;
+
+        if *NES_PPU_DEBUG {
+            // Make room for the palettes
+            width += 50;
+        }
+
         let height = 240 * 2;
         let window = video_subsystem.window("nes", width, height)
             .position_centered()

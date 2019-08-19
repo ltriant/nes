@@ -6,6 +6,7 @@ mod scroll;
 mod addr;
 mod data;
 
+use crate::console::NES_PPU_DEBUG;
 use crate::palette::PALETTE;
 use crate::mem::Memory;
 use crate::ppu::ctrl::PPUCtrl;
@@ -610,7 +611,10 @@ impl PPU {
 
             res.frame_finished = true;
 
-            self.render_palettes(canvas);
+            if *NES_PPU_DEBUG {
+                self.render_palettes(canvas);
+            }
+
             self.inc_dot();
             return res;
         }
