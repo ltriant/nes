@@ -20,6 +20,8 @@ pub struct Console {
     cpu:     CPU,
 }
 
+const CYCLES_PER_SCANLINE: usize = 1364 / 12;
+
 impl Console {
     pub fn new_nes_console() -> Console {
         let sdl_context = sdl2::init().unwrap();
@@ -111,7 +113,16 @@ impl Console {
                 }
             }
 
-            let cpu_cycles = self.cpu.step();
+            let mut cpu_cycles = 0;
+
+            loop {
+                cpu_cycles += self.cpu.step();
+
+                if cpu_cycles > CYCLES_PER_SCANLINE {
+                    break;
+                }
+            }
+
             let ppu_cycles = cpu_cycles * 3;
 
             for _ in 0 .. ppu_cycles {
