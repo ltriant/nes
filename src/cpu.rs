@@ -1,9 +1,18 @@
+use std::env;
+
 use crate::addr::AddressingMode;
 use crate::mem::{Memory, NESMemory};
 use crate::opcode::{Opcode, OPCODES};
 
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: usize = 341;
+
+lazy_static!{
+    static ref NES_DEBUG: bool = match env::var("NES_DEBUG") {
+        Ok(val) => val != "" && val != "0",
+        Err(_)  => false,
+    };
+}
 
 pub struct CPU {
     pub mem: NESMemory,
@@ -192,7 +201,10 @@ impl CPU {
             .expect("unable to read next opcode");
 
         let op = &OPCODES[opcode as usize];
-        // self.debug(&op);  // TODO flag to turn off/on
+
+        if *NES_DEBUG {
+            self.debug(&op);
+        }
 
         let &Opcode(ref inst, ref addr_mode, ref cycles, ref extra_cycles) = op;
 
