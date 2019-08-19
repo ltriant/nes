@@ -61,7 +61,13 @@ impl Cartridge {
         // Reserved bytes, must all be zeroes
         let zeroes = &header[10 .. 16];
         if zeroes != [0, 0, 0, 0, 0, 0] {
-            return Err(CartridgeError::InvalidZeroes);
+            warn!("Header section should be full of zeroes, but contains {:?}",
+                  zeroes);
+
+            // Don't throw an error, because it doesn't seem to cause any issues
+            // that actually matter. Balloon Fight won't start-up because of
+            // this.
+            //return Err(CartridgeError::InvalidZeroes);
         }
 
         if n_rom_banks > 0 {
