@@ -12,7 +12,8 @@ pub const PALETTE_ADDRESSES: [u16; 8] =
 
 impl Memory for PPUData {
     fn read(&mut self, address: u16) -> Result<u8, String> {
-        match address % 0x4000 {
+        let address = address % 0x4000;
+        match address {
             0x0000 ... 0x1fff => {
                 Ok(self.chr_rom[address as usize])
             },
@@ -31,7 +32,8 @@ impl Memory for PPUData {
     }
 
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
-        match address % 0x4000 {
+        let address = address % 0x4000;
+        match address {
             0 ... 0x1fff => {
                 //debug!("writing to CHR-ROM");
                 self.chr_rom[address as usize] = val;
