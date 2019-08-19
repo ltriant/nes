@@ -141,6 +141,7 @@ impl Memory for PPU {
 
 pub struct StepResult {
     pub vblank_nmi: bool,
+    pub frame_finished: bool,
 }
 
 impl PPU {
@@ -521,7 +522,10 @@ impl PPU {
         // There are a total of 341 dots per scanline
         //   The first 256 dots are displayable (i.e. the NES is _256_ x 240)
 
-        let mut res = StepResult{vblank_nmi: false};
+        let mut res = StepResult{
+            vblank_nmi: false,
+            frame_finished: false,
+        };
 
         // All of this logic has been borrowed from github.com/foglemen/nes
 
@@ -604,8 +608,9 @@ impl PPU {
                 res.vblank_nmi = true;
             }
 
+            res.frame_finished = true;
+
             self.render_palettes(canvas);
-            canvas.present();
             self.inc_dot();
             return res;
         }

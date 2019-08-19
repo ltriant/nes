@@ -74,10 +74,7 @@ impl Console {
                     Event::Quit { .. } => { break 'running },
 
                     Event::KeyDown { keycode: Some(key), .. } => {
-                        debug!("keydown: {:?}", key);
                         match key {
-                            Keycode::Escape => { break 'running },
-
                             Keycode::W => { self.cpu.mem.controller.up(true) },
                             Keycode::A => { self.cpu.mem.controller.left(true) },
                             Keycode::S => { self.cpu.mem.controller.down(true) },
@@ -94,7 +91,6 @@ impl Console {
                     },
 
                     Event::KeyUp { keycode: Some(key), .. } => {
-                        debug!("keyup: {:?}", key);
                         match key {
                             Keycode::W => { self.cpu.mem.controller.up(false) },
                             Keycode::A => { self.cpu.mem.controller.left(false) },
@@ -122,7 +118,11 @@ impl Console {
                 let res = self.cpu.mem.ppu.step(&mut self.canvas);
 
                 if res.vblank_nmi {
-                    self.cpu.nmi()
+                    self.cpu.nmi();
+                }
+
+                if res.frame_finished {
+                    self.canvas.present();
                 }
             }
         }
