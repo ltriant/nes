@@ -118,7 +118,7 @@ impl Console {
             loop {
                 cpu_cycles += self.cpu.step();
 
-                if cpu_cycles > CYCLES_PER_SCANLINE {
+                if cpu_cycles >= CYCLES_PER_SCANLINE {
                     break;
                 }
             }
