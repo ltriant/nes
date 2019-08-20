@@ -14,7 +14,7 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 * [x] complete the iNES parser
 * [x] calculate cycle counts
 * [x] implement the rest of the instructions
-* [ ] illegal opcodes (that nestest tests)
+* [x] illegal opcodes (that nestest tests)
 * [x] basic PPU design
 * [x] PPUCTRL
 * [x] PPUMASK
