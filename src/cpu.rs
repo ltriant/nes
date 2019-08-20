@@ -647,6 +647,13 @@ impl CPU {
         self.sbc(n);
         self.c = (n as i8) >= 0;
     }
+
+    pub fn slo(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+        self.asl(addr, val, addr_mode);
+        let val = self.mem.read(addr)
+            .expect("SLO failed");
+        self.ora(val);
+    }
 }
 
 #[cfg(test)]
