@@ -2,7 +2,10 @@ use crate::inst::Instruction;
 use crate::addr::AddressingMode;
 
 #[derive(Debug)]
-pub struct Opcode(pub Instruction, pub AddressingMode, pub usize, pub usize);
+pub struct Opcode(pub Instruction,
+                  pub AddressingMode,
+                  pub usize,
+                  pub usize);
 
 pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::BRK, AddressingMode::Implied, 7, 0),
@@ -232,11 +235,11 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::CPX, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::SBC, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::NOP, AddressingMode::Immediate, 2, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::ISB, AddressingMode::IndexedIndirect, 8, 0),
     Opcode(Instruction::CPX, AddressingMode::ZeroPageIndexed, 3, 0),
     Opcode(Instruction::SBC, AddressingMode::ZeroPageIndexed, 3, 0),
     Opcode(Instruction::INC, AddressingMode::ZeroPageIndexed, 5, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::ISB, AddressingMode::ZeroPageIndexed, 5, 0),
     Opcode(Instruction::INX, AddressingMode::Implied, 2, 0),
     Opcode(Instruction::SBC, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::NOP, AddressingMode::Implied, 2, 0),
@@ -244,21 +247,21 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::CPX, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::SBC, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::INC, AddressingMode::Absolute, 6, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::ISB, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::BEQ, AddressingMode::Relative, 2, 0),
     Opcode(Instruction::SBC, AddressingMode::IndirectIndexed, 5, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::ISB, AddressingMode::IndirectIndexed, 8, 0),
     Opcode(Instruction::NOP, AddressingMode::ZeroPageX, 4, 0),
     Opcode(Instruction::SBC, AddressingMode::ZeroPageX, 4, 0),
     Opcode(Instruction::INC, AddressingMode::ZeroPageX, 6, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::ISB, AddressingMode::ZeroPageX, 6, 0),
     Opcode(Instruction::SED, AddressingMode::Implied, 2, 0),
     Opcode(Instruction::SBC, AddressingMode::AbsoluteY, 4, 1),
     Opcode(Instruction::NOP, AddressingMode::Implied, 2, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::ISB, AddressingMode::AbsoluteY, 7, 0),
     Opcode(Instruction::NOP, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::SBC, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::INC, AddressingMode::AbsoluteX, 7, 0),
-    Opcode(Instruction::None, AddressingMode::None, 0, 0),
+    Opcode(Instruction::ISB, AddressingMode::AbsoluteX, 7, 0),
 ];

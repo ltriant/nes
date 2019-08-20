@@ -640,6 +640,14 @@ impl CPU {
         self.c = self.a >= n;
         self.update_sz(n);
     }
+
+    pub fn isb(&mut self, addr: u16, val: u8) {
+        self.inc(addr, val);
+        let n = self.mem.read(addr)
+            .expect("ISB failed");
+        self.sbc(n);
+        self.c = (n as i8) >= 0;
+    }
 }
 
 #[cfg(test)]
