@@ -1,3 +1,5 @@
+use std::process;
+
 use crate::console::NES_CPU_DEBUG;
 use crate::addr::AddressingMode;
 use crate::mem::{Memory, NESMemory};
@@ -667,6 +669,17 @@ impl CPU {
         let val = self.mem.read(addr)
             .expect("SRE failed");
         self.eor(val);
+    }
+
+    pub fn rra(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+        self.ror(addr, val, addr_mode);
+        let val = self.mem.read(addr)
+            .expect("RRA failed");
+        self.adc(val);
+    }
+
+    pub fn jam(&mut self) {
+        process::exit(0);
     }
 }
 
