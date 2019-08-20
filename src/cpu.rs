@@ -63,8 +63,7 @@ impl CPU {
         let lo = self.mem.read(0xFFFC).expect("low PC byte") as u16;
         let hi = self.mem.read(0xFFFD).expect("high PC byte") as u16;
         let addr = (hi << 8) | lo;
-        self.pc = addr;
-        //self.pc = 0xc000;
+        self.pc = if *NES_CPU_DEBUG { 0xc000 } else { addr };
         debug!("PC: 0x{:04X}", self.pc);
 
         self.set_flags(0x24);
