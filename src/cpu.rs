@@ -661,6 +661,13 @@ impl CPU {
             .expect("RLA failed");
         self.and(val);
     }
+
+    pub fn sre(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+        self.lsr(addr, val, addr_mode);
+        let val = self.mem.read(addr)
+            .expect("SRE failed");
+        self.eor(val);
+    }
 }
 
 #[cfg(test)]
