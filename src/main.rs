@@ -38,7 +38,7 @@ fn main() {
                 println!("Unsupported cartridge type. Only supports NTSC for now.");
             },
             CartridgeError::UnsupportedMapper(m) => {
-                println!("Unsupport mapper type: {}", m);
+                println!("Unsupported mapper type: {}", m);
             },
         }
 
