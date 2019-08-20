@@ -51,6 +51,13 @@ pub struct PPU {
     sprite_indexes: [u8; 8],
 
     vram_temp: u16,
+    odd_frame: bool,
+
+    // NMI stuff
+    nmi_occurred: bool,
+    nmi_output: bool,
+    nmi_previous: bool,
+    nmi_delay: usize,
 }
 
 impl Memory for PPU {
@@ -67,11 +74,17 @@ impl Memory for PPU {
                 Ok(n)
             },
             0x2002 => {
-                let PPUStatus(n) = self.status;
+                let PPUStatus(mut n) = self.status;
 
                 // reset the latch
                 self.scroll.reset_latch();
                 self.ppu_addr.reset_latch();
+
+                if self.nmi_occurred {
+                    n |= 1 << 7;
+                }
+                self.nmi_occurred = false;
+                self.nmi_change();
 
                 Ok(n)
             },
@@ -105,6 +118,9 @@ impl Memory for PPU {
 
                 self.vram_temp = (self.vram_temp & 0xf3ff)
                                | (((val as u16) & 0x03) << 10);
+
+                self.nmi_output = (val >> 7) & 1 == 1;
+                self.nmi_change();
 
                 Ok(val)
             },
@@ -146,8 +162,8 @@ pub struct StepResult {
 }
 
 impl PPU {
-    pub fn new_nes_ppu() -> PPU {
-        PPU {
+    pub fn new_nes_ppu() -> Self {
+        Self {
             ctrl: PPUCtrl(0),
             mask: PPUMask(0),
             status: PPUStatus(0),
@@ -173,6 +189,12 @@ impl PPU {
             sprite_indexes: [0; 8],
 
             vram_temp: 0,
+            odd_frame: false,
+
+            nmi_occurred: false,
+            nmi_output: false,
+            nmi_previous: false,
+            nmi_delay: 0,
         }
     }
 
@@ -185,12 +207,33 @@ impl PPU {
     }
 
     fn inc_dot(&mut self) {
+        if self.mask.show_sprites() && self.mask.show_background() {
+            if self.odd_frame && self.scanline == 261 && self.dot == 339 {
+                self.dot = 0;
+                self.scanline = 0;
+                self.odd_frame = false;
+                return;
+            }
+        }
+
         self.dot += 1;
         if self.dot == 341 {
             self.dot = 0;
             self.scanline += 1;
-            self.scanline %= 262;
+
+            if self.scanline > 261 {
+                self.scanline = 0;
+                self.odd_frame = ! self.odd_frame;
+            }
         }
+    }
+
+    fn nmi_change(&mut self) {
+        let nmi = self.nmi_output && self.nmi_occurred;
+        if nmi && !self.nmi_previous {
+            self.nmi_delay = 15;
+        }
+        self.nmi_previous = nmi;
     }
 
     fn increment_x(&mut self) {
@@ -605,8 +648,20 @@ impl PPU {
             debug!("vblank started");
             self.status.set_vblank();
 
+            self.nmi_occurred = true;
+            self.nmi_change();
+
+            if self.nmi_delay > 0 {
+                self.nmi_delay -= 1;
+
+                if self.nmi_delay == 0 && self.nmi_output && self.nmi_occurred {
+                    res.vblank_nmi = true;
+                }
+            }
+
             if self.ctrl.generate_nmi() {
-                res.vblank_nmi = true;
+                // TODO
+                //res.vblank_nmi = true;
             }
 
             res.frame_finished = true;
@@ -624,8 +679,18 @@ impl PPU {
             self.status.clear_vblank();
             self.status.clear_sprite_zero_hit();
             self.status.clear_sprite_overflow();
+
+            self.nmi_occurred = false;
+            self.nmi_change();
         }
 
+        if self.nmi_delay > 0 {
+            self.nmi_delay -= 1;
+
+            if self.nmi_delay == 0 && self.nmi_output && self.nmi_occurred {
+                res.vblank_nmi = true;
+            }
+        }
         self.inc_dot();
         return res;
     }

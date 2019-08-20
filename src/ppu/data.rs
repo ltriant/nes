@@ -79,8 +79,8 @@ impl Memory for PPUData {
 }
 
 impl PPUData {
-    pub fn new_ppu_data() -> PPUData {
-        PPUData {
+    pub fn new_ppu_data() -> Self {
+        Self {
             chr_rom: vec![],
             nametables: [0; 0x1000],
             palette: [0; 0x20],

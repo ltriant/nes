@@ -103,8 +103,8 @@ impl Memory for NESMemory {
 }
 
 impl NESMemory {
-    pub fn new_nes_mem(ppu: PPU, controller: Controller) -> NESMemory {
-        NESMemory {
+    pub fn new_nes_mem(ppu: PPU, controller: Controller) -> Self {
+        Self {
             ppu: ppu,
             controller: controller,
             ram: [0; 0x800],

@@ -18,7 +18,7 @@ pub enum CartridgeError {
 }
 
 impl Cartridge {
-    pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory) -> Result<Cartridge, CartridgeError> {
+    pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory) -> Result<(), CartridgeError> {
         let mut header = [0; 16];
         let _ = fh.read(&mut header)
             .map_err(CartridgeError::IO)?;
@@ -95,6 +95,6 @@ impl Cartridge {
             mem.ppu.load_vrom(&vrom);
         }
 
-        Ok(Cartridge)
+        Ok(())
     }
 }

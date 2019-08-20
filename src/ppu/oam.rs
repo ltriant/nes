@@ -17,8 +17,8 @@ impl Memory for OAM {
 }
 
 impl OAM {
-    pub fn new_nes_oam() -> OAM {
-        OAM {
+    pub fn new_nes_oam() -> Self {
+        Self {
             data: [0; 0x100],
         }
     }

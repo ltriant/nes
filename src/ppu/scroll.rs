@@ -10,8 +10,8 @@ pub struct PPUScroll {
 }
 
 impl PPUScroll {
-    pub fn new_ppu_scroll() -> PPUScroll {
-        PPUScroll {
+    pub fn new_ppu_scroll() -> Self {
+        Self {
             x: 0,
             y: 0,
             dir: PPUScrollDir::X,

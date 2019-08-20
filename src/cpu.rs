@@ -36,8 +36,8 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new_nes_cpu(mem: NESMemory) -> CPU {
-        CPU {
+    pub fn new_nes_cpu(mem: NESMemory) -> Self {
+        Self {
             mem: mem,
 
             a: 0,

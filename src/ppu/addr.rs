@@ -9,8 +9,8 @@ pub struct PPUAddr {
 }
 
 impl PPUAddr {
-    pub fn new_ppu_addr() -> PPUAddr {
-        PPUAddr {
+    pub fn new_ppu_addr() -> Self {
+        Self {
             val: 0,
             nyb: PPUAddrNybble::Hi,
         }

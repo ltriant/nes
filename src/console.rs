@@ -36,7 +36,7 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new_nes_console() -> Console {
+    pub fn new_nes_console() -> Self {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
@@ -66,7 +66,7 @@ impl Console {
         let controller = Controller::new_controller();
         let mem = NESMemory::new_nes_mem(ppu, controller);
 
-        Console {
+        Self {
             sdl_ctx: sdl_context,
             canvas:  canvas,
             cpu:     CPU::new_nes_cpu(mem),
