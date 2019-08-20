@@ -193,18 +193,18 @@ impl AddressingMode {
                 let hi =
                     if addr & 0xff == 0xff {
                         cpu.mem.read(addr & 0xff00)
-                            .expect("IndexedIndirect hi val bug") as u16
+                            .expect("IndirectIndexed hi val bug") as u16
                     }
                     else {
                         cpu.mem.read(addr + 1)
-                            .expect("IndexedIndirect hi val") as u16
+                            .expect("IndirectIndexed hi val") as u16
                     };
 
                 let addr = (hi << 8) | lo;
                 let n_addr = addr.wrapping_add(cpu.y as u16);
 
                 let val = cpu.mem.read(n_addr)
-                    .expect("IndexedIndirect val");
+                    .expect("IndirectIndexed val");
 
                 Ok((n_addr, val, pages_differ(addr, n_addr)))
             },
