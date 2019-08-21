@@ -34,6 +34,16 @@ impl PPUScroll {
             },
         }
     }
+
+    pub fn incr_x(&mut self) {
+        let old_x = self.x;
+        self.x = (old_x + 256) & 0xff;
+    }
+
+    pub fn incr_y(&mut self) {
+        let old_y = self.y;
+        self.y = (old_y + 240) & 0xff;
+    }
 }
 
 #[cfg(test)]

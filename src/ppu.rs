@@ -50,7 +50,6 @@ pub struct PPU {
     sprite_priorities: [u8; 8],
     sprite_indexes: [u8; 8],
 
-    vram_temp: u16,
     odd_frame: bool,
 
     // NMI stuff
@@ -58,6 +57,11 @@ pub struct PPU {
     nmi_output: bool,
     nmi_previous: bool,
     nmi_delay: usize,
+
+    // Scrolling registers
+    t: u16,
+    x: u8,
+    w: bool,
 }
 
 impl Memory for PPU {
@@ -86,6 +90,9 @@ impl Memory for PPU {
                 self.nmi_occurred = false;
                 self.nmi_change();
 
+                // w:                  = 0
+                self.w = false;
+
                 Ok(n)
             },
             0x2003 => Ok(0), // OAMADDR is write-only
@@ -107,17 +114,16 @@ impl Memory for PPU {
                 self.ctrl = PPUCtrl(val);
 
                 if (val & 0x01) != 0 {
-                    let old_x = self.scroll.x;
-                    self.scroll.x = (old_x + 256) & 0xff;
+                    self.scroll.incr_x();
                 }
 
                 if (val & 0x02) != 0 {
-                    let old_y = self.scroll.y;
-                    self.scroll.y = (old_y + 240) & 0xff;
+                    self.scroll.incr_y();
                 }
 
-                self.vram_temp = (self.vram_temp & 0xf3ff)
-                               | (((val as u16) & 0x03) << 10);
+                // t: ...BA.. ........ = d: ......BA
+                self.t = (self.t & 0xf3ff)
+                       | (((val as u16) & 0x03) << 10);
 
                 self.nmi_output = (val >> 7) & 1 == 1;
                 self.nmi_change();
@@ -140,10 +146,49 @@ impl Memory for PPU {
             },
             0x2005 => {
                 self.scroll.write(val);
+
+                if self.w {
+                    // t: CBA..HG FED..... = d: HGFEDCBA
+                    // w:                  = 0
+                    self.t = (self.t & 0x8fff)
+                           | (((val as u16) & 0x07) << 12);
+                    self.t = (self.t & 0xfc1f)
+                           | (((val as u16) & 0xF8) << 2);
+                    self.w = false;
+                }
+                else {
+                    // t: ....... ...HGFED = d: HGFED...
+                    // x:              CBA = d: .....CBA
+                    // w:                  = 1
+                    self.t = (self.t & 0xffe0)
+                           | ((val as u16) >> 3);
+                    self.x = val & 0x07;
+                    self.w = true;
+                }
+
                 Ok(val)
             },
             0x2006 => {
                 self.ppu_addr.write(val);
+
+                if self.w {
+                    // t: ....... HGFEDCBA = d: HGFEDCBA
+                    // v                   = t
+                    // w:                  = 0
+                    self.t = (self.t & 0xff00)
+                           | (val as u16);
+                    self.ppu_addr.val = self.t;
+                    self.w = false;
+                }
+                else {
+                    // t: .FEDCBA ........ = d: ..FEDCBA
+                    // t: X...... ........ = 0
+                    // w:                  = 1
+                    self.t = (self.t & 0x80ff)
+                           | (((val as u16) & 0x3f) << 8);
+                    self.w = true;
+                }
+
                 Ok(val)
             },
             0x2007 => {
@@ -188,13 +233,16 @@ impl PPU {
             sprite_priorities: [0; 8],
             sprite_indexes: [0; 8],
 
-            vram_temp: 0,
             odd_frame: false,
 
             nmi_occurred: false,
             nmi_output: false,
             nmi_previous: false,
             nmi_delay: 0,
+
+            t: 0,
+            x: 0,
+            w: false,
         }
     }
 
@@ -237,6 +285,8 @@ impl PPU {
     }
 
     fn increment_x(&mut self) {
+        // https://wiki.nesdev.com/w/index.php/PPU_scrolling
+
         if self.ppu_addr.val & 0x001f == 31 {
             self.ppu_addr.val &= 0xffe0;
             self.ppu_addr.val ^= 0x0400;
@@ -247,6 +297,8 @@ impl PPU {
     }
 
     fn increment_y(&mut self) {
+        // https://wiki.nesdev.com/w/index.php/PPU_scrolling
+
         if self.ppu_addr.val & 0x7000 != 0x7000 {
             self.ppu_addr.val += 0x1000;
         }
@@ -271,13 +323,15 @@ impl PPU {
     }
 
     fn copy_x(&mut self) {
+        // v: ....F.. ...EDCBA = t: ....F.. ...EDCBA
         self.ppu_addr.val = (self.ppu_addr.val & 0xfbe0)
-                          | (self.vram_temp & 0x041f);
+                          | (self.t & 0x041f);
     }
 
     fn copy_y(&mut self) {
+        // v: IHGF.ED CBA..... = t: IHGF.ED CBA.....
         self.ppu_addr.val = (self.ppu_addr.val & 0x841f)
-            | (self.vram_temp & 0x7be0);
+                          | (self.t & 0x7be0);
     }
 
     fn background_pixel(&self) -> Option<u8> {
