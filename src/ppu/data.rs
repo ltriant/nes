@@ -17,11 +17,7 @@ impl Memory for PPUData {
             0x0000 ... 0x1fff => {
                 Ok(self.chr_rom[address as usize])
             },
-            0x2000 ... 0x2fff => {
-                Ok(self.nametables[address as usize % 0x1000])
-            },
-            0x3000 ... 0x3eff => {
-                // mirrors 0x2000 ... 0x2eff
+            0x2000 ... 0x3eff => {
                 Ok(self.nametables[address as usize % 0x1000])
             }
             0x3f00 ... 0x3fff => {
