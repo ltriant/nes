@@ -50,6 +50,7 @@ pub struct PPU {
     sprite_priorities: [u8; 8],
     sprite_indexes: [u8; 8],
 
+    // Odd/even frame state
     odd_frame: bool,
 
     // NMI stuff
@@ -62,6 +63,9 @@ pub struct PPU {
     t: u16,
     x: u8,
     w: bool,
+
+    // PPUDATA read buffer
+    buffered_data: u8,
 }
 
 impl Memory for PPU {
@@ -101,8 +105,20 @@ impl Memory for PPU {
             0x2006 => Ok(0), // PPUADDR is write-only
             0x2007 => {
                 let rv = self.data.read(self.ppu_addr.address())?;
+
                 //self.ppu_addr.increment(self.ctrl.vram_addr_increment());
-                Ok(rv)
+
+                // Emulate 1-byte delayed read
+                if self.ppu_addr.address() % 0x4000 <= 0x3eff {
+                    let buffered = self.buffered_data;
+                    self.buffered_data = rv;
+                    Ok(buffered)
+                }
+                else {
+                    self.buffered_data = self.data.read(self.ppu_addr.address())?;
+                    Ok(rv)
+                }
+
             },
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
@@ -243,6 +259,8 @@ impl PPU {
             t: 0,
             x: 0,
             w: false,
+
+            buffered_data: 0,
         }
     }
 
