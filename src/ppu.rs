@@ -288,7 +288,7 @@ impl PPU {
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling
 
         if self.ppu_addr.val & 0x001f == 31 {
-            self.ppu_addr.val &= 0xffe0;
+            self.ppu_addr.val &= !0x001f;
             self.ppu_addr.val ^= 0x0400;
         }
         else {
@@ -303,7 +303,7 @@ impl PPU {
             self.ppu_addr.val += 0x1000;
         }
         else {
-            self.ppu_addr.val &= 0x8fff;
+            self.ppu_addr.val &= !0x7000;
 
             let mut y = (self.ppu_addr.val & 0x03e0) >> 5;
 
@@ -318,7 +318,8 @@ impl PPU {
                 y += 1;
             }
 
-            self.ppu_addr.val = (self.ppu_addr.val & 0xfc1f) | (y << 5);
+            self.ppu_addr.val = (self.ppu_addr.val & !0x03e0)
+                              | (y << 5);
         }
     }
 
@@ -339,7 +340,7 @@ impl PPU {
             return None;
         }
 
-        let tile_data = self.fetch_tile_data() >> ((7 - self.scroll.x) * 4);
+        let tile_data = self.fetch_tile_data() >> ((7 - self.x) * 4);
         let pixel = (tile_data & 0x0f) as u8;
 
         Some(pixel)
@@ -528,6 +529,7 @@ impl PPU {
 
     fn fetch_nametable_byte(&mut self) -> u8 {
         let v = self.ppu_addr.address();
+        // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
         let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
         debug!("fetching NT byte from 0x{:04X}", addr);
         self.data.read(addr).expect("unable to fetch NT byte")
@@ -536,8 +538,12 @@ impl PPU {
     fn fetch_attrtable_byte(&mut self) -> u8 {
         let v = self.ppu_addr.address();
 
-        let addr =
-            0x23c0 | (v & 0x0c00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07);
+        // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
+        let addr = 0x23c0
+                 | (v & 0x0c00)
+                 | ((v >> 4) & 0x38)
+                 | ((v >> 2) & 0x07);
+
         debug!("fetching AT byte from 0x{:04X}", addr);
         let attrbyte = self.data.read(addr).expect("unable to fetch AT byte");
 
