@@ -108,7 +108,7 @@ impl Console {
                             Keycode::D => { self.cpu.mem.controller.right(true) },
 
                             Keycode::Return => { self.cpu.mem.controller.start(true) },
-                            Keycode::K => { self.cpu.mem.controller.select(true) },
+                            Keycode::Space  => { self.cpu.mem.controller.select(true) },
 
                             Keycode::N => { self.cpu.mem.controller.a(true) },
                             Keycode::M => { self.cpu.mem.controller.b(true) },
@@ -125,7 +125,7 @@ impl Console {
                             Keycode::D => { self.cpu.mem.controller.right(false) },
 
                             Keycode::Return => { self.cpu.mem.controller.start(false) },
-                            Keycode::K => { self.cpu.mem.controller.select(false) },
+                            Keycode::Space  => { self.cpu.mem.controller.select(false) },
 
                             Keycode::N => { self.cpu.mem.controller.a(false) },
                             Keycode::M => { self.cpu.mem.controller.b(false) },
