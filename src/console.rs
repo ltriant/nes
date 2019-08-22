@@ -1,5 +1,7 @@
 use std::env;
 use std::fs::File;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::controller::Controller;
 use crate::cpu::CPU;
@@ -28,6 +30,8 @@ lazy_static!{
 }
 
 const CYCLES_PER_SCANLINE: usize = 1364 / 12;
+const NES_FPS: u64 = 60;
+const FRAME_DURATION: Duration = Duration::from_millis((1 / NES_FPS) * 1_000);
 
 pub struct Console {
     sdl_ctx: Sdl,
@@ -88,6 +92,8 @@ impl Console {
         self.cpu.init();
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
+
+        let mut fps_start = Instant::now();
 
         'running: loop {
             for event in event_pump.poll_iter() {
@@ -153,6 +159,10 @@ impl Console {
 
                 if res.frame_finished {
                     self.canvas.present();
+                    let delay = fps_start.elapsed() - FRAME_DURATION;
+                    debug!("sleeping for {}ms", delay.as_millis());
+                    thread::sleep(delay);
+                    fps_start = Instant::now();
                 }
             }
         }
