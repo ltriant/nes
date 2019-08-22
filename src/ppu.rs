@@ -393,7 +393,7 @@ impl PPU {
         let mut tile = self.oam.read(i * 4 + 1).unwrap() as u16;
         let attributes = self.oam.read(i * 4 + 2).unwrap();
 
-        let mut address: u16 = 0;
+        let address: u16;
         let mut row = row;
 
         if self.ctrl.sprite_size() == 8 {
@@ -430,8 +430,8 @@ impl PPU {
         let mut data = 0;
 
         for _ in 0 .. 8 {
-            let mut p1 = 0;
-            let mut p2 = 0;
+            let p1;
+            let p2;
 
             if attributes & 0x40 == 0x40 {
                 p1 = (low_tile_byte & 1) << 0;
@@ -491,7 +491,7 @@ impl PPU {
         let x = self.dot - 1;
         let y = self.scanline;
 
-        let mut address = 0;
+        let mut address;
 
         let background = self.background_pixel();
         let sprite     = self.sprite_pixel();
