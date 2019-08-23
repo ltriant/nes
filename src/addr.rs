@@ -76,9 +76,8 @@ impl AddressingMode {
             AddressingMode::Implied => Ok((0, 0, false)),
             AddressingMode::Accumulator => Ok((0, cpu.a, false)),
             AddressingMode::ZeroPageIndexed => {
-                let lo = cpu.mem.read(pc + 1)
+                let addr = cpu.mem.read(pc + 1)
                     .expect("ZeroPageIndexed arg") as u16;
-                let addr = (0x00 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageIndexed addr");
                 Ok((addr, val, false))
@@ -143,19 +142,17 @@ impl AddressingMode {
                 Ok((addr, val, false))
             }
             AddressingMode::ZeroPageX => {
-                let lo = cpu.mem.read(pc + 1)
+                let addr = cpu.mem.read(pc + 1)
                     .expect("ZeroPageX arg 1")
                     .wrapping_add(cpu.x) as u16;
-                let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageX addr");
                 Ok((addr, val, false))
             },
             AddressingMode::ZeroPageY => {
-                let lo = cpu.mem.read(pc + 1)
+                let addr = cpu.mem.read(pc + 1)
                     .expect("ZeroPageY arg 1")
                     .wrapping_add(cpu.y) as u16;
-                let addr = (0 << 8) | lo;
                 let val = cpu.mem.read(addr)
                     .expect("ZeroPageY addr");
                 Ok((addr, val, false))
