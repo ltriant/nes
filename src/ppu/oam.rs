@@ -6,12 +6,11 @@ pub struct OAM {
 
 impl Memory for OAM {
     fn read(&mut self, address: u16) -> Result<u8, String> {
-        Ok(self.data[address as usize])
+        Ok(self.data[address as usize % 0x100])
     }
 
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
-        // TODO do I need to mod this address value?
-        self.data[address as usize] = val;
+        self.data[address as usize % 0x100] = val;
         Ok(val)
     }
 }
