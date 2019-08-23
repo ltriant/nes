@@ -11,6 +11,7 @@ pub struct NESMemory {
     pub controller: Controller,
     pub ram: [u8; 0x800],
     rom: Vec<u8>,
+    sram: [u8; 0x2000],
 }
 
 impl Memory for NESMemory {
@@ -52,7 +53,7 @@ impl Memory for NESMemory {
             //0x4000 ... 0x5fff => Ok(0),
 
             // SRAM
-            // 0x6000 ... 0x7fff
+            0x6000 ... 0x7fff => Ok(self.rom[address as usize % 0x2000]),
 
             // PRG-ROM
             0x8000 ... 0xffff => Ok(self.rom[address as usize % self.rom.len()]),
@@ -95,6 +96,12 @@ impl Memory for NESMemory {
             // Controller 2
             0x4017            => Ok(0),
 
+            // SRAM
+            0x6000 ... 0x7fff => {
+                self.sram[(address as usize) % 0x2000] = val;
+                Ok(val)
+            },
+
             0x8000 ... 0xffff => Err(String::from("cannot write to ROM")),
 
             _ => Err(format!("write out of bounds 0x{:04X}", address)),
@@ -109,6 +116,7 @@ impl NESMemory {
             controller: controller,
             ram: [0; 0x800],
             rom: vec![],
+            sram: [0; 0x2000],
         }
     }
 
