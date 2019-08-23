@@ -216,7 +216,7 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::CMP, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::DEC, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::DCP, AddressingMode::Absolute, 6, 0),
-    Opcode(Instruction::BNE, AddressingMode::Relative, 2, 2),
+    Opcode(Instruction::BNE, AddressingMode::Relative, 2, 0),
     Opcode(Instruction::CMP, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
     Opcode(Instruction::DCP, AddressingMode::IndirectIndexed, 8, 0),
