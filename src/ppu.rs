@@ -100,7 +100,7 @@ impl Memory for PPU {
                 Ok(n)
             },
             0x2003 => Ok(0), // OAMADDR is write-only
-            0x2004 => panic!("OAMData is unreadable... I think. Double check if this panic happens."),
+            0x2004 => self.oam.read(self.oam_addr as u16),
             0x2005 => Ok(0), // PPUSCROLL is write-only
             0x2006 => Ok(0), // PPUADDR is write-only
             0x2007 => {
