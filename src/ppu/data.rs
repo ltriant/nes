@@ -15,7 +15,8 @@ impl Memory for PPUData {
         let address = address % 0x4000;
         match address {
             0x0000 ... 0x1fff => {
-                Ok(self.chr_rom[address as usize])
+                let len = self.chr_rom.len();
+                Ok(self.chr_rom[address as usize % len])
             },
             0x2000 ... 0x3eff => {
                 Ok(self.nametables[address as usize % 0x1000])
@@ -41,7 +42,8 @@ impl Memory for PPUData {
         match address {
             0 ... 0x1fff => {
                 //debug!("writing to CHR-ROM");
-                self.chr_rom[address as usize] = val;
+                let len = self.chr_rom.len();
+                self.chr_rom[address as usize % len] = val;
                 Ok(val)
             },
             0x2000 ... 0x2fff => {
@@ -77,7 +79,7 @@ impl Memory for PPUData {
 impl PPUData {
     pub fn new_ppu_data() -> Self {
         Self {
-            chr_rom: vec![],
+            chr_rom: vec![0; 0x2000],
             nametables: [0; 0x1000],
             palette: [0; 0x20],
         }
