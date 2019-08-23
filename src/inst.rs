@@ -91,6 +91,7 @@ impl Instruction {
             Instruction::BVS => cpu.bvs(addr),
             Instruction::CLC => cpu.clc(),
             Instruction::CLD => cpu.cld(),
+            Instruction::CLI => cpu.cli(),
             Instruction::CLV => cpu.clv(),
             Instruction::CMP => cpu.cmp(val),
             Instruction::CPX => cpu.cpx(val),

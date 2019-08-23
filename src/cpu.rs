@@ -366,6 +366,10 @@ impl CPU {
         self.d = false;
     }
 
+    pub fn cli(&mut self) {
+        self.i = false;
+    }
+
     pub fn clv(&mut self) {
         self.v = false;
     }
