@@ -364,7 +364,7 @@ impl PPU {
         Some(pixel)
     }
 
-    fn sprite_pixel(&self) -> Option<(u8, u8)> {
+    fn sprite_pixel(&self) -> Option<(usize, u8)> {
         if !self.mask.show_sprites() {
             return None;
         }
@@ -383,7 +383,7 @@ impl PPU {
                 continue;
             }
 
-            return Some((i as u8, color));
+            return Some((i, color));
         }
 
         None
@@ -491,45 +491,43 @@ impl PPU {
         let x = self.dot - 1;
         let y = self.scanline;
 
-        let mut address;
-
         let background = self.background_pixel();
         let sprite     = self.sprite_pixel();
 
-        match (background, sprite) {
-            (None, None) => {
-                address = 0;
-            },
+        let address_low_nyb = match (background, sprite) {
+            (None, None) => 0,
             (Some(background), None) => {
-                address = background as u16;
-
                 if x < 8 && !self.mask.show_background_leftmost() {
-                    address = 0;
+                    0
+                }
+                else {
+                    background as u16
                 }
             },
             (None, Some((_, sprite))) => {
-                address = sprite as u16 | 0x10;
-
                 if x < 8 && !self.mask.show_sprites_leftmost() {
-                    address = 0;
+                    0
+                }
+                else {
+                    sprite as u16 | 0x10
                 }
             },
             (Some(background), Some((i, sprite))) => {
-                if self.sprite_indexes[i as usize] == 0 && x < 255 {
+                if self.sprite_indexes[i] == 0 && x < 255 {
                     self.status.set_sprite_zero_hit();
                 }
 
-                if self.sprite_priorities[i as usize] == 0 {
-                    address = sprite as u16 | 0x10;
+                if self.sprite_priorities[i] == 0 {
+                    sprite as u16 | 0x10
                 }
                 else {
-                    address = background as u16;
+                    background as u16
                 }
             }
-        }
+        };
 
         // Set the base palette address
-        address |= 0x3f00;
+        let address = 0x3f00 | address_low_nyb;
 
         let palette_index = self.data.read(address)
             .expect("unable to read palette index") % 64;
