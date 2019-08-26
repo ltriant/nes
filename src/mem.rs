@@ -127,7 +127,7 @@ impl NESMemory {
     fn dma(&mut self, val: u8) -> Result<u8, String> {
         let addr_base = (val as u16) << 8;
 
-        for lo_nyb in 0x00 .. 0xff {
+        for lo_nyb in 0x00 ..= 0xff {
             let addr = addr_base | lo_nyb;
             let val = self.read(addr)?;
             self.ppu.write(0x2004, val)?;

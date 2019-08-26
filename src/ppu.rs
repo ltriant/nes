@@ -157,7 +157,7 @@ impl Memory for PPU {
             },
             0x2004 => {
                 self.oam.write(self.oam_addr as u16, val)?;
-                self.oam_addr += 1;
+                self.oam_addr = self.oam_addr.wrapping_add(1);
                 Ok(val)
             },
             0x2005 => {
