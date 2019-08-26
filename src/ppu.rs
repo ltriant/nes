@@ -647,7 +647,7 @@ impl PPU {
             frame_finished: false,
         };
 
-        // All of this logic has been borrowed from github.com/foglemen/nes
+        // All of this logic has been borrowed from github.com/fogleman/nes
 
         let pre_line         = self.scanline == 261;
         let visible_line     = self.scanline <= 239;

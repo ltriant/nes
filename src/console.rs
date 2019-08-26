@@ -159,9 +159,12 @@ impl Console {
 
                 if res.frame_finished {
                     self.canvas.present();
-                    let delay = fps_start.elapsed() - FRAME_DURATION;
-                    debug!("sleeping for {}ms", delay.as_millis());
-                    thread::sleep(delay);
+
+                    if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
+                        debug!("sleeping for {}ms", delay.as_millis());
+                        thread::sleep(delay);
+                    }
+
                     fps_start = Instant::now();
                 }
             }
