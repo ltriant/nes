@@ -53,7 +53,7 @@ impl Memory for NESMemory {
             //0x4000 ... 0x5fff => Ok(0),
 
             // SRAM
-            0x6000 ... 0x7fff => Ok(self.rom[address as usize % 0x2000]),
+            0x6000 ... 0x7fff => Ok(self.sram[address as usize % 0x2000]),
 
             // PRG-ROM
             0x8000 ... 0xffff => Ok(self.rom[address as usize % self.rom.len()]),
