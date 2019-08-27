@@ -104,18 +104,18 @@ impl Memory for PPU {
             0x2005 => Ok(0), // PPUSCROLL is write-only
             0x2006 => Ok(0), // PPUADDR is write-only
             0x2007 => {
-                let rv = self.data.read(self.ppu_addr.address())?;
+                let rv = self.data.read(self.ppu_addr.val)?;
 
                 //self.ppu_addr.increment(self.ctrl.vram_addr_increment());
 
                 // Emulate 1-byte delayed read
-                if self.ppu_addr.address() % 0x4000 <= 0x3eff {
+                if self.ppu_addr.val % 0x4000 <= 0x3eff {
                     let buffered = self.buffered_data;
                     self.buffered_data = rv;
                     Ok(buffered)
                 }
                 else {
-                    self.buffered_data = self.data.read(self.ppu_addr.address())?;
+                    self.buffered_data = self.data.read(self.ppu_addr.val)?;
                     Ok(rv)
                 }
 
@@ -208,7 +208,7 @@ impl Memory for PPU {
                 Ok(val)
             },
             0x2007 => {
-                let rv = self.data.write(self.ppu_addr.address(), val)?;
+                let rv = self.data.write(self.ppu_addr.val, val)?;
                 self.ppu_addr.increment(self.ctrl.vram_addr_increment());
                 Ok(rv)
             },
@@ -305,11 +305,16 @@ impl PPU {
     fn increment_x(&mut self) {
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling
 
+        // if coarse X == 31
         if self.ppu_addr.val & 0x001f == 31 {
+            // coarse X = 0
             self.ppu_addr.val &= !0x001f;
+
+            // switch horizontal nametable
             self.ppu_addr.val ^= 0x0400;
         }
         else {
+            // increment coarse X
             self.ppu_addr.val += 1;
         }
     }
@@ -317,40 +322,38 @@ impl PPU {
     fn increment_y(&mut self) {
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling
 
+        // if fine Y < 7
         if self.ppu_addr.val & 0x7000 != 0x7000 {
+            // increment fine Y
             self.ppu_addr.val += 0x1000;
         }
         else {
+            // fine Y = 0
             self.ppu_addr.val &= !0x7000;
 
+            // let y = coarse Y
             let mut y = (self.ppu_addr.val & 0x03e0) >> 5;
 
             if y == 29 {
+                // coarse Y = 0
                 y = 0;
+
+                // switch vertical nametable
                 self.ppu_addr.val ^= 0x0800;
             }
             else if y == 31 {
+                // coarse Y = 0, nametable not switched
                 y = 0;
             }
             else {
+                // increment coarse Y
                 y += 1;
             }
 
+            // put coarse Y back into v
             self.ppu_addr.val = (self.ppu_addr.val & !0x03e0)
                               | (y << 5);
         }
-    }
-
-    fn copy_x(&mut self) {
-        // v: ....F.. ...EDCBA = t: ....F.. ...EDCBA
-        self.ppu_addr.val = (self.ppu_addr.val & 0xfbe0)
-                          | (self.t & 0x041f);
-    }
-
-    fn copy_y(&mut self) {
-        // v: IHGF.ED CBA..... = t: IHGF.ED CBA.....
-        self.ppu_addr.val = (self.ppu_addr.val & 0x841f)
-                          | (self.t & 0x7be0);
     }
 
     fn background_pixel(&self) -> Option<u8> {
@@ -544,7 +547,7 @@ impl PPU {
     }
 
     fn fetch_nametable_byte(&mut self) -> u8 {
-        let v = self.ppu_addr.address();
+        let v = self.ppu_addr.val;
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
         let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
         debug!("fetching NT byte from 0x{:04X}", addr);
@@ -552,7 +555,7 @@ impl PPU {
     }
 
     fn fetch_attrtable_byte(&mut self) -> u8 {
-        let v = self.ppu_addr.address();
+        let v = self.ppu_addr.val;
 
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
         let addr = 0x23c0
@@ -568,22 +571,22 @@ impl PPU {
     }
 
     fn fetch_low_tile_byte(&mut self) -> u8 {
-        let fine_y = (self.ppu_addr.address() >> 12) & 7;
-        let tile = self.nametable_byte;
+        let fine_y = (self.ppu_addr.val >> 12) & 0x07;
+        let tile = self.nametable_byte as u16;
         let addr = self.ctrl.background_pattern_table_addr()
-            + ((tile as u16) * 16)
-            + fine_y;
+            + fine_y
+            + (16 * tile);
 
         debug!("fetching low tile byte from 0x{:04X}", addr);
         self.data.read(addr).expect("unable to fetch low tile byte")
     }
 
     fn fetch_high_tile_byte(&mut self) -> u8 {
-        let fine_y = (self.ppu_addr.address() >> 12) & 7;
-        let tile = self.nametable_byte;
+        let fine_y = (self.ppu_addr.val >> 12) & 0x07;
+        let tile = self.nametable_byte as u16;
         let addr = self.ctrl.background_pattern_table_addr()
-            + (tile as u16) * 16
-            + fine_y;
+            + fine_y
+            + (16 * tile);
 
         debug!("fetching high tile byte from 0x{:04X}", addr + 8);
         self.data.read(addr + 8).expect("unable to fetch high tile byte")
@@ -690,7 +693,9 @@ impl PPU {
             }
 
             if pre_line && self.dot >= 280 && self.dot <= 304 {
-                self.copy_y();
+                // v: IHGF.ED CBA..... = t: IHGF.ED CBA.....
+                self.ppu_addr.val = (self.ppu_addr.val & 0x841f)
+                                  | (self.t & 0x7be0);
             }
 
             if render_line {
@@ -703,7 +708,9 @@ impl PPU {
                 }
 
                 if self.dot == 257 {
-                    self.copy_x();
+                    // v: ....F.. ...EDCBA = t: ....F.. ...EDCBA
+                    self.ppu_addr.val = (self.ppu_addr.val & 0xfbe0)
+                                      | (self.t & 0x041f);
                 }
             }
         }

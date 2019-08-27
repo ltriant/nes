@@ -20,10 +20,6 @@ impl PPUAddr {
         self.nyb = PPUAddrNybble::Hi;
     }
 
-    pub fn address(&self) -> u16 {
-        self.val
-    }
-
     pub fn increment(&mut self, val: u16) {
         self.val += val;
     }
@@ -53,15 +49,15 @@ mod tests {
         let mut ppu_addr = PPUAddr::new_ppu_addr();
 
         ppu_addr.write(0x21);
-        assert!(ppu_addr.address() == 0x2100);
+        assert!(ppu_addr.val == 0x2100);
 
         ppu_addr.write(0x08);
-        assert!(ppu_addr.address() == 0x2108);
+        assert!(ppu_addr.val == 0x2108);
 
         ppu_addr.write(0x32);
-        assert!(ppu_addr.address() == 0x3208);
+        assert!(ppu_addr.val == 0x3208);
 
         ppu_addr.write(0x01);
-        assert!(ppu_addr.address() == 0x3201);
+        assert!(ppu_addr.val == 0x3201);
     }
 }
