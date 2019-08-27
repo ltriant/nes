@@ -29,7 +29,7 @@ lazy_static!{
     };
 }
 
-const CYCLES_PER_SCANLINE: usize = 1364 / 12;
+const CYCLES_PER_SCANLINE: u64 = 1364 / 12;
 const NES_FPS: u64 = 60;
 const FRAME_DURATION: Duration = Duration::from_millis((1 / NES_FPS) * 1_000);
 
@@ -96,77 +96,79 @@ impl Console {
         let mut fps_start = Instant::now();
 
         'running: loop {
-            for event in event_pump.poll_iter() {
-                match event {
-                    Event::Quit { .. } => { break 'running },
-
-                    Event::KeyDown { keycode: Some(key), .. } => {
-                        match key {
-                            Keycode::W => { self.cpu.mem.controller.up(true) },
-                            Keycode::A => { self.cpu.mem.controller.left(true) },
-                            Keycode::S => { self.cpu.mem.controller.down(true) },
-                            Keycode::D => { self.cpu.mem.controller.right(true) },
-
-                            Keycode::Return => { self.cpu.mem.controller.start(true) },
-                            Keycode::Space  => { self.cpu.mem.controller.select(true) },
-
-                            Keycode::N => { self.cpu.mem.controller.a(true) },
-                            Keycode::M => { self.cpu.mem.controller.b(true) },
-
-                            _ => {},
-                        }
-                    },
-
-                    Event::KeyUp { keycode: Some(key), .. } => {
-                        match key {
-                            Keycode::W => { self.cpu.mem.controller.up(false) },
-                            Keycode::A => { self.cpu.mem.controller.left(false) },
-                            Keycode::S => { self.cpu.mem.controller.down(false) },
-                            Keycode::D => { self.cpu.mem.controller.right(false) },
-
-                            Keycode::Return => { self.cpu.mem.controller.start(false) },
-                            Keycode::Space  => { self.cpu.mem.controller.select(false) },
-
-                            Keycode::N => { self.cpu.mem.controller.a(false) },
-                            Keycode::M => { self.cpu.mem.controller.b(false) },
-
-                            _ => {},
-                        }
-                    },
-
-                    _ => {},
-                }
-            }
-
-            let mut cpu_cycles = 0;
-
-            loop {
-                cpu_cycles += self.cpu.step();
-
-                if cpu_cycles >= CYCLES_PER_SCANLINE {
-                    break;
-                }
-            }
-
+            let cpu_cycles = self.cpu.step();
             let ppu_cycles = cpu_cycles * 3;
 
+            let mut frame_finished = false;
             for _ in 0 .. ppu_cycles {
                 let res = self.cpu.mem.ppu.step(&mut self.canvas);
 
                 if res.vblank_nmi {
-                    self.cpu.nmi();
+                    self.cpu.trigger_nmi();
                 }
 
                 if res.frame_finished {
-                    self.canvas.present();
-
-                    if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
-                        debug!("sleeping for {}ms", delay.as_millis());
-                        thread::sleep(delay);
-                    }
-
-                    fps_start = Instant::now();
+                    frame_finished = true;
                 }
+            }
+
+            if frame_finished {
+                self.canvas.present();
+
+                if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
+                    debug!("sleeping for {}ms", delay.as_millis());
+                    thread::sleep(delay);
+                }
+
+                fps_start = Instant::now();
+
+                // Polling for events once per loop slows the emulator right the
+                // fuck down, so I've moved to when a frame has finished
+                // instead.
+                //
+                // I feel like this shouldn't be so damned slow...
+                for event in event_pump.poll_iter() {
+                    match event {
+                        Event::Quit { .. } => { break 'running },
+
+                        Event::KeyDown { keycode: Some(key), .. } => {
+                            match key {
+                                Keycode::W => { self.cpu.mem.controller.up(true) },
+                                Keycode::A => { self.cpu.mem.controller.left(true) },
+                                Keycode::S => { self.cpu.mem.controller.down(true) },
+                                Keycode::D => { self.cpu.mem.controller.right(true) },
+
+                                Keycode::Return => { self.cpu.mem.controller.start(true) },
+                                Keycode::Space  => { self.cpu.mem.controller.select(true) },
+
+                                Keycode::N => { self.cpu.mem.controller.a(true) },
+                                Keycode::M => { self.cpu.mem.controller.b(true) },
+
+                                _ => {},
+                            }
+                        },
+
+                        Event::KeyUp { keycode: Some(key), .. } => {
+                            match key {
+                                Keycode::W => { self.cpu.mem.controller.up(false) },
+                                Keycode::A => { self.cpu.mem.controller.left(false) },
+                                Keycode::S => { self.cpu.mem.controller.down(false) },
+                                Keycode::D => { self.cpu.mem.controller.right(false) },
+
+                                Keycode::Return => { self.cpu.mem.controller.start(false) },
+                                Keycode::Space  => { self.cpu.mem.controller.select(false) },
+
+                                Keycode::N => { self.cpu.mem.controller.a(false) },
+                                Keycode::M => { self.cpu.mem.controller.b(false) },
+
+                                _ => {},
+                            }
+                        },
+
+                        _ => {},
+                    }
+                }
+
             }
         }
 

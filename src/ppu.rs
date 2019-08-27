@@ -272,8 +272,16 @@ impl PPU {
         self.mask.show_background() || self.mask.show_sprites()
     }
 
-    fn inc_dot(&mut self) {
-        if self.mask.show_sprites() && self.mask.show_background() {
+    fn tick(&mut self, res: &mut StepResult) {
+        if self.nmi_delay > 0 {
+            self.nmi_delay -= 1;
+
+            if self.nmi_delay == 0 && self.nmi_output && self.nmi_occurred {
+                res.vblank_nmi = true;
+            }
+        }
+
+        if self.rendering_enabled() {
             if self.odd_frame && self.scanline == 261 && self.dot == 339 {
                 self.dot = 0;
                 self.scanline = 0;
@@ -650,6 +658,8 @@ impl PPU {
             frame_finished: false,
         };
 
+        self.tick(&mut res);
+
         // All of this logic has been borrowed from github.com/fogleman/nes
 
         let pre_line         = self.scanline == 261;
@@ -734,14 +744,6 @@ impl PPU {
             self.nmi_occurred = true;
             self.nmi_change();
 
-            if self.nmi_delay > 0 {
-                self.nmi_delay -= 1;
-
-                if self.nmi_delay == 0 && self.nmi_output && self.nmi_occurred {
-                    res.vblank_nmi = true;
-                }
-            }
-
             if self.ctrl.generate_nmi() {
                 // TODO
                 //res.vblank_nmi = true;
@@ -753,7 +755,6 @@ impl PPU {
                 self.render_palettes(canvas);
             }
 
-            self.inc_dot();
             return res;
         }
 
@@ -767,14 +768,6 @@ impl PPU {
             self.nmi_change();
         }
 
-        if self.nmi_delay > 0 {
-            self.nmi_delay -= 1;
-
-            if self.nmi_delay == 0 && self.nmi_output && self.nmi_occurred {
-                res.vblank_nmi = true;
-            }
-        }
-        self.inc_dot();
         return res;
     }
 }

@@ -6,7 +6,12 @@ use crate::mem::{Memory, NESMemory};
 use crate::opcode::{Opcode, OPCODES};
 
 const STACK_INIT: u8 = 0xfd;
-const PPU_DOTS_PER_SCANLINE: usize = 341;
+const PPU_DOTS_PER_SCANLINE: u64 = 341;
+
+enum Interrupt {
+    NMI,
+    IRQ,
+}
 
 pub struct CPU {
     pub mem: NESMemory,
@@ -32,7 +37,9 @@ pub struct CPU {
     // Stack pointer
     pub sp: u8,
 
-    cycles: usize,
+    interrupt: Option<Interrupt>,
+
+    cycles: u64,
 }
 
 impl CPU {
@@ -56,6 +63,8 @@ impl CPU {
             pc: 0x0000,
 
             sp: STACK_INIT,
+
+            interrupt: None,
 
             cycles: 0,
         }
@@ -125,7 +134,11 @@ impl CPU {
                  ppu_dots);
     }
 
-    pub fn nmi(&mut self) {
+    pub fn trigger_nmi(&mut self) {
+        self.interrupt = Some(Interrupt::NMI);
+    }
+
+    fn nmi(&mut self) {
         let pc = self.pc;
         self.stack_push16(pc);
         self.php();
@@ -133,8 +146,8 @@ impl CPU {
         let lo = self.mem.read(0xFFFA).expect("low NMI byte") as u16;
         let hi = self.mem.read(0xFFFB).expect("high NMI byte") as u16;
         let addr = (hi << 8) | lo;
+        self.i = true;
         self.cycles += 7;
-        self.cycles %= PPU_DOTS_PER_SCANLINE;
 
         debug!("NMI: {:04X}", addr);
         self.pc = addr;
@@ -189,7 +202,18 @@ impl CPU {
         }
     }
 
-    pub fn step(&mut self) -> usize {
+    pub fn step(&mut self) -> u64 {
+        let mut n_cycles = self.cycles;
+
+        if let Some(interrupt) = &self.interrupt {
+            match interrupt {
+                Interrupt::NMI => { self.nmi() }
+                Interrupt::IRQ => { }
+            }
+
+            self.interrupt = None;
+        }
+
         let opcode = self.mem.read(self.pc)
             .expect("unable to read next opcode");
 
@@ -199,21 +223,17 @@ impl CPU {
             self.debug(&op);
         }
 
-        let &Opcode(ref inst, ref addr_mode, ref cycles, ref extra_cycles) = op;
-
-        let mut n_cycles = 0;
+        let &Opcode(ref inst, ref addr_mode, cycles, extra_cycles) = op;
 
         if let Ok(bytes) = addr_mode.n_bytes() {
             self.pc += bytes as u16;
-            self.cycles = (self.cycles + cycles) % PPU_DOTS_PER_SCANLINE;
-            n_cycles += cycles;
+            self.cycles += cycles as u64;
 
             if let Ok((addr, val, page_crossed)) = addr_mode.get_data(self) {
                 inst.run(self, addr, val, addr_mode);
 
                 if page_crossed {
-                    self.cycles += extra_cycles;
-                    n_cycles += extra_cycles;
+                    self.cycles += extra_cycles as u64;
                 }
             }
             else {
@@ -228,7 +248,7 @@ impl CPU {
                    opcode);
         }
 
-        n_cycles
+        self.cycles - n_cycles
     }
 
     //
@@ -787,5 +807,6 @@ mod tests {
         cpu.mem.load_rom(&rom);
         cpu.nmi();
         assert_eq!(cpu.pc, 0xdead);
+        assert!(cpu.i);
     }
 }
