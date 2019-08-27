@@ -39,7 +39,26 @@ pub struct CPU {
 
     interrupt: Option<Interrupt>,
 
+    // DMA requires CPU cycles, so this is the mechanism we use to achieve that
+    stall: Option<u64>,
+
+    // Total number of cycles executed
     cycles: u64,
+}
+
+impl Memory for CPU {
+    fn read(&mut self, addr: u16) -> Result<u8, String> {
+        self.mem.read(addr)
+    }
+
+    fn write(&mut self, addr: u16, val: u8) -> Result<u8, String> {
+        if addr == 0x4014 {
+            self.dma(val)
+        }
+        else {
+            self.mem.write(addr, val)
+        }
+    }
 }
 
 impl CPU {
@@ -66,13 +85,14 @@ impl CPU {
 
             interrupt: None,
 
+            stall: None,
             cycles: 0,
         }
     }
 
     pub fn init(&mut self) {
-        let lo = self.mem.read(0xFFFC).expect("low PC byte") as u16;
-        let hi = self.mem.read(0xFFFD).expect("high PC byte") as u16;
+        let lo = self.read(0xFFFC).expect("low PC byte") as u16;
+        let hi = self.read(0xFFFD).expect("high PC byte") as u16;
         let addr = (hi << 8) | lo;
         self.pc = if *NES_CPU_DEBUG { 0xc000 } else { addr };
         debug!("PC: 0x{:04X}", self.pc);
@@ -81,6 +101,24 @@ impl CPU {
         debug!("flags: 0x{:02X}", self.flags());
     }
 
+    fn dma(&mut self, val: u8) -> Result<u8, String> {
+        let addr_base = (val as u16) << 8;
+
+        for lo_nyb in 0x00 ..= 0xff {
+            let addr = addr_base | lo_nyb;
+            let val = self.read(addr)?;
+            self.mem.ppu.write(0x2004, val)?;
+        }
+
+        if self.cycles % 2 == 1 {
+            self.stall = Some(514);
+        }
+        else {
+            self.stall = Some(513);
+        }
+
+        Ok(val)
+    }
     fn flags(&self) -> u8 {
            (self.c as u8)
         | ((self.z as u8) << 1)
@@ -107,7 +145,7 @@ impl CPU {
         let Opcode(ref inst, ref addr_mode, _, _) = *op;
 
         if let Err(_) = addr_mode.n_bytes() {
-            let opcode = self.mem.read(self.pc).unwrap();
+            let opcode = self.read(self.pc).unwrap();
             panic!("unsupported addressing mode {:?} at PC {:04X}, opcode {:02X}",
                    addr_mode,
                    self.pc,
@@ -143,8 +181,8 @@ impl CPU {
         self.stack_push16(pc);
         self.php();
 
-        let lo = self.mem.read(0xFFFA).expect("low NMI byte") as u16;
-        let hi = self.mem.read(0xFFFB).expect("high NMI byte") as u16;
+        let lo = self.read(0xFFFA).expect("low NMI byte") as u16;
+        let hi = self.read(0xFFFB).expect("high NMI byte") as u16;
         let addr = (hi << 8) | lo;
         self.i = true;
         self.cycles += 7;
@@ -156,7 +194,7 @@ impl CPU {
     fn stack_push8(&mut self, val: u8) {
         // The stack page exists from 0x0100 to 0x01FF
         let addr = (0x01 << 8) | self.sp as u16;
-        self.mem.write(addr, val)
+        self.write(addr, val)
             .expect("unable to write to stack");
 
         let n = self.sp.wrapping_sub(1);
@@ -169,7 +207,7 @@ impl CPU {
 
         // The stack page exists from 0x0100 to 0x01FF
         let addr = (0x01 << 8) | self.sp as u16;
-        let val = self.mem.read(addr)
+        let val = self.read(addr)
             .expect("unable to read from stack");
 
         val
@@ -203,6 +241,16 @@ impl CPU {
     }
 
     pub fn step(&mut self) -> u64 {
+        if let Some(stall) = self.stall {
+            if stall > 0 {
+                self.stall = Some(stall - 1);
+                return 1;
+            }
+            else {
+                self.stall = None;
+            }
+        }
+
         let mut n_cycles = self.cycles;
 
         if let Some(interrupt) = &self.interrupt {
@@ -214,7 +262,7 @@ impl CPU {
             self.interrupt = None;
         }
 
-        let opcode = self.mem.read(self.pc)
+        let opcode = self.read(self.pc)
             .expect("unable to read next opcode");
 
         let op = &OPCODES[opcode as usize];
@@ -241,7 +289,7 @@ impl CPU {
             }
         }
         else {
-            let opcode = self.mem.read(self.pc).unwrap();
+            let opcode = self.read(self.pc).unwrap();
             panic!("unsupported addressing mode {:?} at PC {:04X}, opcode {:02X}",
                    addr_mode,
                    self.pc,
@@ -284,7 +332,7 @@ impl CPU {
 
         match *addr_mode {
             AddressingMode::Accumulator => { self.a = n; },
-            _ => { self.mem.write(addr, n).expect("ASL failed"); }
+            _ => { self.write(addr, n).expect("ASL failed"); }
         };
 
         self.update_sz(n);
@@ -356,8 +404,8 @@ impl CPU {
 
         self.i = true;
 
-        let lo = self.mem.read(0xFFFE).expect("BRK read low byte") as u16;
-        let hi = self.mem.read(0xFFFF).expect("BRK read high byte") as u16;
+        let lo = self.read(0xFFFE).expect("BRK read low byte") as u16;
+        let hi = self.read(0xFFFF).expect("BRK read high byte") as u16;
         let pc = (hi << 8) | lo;
         self.pc = pc;
     }
@@ -415,7 +463,7 @@ impl CPU {
     pub fn dec(&mut self, addr: u16, val: u8) {
         let n = val.wrapping_sub(1);
         self.update_sz(n);
-        self.mem.write(addr, n)
+        self.write(addr, n)
             .expect("DEC failed");
     }
 
@@ -439,7 +487,7 @@ impl CPU {
 
     pub fn inc(&mut self, addr: u16, val: u8) {
         let n = val.wrapping_add(1);
-        self.mem.write(addr, n)
+        self.write(addr, n)
             .expect("INC failed");
         self.update_sz(n);
     }
@@ -488,7 +536,7 @@ impl CPU {
 
         match *addr_mode {
             AddressingMode::Accumulator => { self.a = n; },
-            _ => { self.mem.write(addr, n).expect("LSR failed"); }
+            _ => { self.write(addr, n).expect("LSR failed"); }
         };
     }
 
@@ -533,7 +581,7 @@ impl CPU {
 
         match *addr_mode {
             AddressingMode::Accumulator => { self.a = n; },
-            _ => { self.mem.write(addr, n).expect("ROR failed"); }
+            _ => { self.write(addr, n).expect("ROR failed"); }
         };
     }
 
@@ -545,7 +593,7 @@ impl CPU {
 
         match *addr_mode {
             AddressingMode::Accumulator => { self.a = n; },
-            _ => { self.mem.write(addr, n).expect("ROR failed"); }
+            _ => { self.write(addr, n).expect("ROR failed"); }
         };
     }
 
@@ -587,17 +635,17 @@ impl CPU {
     }
 
     pub fn sta(&mut self, addr: u16) {
-        self.mem.write(addr, self.a)
+        self.write(addr, self.a)
             .expect("STA failed");
     }
 
     pub fn stx(&mut self, addr: u16) {
-        self.mem.write(addr, self.x)
+        self.write(addr, self.x)
             .expect("STX failed");
     }
 
     pub fn sty(&mut self, addr: u16) {
-        self.mem.write(addr, self.y)
+        self.write(addr, self.y)
             .expect("STY failed");
     }
 
@@ -649,7 +697,7 @@ impl CPU {
 
     pub fn sax(&mut self, addr: u16) {
         let val = self.x & self.a;
-        self.mem.write(addr, val)
+        self.write(addr, val)
             .expect("SAX failed");
     }
 
@@ -657,7 +705,7 @@ impl CPU {
         // dec value
         let n = val.wrapping_sub(1);
         self.update_sz(n);
-        self.mem.write(addr, n)
+        self.write(addr, n)
             .expect("DEC failed");
 
         // cmp with A register
@@ -668,7 +716,7 @@ impl CPU {
 
     pub fn isb(&mut self, addr: u16, val: u8) {
         self.inc(addr, val);
-        let n = self.mem.read(addr)
+        let n = self.read(addr)
             .expect("ISB failed");
         self.sbc(n);
         self.c = (n as i8) >= 0;
@@ -676,28 +724,28 @@ impl CPU {
 
     pub fn slo(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
         self.asl(addr, val, addr_mode);
-        let val = self.mem.read(addr)
+        let val = self.read(addr)
             .expect("SLO failed");
         self.ora(val);
     }
 
     pub fn rla(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
         self.rol(addr, val, addr_mode);
-        let val = self.mem.read(addr)
+        let val = self.read(addr)
             .expect("RLA failed");
         self.and(val);
     }
 
     pub fn sre(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
         self.lsr(addr, val, addr_mode);
-        let val = self.mem.read(addr)
+        let val = self.read(addr)
             .expect("SRE failed");
         self.eor(val);
     }
 
     pub fn rra(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
         self.ror(addr, val, addr_mode);
-        let val = self.mem.read(addr)
+        let val = self.read(addr)
             .expect("RRA failed");
         self.adc(val);
     }

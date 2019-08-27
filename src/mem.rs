@@ -85,7 +85,7 @@ impl Memory for NESMemory {
             0x4010 ... 0x4013 => Ok(0),
 
             // OAM DMA
-            0x4014            => self.dma(val),
+            0x4014            => panic!("this should've been intercepted by the CPU"),
 
             // APU sound channel
             0x4015            => Ok(0),
@@ -122,18 +122,6 @@ impl NESMemory {
 
     pub fn load_rom(&mut self, data: &Vec<u8>) {
         self.rom.clone_from(data)
-    }
-
-    fn dma(&mut self, val: u8) -> Result<u8, String> {
-        let addr_base = (val as u16) << 8;
-
-        for lo_nyb in 0x00 ..= 0xff {
-            let addr = addr_base | lo_nyb;
-            let val = self.read(addr)?;
-            self.ppu.write(0x2004, val)?;
-        }
-
-        Ok(val)
     }
 }
 
