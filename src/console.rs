@@ -1,11 +1,12 @@
 use std::env;
 use std::fs::File;
+use std::process;
 use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::controller::Controller;
 use crate::cpu::CPU;
-use crate::mem::NESMemory;
+use crate::mem::{Memory, NESMemory};
 use crate::ppu::PPU;
 use crate::ines::{Cartridge, CartridgeError};
 
@@ -90,6 +91,47 @@ impl Console {
         Ok(())
     }
 
+    // Reads a null-terminated string starting at `addr'
+    fn read_string(&mut self, addr: u16) -> Result<String, String> {
+        let mut addr = addr;
+
+        let mut rv = String::new();
+
+        loop {
+            let b = self.cpu.mem.read(addr)?;
+
+            if b == 0 {
+                break;
+            }
+
+            rv.push(b as char);
+
+            addr += 1;
+        }
+
+        Ok(rv)
+    }
+
+    // Detects if we're running a instr_test-v5 rom, and if so, it will output
+    // the test results.
+    fn debug_tests(&mut self) {
+        let a = self.cpu.mem.read(0x6001).unwrap();
+        let b = self.cpu.mem.read(0x6002).unwrap();
+        let c = self.cpu.mem.read(0x6003).unwrap();
+
+        if a == 0xDE && b == 0xB0 && c == 0x61 {
+            let result = self.cpu.mem.read(0x6000).unwrap();
+
+            if result <= 0x7F {
+                println!("Emulator test complete, final status: 0x{:02X}", result);
+                process::exit(0);
+            }
+
+            let result_string = self.read_string(0x6004).unwrap();
+            println!("{}", result_string);
+        }
+    }
+
     pub fn power_up(&mut self) {
         info!("powering up");
 
@@ -100,6 +142,8 @@ impl Console {
         let mut fps_start = Instant::now();
 
         'running: loop {
+            self.debug_tests();
+
             let cpu_cycles = self.cpu.step();
             let ppu_cycles = cpu_cycles * 3;
 
