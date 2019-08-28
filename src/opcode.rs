@@ -8,6 +8,7 @@ pub struct Opcode(pub Instruction,
                   pub usize);  // number of extra cycles, if a page boundary is crossed
 
 pub const OPCODES: [Opcode; 256] = [
+    // 0x00
     Opcode(Instruction::BRK, AddressingMode::Implied, 7, 0),
     Opcode(Instruction::ORA, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -24,8 +25,10 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::ORA, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::ASL, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::SLO, AddressingMode::Absolute, 6, 0),
+
+    // 0x10
     Opcode(Instruction::BPL, AddressingMode::Relative, 2, 1),
-    Opcode(Instruction::ORA, AddressingMode::IndirectIndexed, 5, 0),
+    Opcode(Instruction::ORA, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
     Opcode(Instruction::SLO, AddressingMode::IndirectIndexed, 8, 0),
     Opcode(Instruction::NOP, AddressingMode::ZeroPageX, 4, 0),
@@ -40,6 +43,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::ORA, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::ASL, AddressingMode::AbsoluteX, 7, 0),
     Opcode(Instruction::SLO, AddressingMode::AbsoluteX, 7, 0),
+
+    // 0x20
     Opcode(Instruction::JSR, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::AND, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -56,8 +61,10 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::AND, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::ROL, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::RLA, AddressingMode::Absolute, 6, 0),
+
+    // 0x30
     Opcode(Instruction::BMI, AddressingMode::Relative, 2, 1),
-    Opcode(Instruction::AND, AddressingMode::IndirectIndexed, 5, 0),
+    Opcode(Instruction::AND, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
     Opcode(Instruction::RLA, AddressingMode::IndirectIndexed, 8, 0),
     Opcode(Instruction::NOP, AddressingMode::ZeroPageX, 4, 0),
@@ -72,6 +79,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::AND, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::ROL, AddressingMode::AbsoluteX, 7, 0),
     Opcode(Instruction::RLA, AddressingMode::AbsoluteX, 7, 0),
+
+    // 0x40
     Opcode(Instruction::RTI, AddressingMode::Implied, 6, 0),
     Opcode(Instruction::EOR, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -88,6 +97,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::EOR, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::LSR, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::SRE, AddressingMode::Absolute, 6, 0),
+
+    // 0x50
     Opcode(Instruction::BVC, AddressingMode::Relative, 2, 1),
     Opcode(Instruction::EOR, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -104,6 +115,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::EOR, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::LSR, AddressingMode::AbsoluteX, 7, 0),
     Opcode(Instruction::SRE, AddressingMode::AbsoluteX, 7, 0),
+
+    // 0x60
     Opcode(Instruction::RTS, AddressingMode::Implied, 6, 0),
     Opcode(Instruction::ADC, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -120,6 +133,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::ADC, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::ROR, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::RRA, AddressingMode::Absolute, 6, 0),
+
+    // 0x70
     Opcode(Instruction::BVS, AddressingMode::Relative, 2, 1),
     Opcode(Instruction::ADC, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -136,6 +151,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::ADC, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::ROR, AddressingMode::AbsoluteX, 7, 0),
     Opcode(Instruction::RRA, AddressingMode::AbsoluteX, 7, 0),
+
+    // 0x80
     Opcode(Instruction::NOP, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::STA, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::NOP, AddressingMode::Immediate, 2, 0),
@@ -152,6 +169,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::STA, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::STX, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::SAX, AddressingMode::Absolute, 4, 0),
+
+    // 0x90
     Opcode(Instruction::BCC, AddressingMode::Relative, 2, 1),
     Opcode(Instruction::STA, AddressingMode::IndirectIndexed, 6, 0),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -168,6 +187,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::STA, AddressingMode::AbsoluteX, 5, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
     Opcode(Instruction::None, AddressingMode::None, 0, 0),
+
+    // 0xA0
     Opcode(Instruction::LDY, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::LDA, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::LDX, AddressingMode::Immediate, 2, 0),
@@ -184,6 +205,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::LDA, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::LDX, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::LAX, AddressingMode::Absolute, 4, 0),
+
+    // 0xB0
     Opcode(Instruction::BCS, AddressingMode::Relative, 2, 1),
     Opcode(Instruction::LDA, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -200,6 +223,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::LDA, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::LDX, AddressingMode::AbsoluteY, 4, 1),
     Opcode(Instruction::LAX, AddressingMode::AbsoluteY, 4, 1),
+
+    // 0xC0
     Opcode(Instruction::CPY, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::CMP, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::NOP, AddressingMode::Immediate, 2, 0),
@@ -216,6 +241,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::CMP, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::DEC, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::DCP, AddressingMode::Absolute, 6, 0),
+
+    // 0xD0
     Opcode(Instruction::BNE, AddressingMode::Relative, 2, 1),
     Opcode(Instruction::CMP, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
@@ -232,6 +259,8 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::CMP, AddressingMode::AbsoluteX, 4, 1),
     Opcode(Instruction::DEC, AddressingMode::AbsoluteX, 7, 0),
     Opcode(Instruction::DCP, AddressingMode::AbsoluteX, 7, 0),
+
+    // 0xE0
     Opcode(Instruction::CPX, AddressingMode::Immediate, 2, 0),
     Opcode(Instruction::SBC, AddressingMode::IndexedIndirect, 6, 0),
     Opcode(Instruction::NOP, AddressingMode::Immediate, 2, 0),
@@ -248,8 +277,10 @@ pub const OPCODES: [Opcode; 256] = [
     Opcode(Instruction::SBC, AddressingMode::Absolute, 4, 0),
     Opcode(Instruction::INC, AddressingMode::Absolute, 6, 0),
     Opcode(Instruction::ISB, AddressingMode::Absolute, 6, 0),
+
+    // 0xF0
     Opcode(Instruction::BEQ, AddressingMode::Relative, 2, 1),
-    Opcode(Instruction::SBC, AddressingMode::IndirectIndexed, 5, 0),
+    Opcode(Instruction::SBC, AddressingMode::IndirectIndexed, 5, 1),
     Opcode(Instruction::JAM, AddressingMode::Implied, 0, 0),
     Opcode(Instruction::ISB, AddressingMode::IndirectIndexed, 8, 0),
     Opcode(Instruction::NOP, AddressingMode::ZeroPageX, 4, 0),
