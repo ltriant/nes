@@ -218,7 +218,7 @@ impl Memory for PPU {
 }
 
 pub struct StepResult {
-    pub vblank_nmi: bool,
+    pub trigger_nmi: bool,
     pub frame_finished: bool,
 }
 
@@ -277,7 +277,7 @@ impl PPU {
             self.nmi_delay -= 1;
 
             if self.nmi_delay == 0 && self.nmi_output && self.nmi_occurred {
-                res.vblank_nmi = true;
+                res.trigger_nmi = true;
             }
         }
 
@@ -654,7 +654,7 @@ impl PPU {
         //   The first 256 dots are displayable (i.e. the NES is _256_ x 240)
 
         let mut res = StepResult{
-            vblank_nmi: false,
+            trigger_nmi: false,
             frame_finished: false,
         };
 
@@ -662,10 +662,10 @@ impl PPU {
 
         // All of this logic has been borrowed from github.com/fogleman/nes
 
-        let pre_line         = self.scanline == 261;
-        let visible_line     = self.scanline <= 239;
-        let render_line      = pre_line || visible_line;
-        let post_render_line = self.scanline == 240;
+        let pre_line          = self.scanline == 261;
+        let visible_line      = self.scanline <= 239;
+        let render_line       = pre_line || visible_line;
+        let _post_render_line = self.scanline == 240;
 
         let pre_fetch_cycle = self.dot >= 321 && self.dot <= 336;
         let visible_cycle   = self.dot >= 1   && self.dot <= 256;
@@ -739,28 +739,20 @@ impl PPU {
         // vblank logic
         if self.scanline == 241 && self.dot == 1 {
             debug!("vblank started");
-            self.status.set_vblank();
 
             self.nmi_occurred = true;
             self.nmi_change();
-
-            if self.ctrl.generate_nmi() {
-                // TODO
-                //res.vblank_nmi = true;
-            }
-
-            res.frame_finished = true;
 
             if *NES_PPU_DEBUG {
                 self.render_palettes(canvas);
             }
 
+            res.frame_finished = true;
             return res;
         }
 
         if pre_line && self.dot == 1 {
             debug!("vblank ended");
-            self.status.clear_vblank();
             self.status.clear_sprite_zero_hit();
             self.status.clear_sprite_overflow();
 

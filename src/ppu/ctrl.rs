@@ -15,6 +15,7 @@ impl SpriteSize {
 }
 
 impl PPUCtrl {
+    #[allow(dead_code)]
     pub fn generate_nmi(&self) -> bool {
         let PPUCtrl(val) = *self;
 

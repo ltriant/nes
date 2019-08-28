@@ -2,22 +2,26 @@ pub struct PPUStatus(pub u8);
 
 impl PPUStatus {
     // Vertical blank status
+    #[allow(dead_code)]
     pub fn vblank_started(&self) -> bool {
         let &PPUStatus(val) = self;
         (val & 0x80) != 0
     }
 
+    #[allow(dead_code)]
     pub fn set_vblank(&mut self) {
         let PPUStatus(old) = *self;
         *self = PPUStatus(old | 0x80);
     }
 
+    #[allow(dead_code)]
     pub fn clear_vblank(&mut self) {
         let PPUStatus(old) = *self;
         *self = PPUStatus(old & !0x80);
     }
 
     // Sprite zero hit status
+    #[allow(dead_code)]
     pub fn sprite_zero_hit(&self) -> bool {
         let &PPUStatus(val) = self;
         (val & 0x40) != 0
@@ -34,6 +38,7 @@ impl PPUStatus {
     }
 
     // Sprite overflow status
+    #[allow(dead_code)]
     pub fn sprite_overflow(&self) -> bool {
         let &PPUStatus(val) = self;
         (val & 0x20) != 0

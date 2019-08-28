@@ -29,7 +29,6 @@ lazy_static!{
     };
 }
 
-const CYCLES_PER_SCANLINE: u64 = 1364 / 12;
 const NES_FPS: u64 = 60;
 const FRAME_DURATION: Duration = Duration::from_millis((1 / NES_FPS) * 1_000);
 
@@ -103,7 +102,7 @@ impl Console {
             for _ in 0 .. ppu_cycles {
                 let res = self.cpu.mem.ppu.step(&mut self.canvas);
 
-                if res.vblank_nmi {
+                if res.trigger_nmi {
                     self.cpu.trigger_nmi();
                 }
 

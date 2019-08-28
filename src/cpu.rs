@@ -8,6 +8,7 @@ use crate::opcode::{Opcode, OPCODES};
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: u64 = 341;
 
+#[allow(dead_code)]
 enum Interrupt {
     NMI,
     IRQ,
@@ -251,7 +252,7 @@ impl CPU {
             }
         }
 
-        let mut n_cycles = self.cycles;
+        let start_cycles = self.cycles;
 
         if let Some(interrupt) = &self.interrupt {
             match interrupt {
@@ -296,7 +297,7 @@ impl CPU {
                    opcode);
         }
 
-        self.cycles - n_cycles
+        self.cycles - start_cycles
     }
 
     //
