@@ -48,11 +48,17 @@ Some limited graphical debugging information can be displayed by toggling the `N
 $ NES_PPU_DEBUG=1 cargo run --release -- roms/donkey_kong.nes
 ```
 
-In order to run the nestest ROM, full CPU debugging output can be printed to standard output by toggling the `NES_CPU_DEBUG` environment variable. This will start the program counter at 0xc000 for automating the nestest tests.
+To get full CPU debugging output printed to standard output, the `NES_CPU_DEBUG` environment variable can be toggled.
 
 ```
-$ NES_CPU_DEBUG=1 cargo run -- roms/nestest.nes
+$ NES_CPU_DEBUG=1 cargo run -- roms/donkey_kong.nes
+``` 
+
+In order to run the nestest ROM, the CPU debugging output can be combined with the `NES_CPU_NESTEST` environment variable to also start the program counter at 0xc000.
+
 ```
+$ NES_CPU_NESTEST=1 NES_CPU_DEBUG=1 cargo run -- roms/nestest.nes
+``` 
 
 ## Controller 1 Keys
 

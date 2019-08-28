@@ -23,6 +23,11 @@ lazy_static!{
         Err(_)  => false,
     };
 
+    pub static ref NES_CPU_NESTEST: bool = match env::var("NES_CPU_NESTEST") {
+        Ok(val) => val != "" && val != "0",
+        Err(_)  => false,
+    };
+
     pub static ref NES_PPU_DEBUG: bool = match env::var("NES_PPU_DEBUG") {
         Ok(val) => val != "" && val != "0",
         Err(_)  => false,

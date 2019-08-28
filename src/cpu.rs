@@ -1,6 +1,6 @@
 use std::process;
 
-use crate::console::NES_CPU_DEBUG;
+use crate::console::{NES_CPU_DEBUG, NES_CPU_NESTEST};
 use crate::addr::AddressingMode;
 use crate::mem::{Memory, NESMemory};
 use crate::opcode::{Opcode, OPCODES};
@@ -95,7 +95,7 @@ impl CPU {
         let lo = self.read(0xFFFC).expect("low PC byte") as u16;
         let hi = self.read(0xFFFD).expect("high PC byte") as u16;
         let addr = (hi << 8) | lo;
-        self.pc = if *NES_CPU_DEBUG { 0xc000 } else { addr };
+        self.pc = if *NES_CPU_NESTEST { 0xc000 } else { addr };
         debug!("PC: 0x{:04X}", self.pc);
 
         self.set_flags(0x24);
