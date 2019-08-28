@@ -687,7 +687,12 @@ impl CPU {
     // Illegal instructions
     //
 
-    pub fn anc(&mut self) { }
+    pub fn anc(&mut self, val: u8) {
+        let a = self.a & val;
+        self.a = a;
+        self.update_sz(a);
+        self.c = (a as i8) < 0;
+    }
 
     pub fn lax(&mut self, val: u8) {
         self.a = val;

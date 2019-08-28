@@ -76,7 +76,7 @@ impl Instruction {
     pub fn run(&self, cpu: &mut CPU, addr: u16, val: u8, addr_mode: &AddressingMode) {
         match *self {
             Instruction::ADC => cpu.adc(val),
-            Instruction::ANC => cpu.anc(),
+            Instruction::ANC => cpu.anc(val),
             Instruction::AND => cpu.and(val),
             Instruction::ASL => cpu.asl(addr, val, addr_mode),
             Instruction::BCC => cpu.bcc(addr),
