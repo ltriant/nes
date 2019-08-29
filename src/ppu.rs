@@ -2,8 +2,6 @@ mod ctrl;
 mod mask;
 mod status;
 mod oam;
-mod scroll;
-mod addr;
 mod data;
 
 use crate::console::NES_PPU_DEBUG;
@@ -12,8 +10,6 @@ use crate::mem::Memory;
 use crate::ppu::ctrl::PPUCtrl;
 use crate::ppu::mask::PPUMask;
 use crate::ppu::status::PPUStatus;
-use crate::ppu::scroll::PPUScroll;
-use crate::ppu::addr::PPUAddr;
 use crate::ppu::oam::OAM;
 use crate::ppu::data::{PPUData, PALETTE_ADDRESSES};
 
@@ -28,8 +24,7 @@ pub struct PPU {
     status: PPUStatus,
     oam_addr: u8,
     oam: OAM,
-    scroll: PPUScroll,
-    ppu_addr: PPUAddr,
+    ppu_addr: u16,
     data: PPUData,
 
     // State for frame timing
@@ -59,13 +54,17 @@ pub struct PPU {
     nmi_previous: bool,
     nmi_delay: usize,
 
-    // Scrolling registers
+    // PPUSCROLL registers
     t: u16,
     x: u8,
     w: bool,
 
     // PPUDATA read buffer
     buffered_data: u8,
+
+    // The last written value to any PPU register
+    // For use when reading the PPUSTATUS
+    last_value: u8,
 }
 
 impl Memory for PPU {
@@ -84,9 +83,11 @@ impl Memory for PPU {
             0x2002 => {
                 let PPUStatus(mut n) = self.status;
 
-                // reset the latch
-                self.scroll.reset_latch();
-                self.ppu_addr.reset_latch();
+                // Whatever the last value was written to the PPU (to any
+                // register), set the first 5 bits of the PPUSTATUS value to
+                // the first 5 bits of _that_ last value.
+                n &= ! 0x1f;
+                n |= self.last_value & 0x1f;
 
                 if self.nmi_occurred {
                     n |= 1 << 7;
@@ -104,18 +105,18 @@ impl Memory for PPU {
             0x2005 => Ok(0), // PPUSCROLL is write-only
             0x2006 => Ok(0), // PPUADDR is write-only
             0x2007 => {
-                let rv = self.data.read(self.ppu_addr.val)?;
+                let rv = self.data.read(self.ppu_addr)?;
 
-                //self.ppu_addr.increment(self.ctrl.vram_addr_increment());
+                //self.ppu_addr += self.ctrl.vram_addr_increment();
 
                 // Emulate 1-byte delayed read
-                if self.ppu_addr.val % 0x4000 <= 0x3eff {
+                if self.ppu_addr % 0x4000 <= 0x3eff {
                     let buffered = self.buffered_data;
                     self.buffered_data = rv;
                     Ok(buffered)
                 }
                 else {
-                    self.buffered_data = self.data.read(self.ppu_addr.val)?;
+                    self.buffered_data = self.data.read(self.ppu_addr)?;
                     Ok(rv)
                 }
 
@@ -125,17 +126,11 @@ impl Memory for PPU {
     }
 
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+        self.last_value = val;
+
         match address {
             0x2000 => {
                 self.ctrl = PPUCtrl(val);
-
-                if (val & 0x01) != 0 {
-                    self.scroll.incr_x();
-                }
-
-                if (val & 0x02) != 0 {
-                    self.scroll.incr_y();
-                }
 
                 // t: ...BA.. ........ = d: ......BA
                 self.t = (self.t & 0xf3ff)
@@ -161,15 +156,13 @@ impl Memory for PPU {
                 Ok(val)
             },
             0x2005 => {
-                self.scroll.write(val);
-
                 if self.w {
                     // t: CBA..HG FED..... = d: HGFEDCBA
                     // w:                  = 0
                     self.t = (self.t & 0x8fff)
                            | (((val as u16) & 0x07) << 12);
                     self.t = (self.t & 0xfc1f)
-                           | (((val as u16) & 0xF8) << 2);
+                           | (((val as u16) & 0xf8) << 2);
                     self.w = false;
                 }
                 else {
@@ -185,15 +178,13 @@ impl Memory for PPU {
                 Ok(val)
             },
             0x2006 => {
-                self.ppu_addr.write(val);
-
                 if self.w {
                     // t: ....... HGFEDCBA = d: HGFEDCBA
                     // v                   = t
                     // w:                  = 0
                     self.t = (self.t & 0xff00)
                            | (val as u16);
-                    self.ppu_addr.val = self.t;
+                    self.ppu_addr = self.t;
                     self.w = false;
                 }
                 else {
@@ -208,8 +199,8 @@ impl Memory for PPU {
                 Ok(val)
             },
             0x2007 => {
-                let rv = self.data.write(self.ppu_addr.val, val)?;
-                self.ppu_addr.increment(self.ctrl.vram_addr_increment());
+                let rv = self.data.write(self.ppu_addr, val)?;
+                self.ppu_addr += self.ctrl.vram_addr_increment();
                 Ok(rv)
             },
             _ => panic!("bad PPU address 0x{:04X}", address)
@@ -230,8 +221,7 @@ impl PPU {
             status: PPUStatus(0),
             oam: OAM::new_nes_oam(),
             oam_addr: 0,
-            scroll: PPUScroll::new_ppu_scroll(),
-            ppu_addr: PPUAddr::new_ppu_addr(),
+            ppu_addr: 0,
             data: PPUData::new_ppu_data(),
 
             dot: 0,
@@ -261,6 +251,8 @@ impl PPU {
             w: false,
 
             buffered_data: 0,
+
+            last_value: 0,
         }
     }
 
@@ -314,16 +306,16 @@ impl PPU {
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling
 
         // if coarse X == 31
-        if self.ppu_addr.val & 0x001f == 31 {
+        if self.ppu_addr & 0x001f == 31 {
             // coarse X = 0
-            self.ppu_addr.val &= !0x001f;
+            self.ppu_addr &= !0x001f;
 
             // switch horizontal nametable
-            self.ppu_addr.val ^= 0x0400;
+            self.ppu_addr ^= 0x0400;
         }
         else {
             // increment coarse X
-            self.ppu_addr.val += 1;
+            self.ppu_addr += 1;
         }
     }
 
@@ -331,23 +323,23 @@ impl PPU {
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling
 
         // if fine Y < 7
-        if self.ppu_addr.val & 0x7000 != 0x7000 {
+        if self.ppu_addr & 0x7000 != 0x7000 {
             // increment fine Y
-            self.ppu_addr.val += 0x1000;
+            self.ppu_addr += 0x1000;
         }
         else {
             // fine Y = 0
-            self.ppu_addr.val &= !0x7000;
+            self.ppu_addr &= !0x7000;
 
             // let y = coarse Y
-            let mut y = (self.ppu_addr.val & 0x03e0) >> 5;
+            let mut y = (self.ppu_addr & 0x03e0) >> 5;
 
             if y == 29 {
                 // coarse Y = 0
                 y = 0;
 
                 // switch vertical nametable
-                self.ppu_addr.val ^= 0x0800;
+                self.ppu_addr ^= 0x0800;
             }
             else if y == 31 {
                 // coarse Y = 0, nametable not switched
@@ -359,8 +351,7 @@ impl PPU {
             }
 
             // put coarse Y back into v
-            self.ppu_addr.val = (self.ppu_addr.val & !0x03e0)
-                              | (y << 5);
+            self.ppu_addr = (self.ppu_addr & !0x03e0) | (y << 5);
         }
     }
 
@@ -555,7 +546,7 @@ impl PPU {
     }
 
     fn fetch_nametable_byte(&mut self) -> u8 {
-        let v = self.ppu_addr.val;
+        let v = self.ppu_addr;
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
         let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
         debug!("fetching NT byte from 0x{:04X}", addr);
@@ -563,7 +554,7 @@ impl PPU {
     }
 
     fn fetch_attrtable_byte(&mut self) -> u8 {
-        let v = self.ppu_addr.val;
+        let v = self.ppu_addr;
 
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
         let addr = 0x23c0
@@ -579,7 +570,7 @@ impl PPU {
     }
 
     fn fetch_low_tile_byte(&mut self) -> u8 {
-        let fine_y = (self.ppu_addr.val >> 12) & 0x07;
+        let fine_y = (self.ppu_addr >> 12) & 0x07;
         let tile = self.nametable_byte as u16;
         let addr = self.ctrl.background_pattern_table_addr()
             + fine_y
@@ -590,7 +581,7 @@ impl PPU {
     }
 
     fn fetch_high_tile_byte(&mut self) -> u8 {
-        let fine_y = (self.ppu_addr.val >> 12) & 0x07;
+        let fine_y = (self.ppu_addr >> 12) & 0x07;
         let tile = self.nametable_byte as u16;
         let addr = self.ctrl.background_pattern_table_addr()
             + fine_y
@@ -704,8 +695,8 @@ impl PPU {
 
             if pre_line && self.dot >= 280 && self.dot <= 304 {
                 // v: IHGF.ED CBA..... = t: IHGF.ED CBA.....
-                self.ppu_addr.val = (self.ppu_addr.val & 0x841f)
-                                  | (self.t & 0x7be0);
+                self.ppu_addr = (self.ppu_addr & 0x841f)
+                              | (self.t & 0x7be0);
             }
 
             if render_line {
@@ -719,8 +710,8 @@ impl PPU {
 
                 if self.dot == 257 {
                     // v: ....F.. ...EDCBA = t: ....F.. ...EDCBA
-                    self.ppu_addr.val = (self.ppu_addr.val & 0xfbe0)
-                                      | (self.t & 0x041f);
+                    self.ppu_addr = (self.ppu_addr & 0xfbe0)
+                                  | (self.t & 0x041f);
                 }
             }
         }
