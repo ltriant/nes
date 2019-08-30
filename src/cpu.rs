@@ -476,8 +476,7 @@ impl CPU {
         let val = self.read(addr).expect("DEC addr");
         let n = val.wrapping_sub(1);
         self.update_sz(n);
-        self.write(addr, n)
-            .expect("DEC failed");
+        self.write(addr, n).expect("DEC failed");
     }
 
     pub fn dex(&mut self) {
@@ -502,8 +501,7 @@ impl CPU {
     pub fn inc(&mut self, addr: u16) {
         let val = self.read(addr).expect("INC addr");
         let n = val.wrapping_add(1);
-        self.write(addr, n)
-            .expect("INC failed");
+        self.write(addr, n).expect("INC failed");
         self.update_sz(n);
     }
 
@@ -670,18 +668,15 @@ impl CPU {
     }
 
     pub fn sta(&mut self, addr: u16) {
-        self.write(addr, self.a)
-            .expect("STA failed");
+        self.write(addr, self.a).expect("STA failed");
     }
 
     pub fn stx(&mut self, addr: u16) {
-        self.write(addr, self.x)
-            .expect("STX failed");
+        self.write(addr, self.x).expect("STX failed");
     }
 
     pub fn sty(&mut self, addr: u16) {
-        self.write(addr, self.y)
-            .expect("STY failed");
+        self.write(addr, self.y).expect("STY failed");
     }
 
     pub fn tax(&mut self) {
@@ -739,19 +734,17 @@ impl CPU {
 
     pub fn sax(&mut self, addr: u16) {
         let val = self.x & self.a;
-        self.write(addr, val)
-            .expect("SAX failed");
+        self.write(addr, val).expect("SAX failed");
     }
 
     pub fn dcp(&mut self, addr: u16) {
+        // Copied from dec
         let val = self.read(addr).expect("DCP addr");
-        // dec value
         let n = val.wrapping_sub(1);
         self.update_sz(n);
-        self.write(addr, n)
-            .expect("DEC failed");
+        self.write(addr, n).expect("DCP failed");
 
-        // cmp with A register
+        // Copied from cmp
         let n = self.a.wrapping_sub(n);
         self.c = self.a >= n;
         self.update_sz(n);
