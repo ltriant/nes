@@ -71,7 +71,8 @@ impl Memory for PPU {
     fn read(&mut self, address: u16) -> Result<u8, String> {
         // The PPU registers exist from 0x2000 to 0x2007, the rest of the
         // address space is just a mirror of these first eight bytes.
-        match address % 8 + 0x2000 {
+        let address = address % 8 + 0x2000;
+        match address {
             0x2000 => {
                 let PPUCtrl(n) = self.ctrl;
                 Ok(n)
@@ -105,21 +106,24 @@ impl Memory for PPU {
             0x2005 => Ok(0), // PPUSCROLL is write-only
             0x2006 => Ok(0), // PPUADDR is write-only
             0x2007 => {
-                let rv = self.data.read(self.ppu_addr)?;
-
-                //self.ppu_addr += self.ctrl.vram_addr_increment();
+                let rv;
 
                 // Emulate 1-byte delayed read
+                // Palette reads aren't buffered
                 if self.ppu_addr % 0x4000 <= 0x3eff {
-                    let buffered = self.buffered_data;
-                    self.buffered_data = rv;
-                    Ok(buffered)
+                    rv = self.buffered_data;
+                    self.buffered_data = self.data.read(self.ppu_addr)?;
                 }
                 else {
-                    self.buffered_data = self.data.read(self.ppu_addr)?;
-                    Ok(rv)
+                    // TODO why do we subtract 0x1000 ?
+                    self.buffered_data = self.data.read(self.ppu_addr - 0x1000)?;
+                    rv = self.data.read(self.ppu_addr)?;
                 }
 
+                self.ppu_addr = self.ppu_addr.wrapping_add(
+                    self.ctrl.vram_addr_increment());
+
+                Ok(rv)
             },
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
@@ -128,6 +132,7 @@ impl Memory for PPU {
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
         self.last_value = val;
 
+        let address = address % 8 + 0x2000;
         match address {
             0x2000 => {
                 self.ctrl = PPUCtrl(val);
@@ -200,7 +205,8 @@ impl Memory for PPU {
             },
             0x2007 => {
                 let rv = self.data.write(self.ppu_addr, val)?;
-                self.ppu_addr += self.ctrl.vram_addr_increment();
+                self.ppu_addr = self.ppu_addr.wrapping_add(
+                    self.ctrl.vram_addr_increment());
                 Ok(rv)
             },
             _ => panic!("bad PPU address 0x{:04X}", address)
