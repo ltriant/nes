@@ -50,7 +50,7 @@ impl Memory for NESMemory {
             0x4017            => Ok(0),
 
             // Expansion ROM
-            //0x4000 ... 0x5fff => Ok(0),
+            0x4020 ... 0x5fff => Ok(0),
 
             // SRAM
             0x6000 ... 0x7fff => Ok(self.sram[address as usize % 0x2000]),
@@ -95,6 +95,9 @@ impl Memory for NESMemory {
 
             // Controller 2
             0x4017            => Ok(0),
+
+            // Expansion ROM
+            0x4020 ... 0x5fff => Ok(0),
 
             // SRAM
             0x6000 ... 0x7fff => {
