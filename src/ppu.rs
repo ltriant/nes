@@ -532,7 +532,9 @@ impl PPU {
                         self.status.set_sprite_zero_hit();
                     }
 
-                    if self.sprite_priorities[i] == 0 {
+                    // If the background is the "transparent" color, or if the
+                    // sprite is shown in front of the background
+                    if background == 0 || self.sprite_priorities[i] == 0 {
                         sprite as u16 | 0x10
                     }
                     else {
