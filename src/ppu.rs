@@ -367,9 +367,9 @@ impl PPU {
         }
 
         let tile_data = self.fetch_tile_data() >> ((7 - self.x) * 4);
-        let pixel = (tile_data & 0x0f) as u8;
+        let color = (tile_data & 0x0f) as u8;
 
-        Some(pixel)
+        Some(color)
     }
 
     fn sprite_pixel(&self) -> Option<(usize, u8)> {
@@ -499,49 +499,44 @@ impl PPU {
         let x = self.dot - 1;
         let y = self.scanline;
 
-        let background = self.background_pixel();
-        let sprite     = self.sprite_pixel();
+        let mut background  = self.background_pixel().unwrap_or(0);
+        let     (i, sprite) = self.sprite_pixel().unwrap_or((0, 0));
+        let mut sprite = sprite;
 
-        let address_low_nyb = match (background, sprite) {
-            (None, None) => 0,
-            (Some(background), None) => {
-                if x < 8 && !self.mask.show_background_leftmost() {
-                    0
+        if x < 8 && !self.mask.show_background_leftmost() {
+            background = 0;
+        }
+
+        if x < 8 && !self.mask.show_sprites_leftmost() {
+            sprite = 0;
+        }
+
+        // https://wiki.nesdev.com/w/index.php/PPU_palettes#The_background_palette_hack
+        // Palette addresses $3f04, $3f08, and $3f0c should retrieve the
+        // transparent background value at $3f00
+        let b = background % 4 != 0;
+        let s = sprite % 4 != 0;
+
+        let address_low_nyb = match (b, s) {
+            (false, false) => 0,
+            (false, true) => {
+                sprite as u16 | 0x10
+            },
+            (true, false) => {
+                background as u16
+            },
+            (true, true) => {
+                if self.sprite_indexes[i] == 0 && x < 255 {
+                    self.status.set_sprite_zero_hit();
+                }
+
+                if self.sprite_priorities[i] == 0 {
+                    sprite as u16 | 0x10
                 }
                 else {
                     background as u16
                 }
             },
-            (None, Some((_, sprite))) => {
-                if x < 8 && !self.mask.show_sprites_leftmost() {
-                    0
-                }
-                else {
-                    sprite as u16 | 0x10
-                }
-            },
-            (Some(background), Some((i, sprite))) => {
-                if x < 8 && !self.mask.show_sprites_leftmost() {
-                    0
-                }
-                else if x < 8 && !self.mask.show_background_leftmost() {
-                    0
-                }
-                else {
-                    if self.sprite_indexes[i] == 0 && x < 255 && background != 0 {
-                        self.status.set_sprite_zero_hit();
-                    }
-
-                    // If the background is the "transparent" color, or if the
-                    // sprite is shown in front of the background
-                    if background == 0 || self.sprite_priorities[i] == 0 {
-                        sprite as u16 | 0x10
-                    }
-                    else {
-                        background as u16
-                    }
-                }
-            }
         };
 
         // Set the base palette address
