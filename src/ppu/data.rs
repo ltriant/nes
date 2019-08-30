@@ -40,20 +40,15 @@ impl Memory for PPUData {
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
         let address = address % 0x4000;
         match address {
-            0 ... 0x1fff => {
+            0x0000 ... 0x1fff => {
                 //debug!("writing to CHR-ROM");
                 let len = self.chr_rom.len();
                 self.chr_rom[address as usize % len] = val;
                 Ok(val)
             },
-            0x2000 ... 0x2fff => {
+            0x2000 ... 0x3eff => {
                 debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
-                self.nametables[address as usize - 0x2000] = val;
-                Ok(val)
-            },
-            0x3000 ... 0x3eff => {
-                debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
-                self.nametables[address as usize - 0x3000] = val;
+                self.nametables[address as usize % 0x1000] = val;
                 Ok(val)
             },
             0x3f00 ... 0x3fff => {
