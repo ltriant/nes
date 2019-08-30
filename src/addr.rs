@@ -52,16 +52,14 @@ impl AddressingMode {
             .collect::<Vec<_>>()
     }
 
-    pub fn get_data(&self, cpu: &mut CPU) -> Result<(u16, u8, bool), ()> {
+    pub fn get_data(&self, cpu: &mut CPU) -> Result<(u16, bool), ()> {
         // At this point, cpu.pc points to the next instruction.
         let pc = cpu.pc - self.n_bytes().unwrap() as u16;
 
         match *self {
             AddressingMode::Immediate => {
                 let addr = pc + 1;
-                let val = cpu.mem.read(addr)
-                    .expect("Immediate val");
-                Ok((addr, val, false))
+                Ok((addr, false))
             },
             AddressingMode::Absolute => {
                 let lo = cpu.mem.read(pc + 1)
@@ -69,18 +67,14 @@ impl AddressingMode {
                 let hi = cpu.mem.read(pc + 2)
                     .expect("Absolute arg 2") as u16;
                 let addr = (hi << 8) | lo;
-                let val = cpu.mem.read(addr)
-                    .expect("Absolute addr");
-                Ok((addr, val, false))
+                Ok((addr, false))
             },
-            AddressingMode::Implied => Ok((0, 0, false)),
-            AddressingMode::Accumulator => Ok((0, cpu.a, false)),
+            AddressingMode::Implied => Ok((0, false)),
+            AddressingMode::Accumulator => Ok((0, false)),
             AddressingMode::ZeroPageIndexed => {
                 let addr = cpu.mem.read(pc + 1)
                     .expect("ZeroPageIndexed arg") as u16;
-                let val = cpu.mem.read(addr)
-                    .expect("ZeroPageIndexed addr");
-                Ok((addr, val, false))
+                Ok((addr, false))
             },
             AddressingMode::Relative => {
                 let offset = cpu.mem.read(pc + 1)
@@ -91,7 +85,7 @@ impl AddressingMode {
                 // being executed. I don't know why though?
 
                 // All of this casting is to handle negative offsets
-                Ok((((cpu.pc as i16) + (offset as i8 as i16)) as u16, 0, false))
+                Ok((((cpu.pc as i16) + (offset as i8 as i16)) as u16, false))
             },
             AddressingMode::AbsoluteX => {
                 let lo = cpu.mem.read(pc + 1)
@@ -100,9 +94,7 @@ impl AddressingMode {
                     .expect("AbsoluteX arg 2") as u16;
                 let addr = (hi << 8) | lo;
                 let n_addr = addr.wrapping_add(cpu.x as u16);
-                let val = cpu.mem.read(n_addr)
-                    .expect("AbsoluteX addr");
-                Ok((n_addr, val, pages_differ(addr, n_addr)))
+                Ok((n_addr, pages_differ(addr, n_addr)))
             },
             AddressingMode::AbsoluteY => {
                 let lo = cpu.mem.read(pc + 1)
@@ -111,9 +103,7 @@ impl AddressingMode {
                     .expect("AbsoluteY arg 2") as u16;
                 let addr = (hi << 8) | lo;
                 let n_addr = addr.wrapping_add(cpu.y as u16);
-                let val = cpu.mem.read(n_addr)
-                    .expect("AbsoluteY addr");
-                Ok((n_addr, val, pages_differ(addr, n_addr)))
+                Ok((n_addr, pages_differ(addr, n_addr)))
             },
             AddressingMode::Indirect => {
                 let lo = cpu.mem.read(pc + 1)
@@ -136,26 +126,20 @@ impl AddressingMode {
                     };
 
                 let addr = (hi << 8) | lo;
-                let val = cpu.mem.read(addr)
-                    .expect("Indirect addr val");
 
-                Ok((addr, val, false))
+                Ok((addr, false))
             }
             AddressingMode::ZeroPageX => {
                 let addr = cpu.mem.read(pc + 1)
                     .expect("ZeroPageX arg 1")
                     .wrapping_add(cpu.x) as u16;
-                let val = cpu.mem.read(addr)
-                    .expect("ZeroPageX addr");
-                Ok((addr, val, false))
+                Ok((addr, false))
             },
             AddressingMode::ZeroPageY => {
                 let addr = cpu.mem.read(pc + 1)
                     .expect("ZeroPageY arg 1")
                     .wrapping_add(cpu.y) as u16;
-                let val = cpu.mem.read(addr)
-                    .expect("ZeroPageY addr");
-                Ok((addr, val, false))
+                Ok((addr, false))
             },
             AddressingMode::IndexedIndirect => {
                 let lo = cpu.mem.read(pc + 1)
@@ -176,9 +160,7 @@ impl AddressingMode {
                     };
 
                 let addr = (hi << 8) | lo;
-                let val = cpu.mem.read(addr)
-                    .expect("IndexedIndirect val");
-                Ok((addr, val, false))
+                Ok((addr, false))
             },
             AddressingMode::IndirectIndexed => {
                 let addr = cpu.mem.read(pc + 1)
@@ -200,10 +182,7 @@ impl AddressingMode {
                 let addr = (hi << 8) | lo;
                 let n_addr = addr.wrapping_add(cpu.y as u16);
 
-                let val = cpu.mem.read(n_addr)
-                    .expect("IndirectIndexed val");
-
-                Ok((n_addr, val, pages_differ(addr, n_addr)))
+                Ok((n_addr, pages_differ(addr, n_addr)))
             },
             _ => Err(())
         }

@@ -278,8 +278,8 @@ impl CPU {
             self.pc += bytes as u16;
             self.cycles += cycles as u64;
 
-            if let Ok((addr, val, page_crossed)) = addr_mode.get_data(self) {
-                inst.run(self, addr, val, addr_mode);
+            if let Ok((addr, page_crossed)) = addr_mode.get_data(self) {
+                inst.run(self, addr, addr_mode);
 
                 if page_crossed {
                     self.cycles += extra_cycles as u64;
@@ -304,7 +304,8 @@ impl CPU {
     // Legal instructions
     //
 
-    pub fn adc(&mut self, val: u8) {
+    pub fn adc(&mut self, addr: u16) {
+        let val = self.read(addr).expect("ADC addr");
         let n = (val as u16) + (self.a as u16) + (self.c as u16);
 
         let a = (n & 0xff) as u8;
@@ -321,13 +322,19 @@ impl CPU {
         self.a = a;
     }
 
-    pub fn and(&mut self, val: u8) {
+    pub fn and(&mut self, addr: u16) {
+        let val = self.read(addr).expect("AND addr");
         self.a &= val;
         let a = self.a;
         self.update_sz(a);
     }
 
-    pub fn asl(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+    pub fn asl(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        let val = match addr_mode {
+            AddressingMode::Accumulator => self.a,
+            _ => self.read(addr).expect("ASL addr"),
+        };
+
         self.c = val & 0x80 != 0;
         let n = (val << 1) & 0xff;
 
@@ -363,7 +370,8 @@ impl CPU {
         }
     }
 
-    pub fn bit(&mut self, val: u8) {
+    pub fn bit(&mut self, addr: u16) {
+        let val = self.read(addr).expect("BIT addr");
         self.s = val & 0x80 != 0;
         self.v = (val >> 0x06 & 0x01) == 1;
         let f = self.a & val;
@@ -443,25 +451,29 @@ impl CPU {
         self.v = false;
     }
 
-    pub fn cmp(&mut self, val: u8) {
+    pub fn cmp(&mut self, addr: u16) {
+        let val = self.read(addr).expect("CMP addr");
         let n = self.a.wrapping_sub(val);
         self.c = self.a >= val;
         self.update_sz(n);
     }
 
-    pub fn cpx(&mut self, val: u8) {
+    pub fn cpx(&mut self, addr: u16) {
+        let val = self.read(addr).expect("CPX addr");
         let n = self.x.wrapping_sub(val);
         self.update_sz(n);
         self.c = self.x >= val;
     }
 
-    pub fn cpy(&mut self, val: u8) {
+    pub fn cpy(&mut self, addr: u16) {
+        let val = self.read(addr).expect("CPY addr");
         let n = self.y.wrapping_sub(val);
         self.update_sz(n);
         self.c = self.y >= val;
     }
 
-    pub fn dec(&mut self, addr: u16, val: u8) {
+    pub fn dec(&mut self, addr: u16) {
+        let val = self.read(addr).expect("DEC addr");
         let n = val.wrapping_sub(1);
         self.update_sz(n);
         self.write(addr, n)
@@ -480,13 +492,15 @@ impl CPU {
         self.update_sz(n);
     }
 
-    pub fn eor(&mut self, val: u8) {
+    pub fn eor(&mut self, addr: u16) {
+        let val = self.read(addr).expect("EOR addr");
         let val = val ^ self.a;
         self.a = val;
         self.update_sz(val);
     }
 
-    pub fn inc(&mut self, addr: u16, val: u8) {
+    pub fn inc(&mut self, addr: u16) {
+        let val = self.read(addr).expect("INC addr");
         let n = val.wrapping_add(1);
         self.write(addr, n)
             .expect("INC failed");
@@ -515,22 +529,30 @@ impl CPU {
         self.pc = addr;
     }
 
-    pub fn lda(&mut self, val: u8) {
+    pub fn lda(&mut self, addr: u16) {
+        let val = self.read(addr).expect("LDA addr");
         self.a = val;
         self.update_sz(val);
     }
 
-    pub fn ldx(&mut self, val: u8) {
+    pub fn ldx(&mut self, addr: u16) {
+        let val = self.read(addr).expect("LDX addr");
         self.x = val;
         self.update_sz(val);
     }
 
-    pub fn ldy(&mut self, val: u8) {
+    pub fn ldy(&mut self, addr: u16) {
+        let val = self.read(addr).expect("LDY addr");
         self.y = val;
         self.update_sz(val);
     }
 
-    pub fn lsr(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+    pub fn lsr(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        let val = match addr_mode {
+            AddressingMode::Accumulator => self.a,
+            _ => self.read(addr).expect("LSR addr"),
+        };
+
         self.c = val & 0x01 == 1;
         let n = val >> 1;
         self.update_sz(n);
@@ -543,7 +565,8 @@ impl CPU {
 
     pub fn nop(&self) { }
 
-    pub fn ora(&mut self, val: u8) {
+    pub fn ora(&mut self, addr: u16) {
+        let val = self.read(addr).expect("ORA addr");
         let na = self.a | val;
         self.a = na;
         self.update_sz(na);
@@ -574,7 +597,12 @@ impl CPU {
         self.set_flags(p);
     }
 
-    pub fn rol(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+    pub fn rol(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        let val = match addr_mode {
+            AddressingMode::Accumulator => self.a,
+            _ => self.read(addr).expect("ROL addr"),
+        };
+
         let c = self.c;
         self.c = val & 0x80 != 0;
         let n = (val << 1) | (c as u8);
@@ -586,7 +614,12 @@ impl CPU {
         };
     }
 
-    pub fn ror(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
+    pub fn ror(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        let val = match addr_mode {
+            AddressingMode::Accumulator => self.a,
+            _ => self.read(addr).expect("ROR addr"),
+        };
+
         let c = self.c;
         self.c = val & 0x01 == 1;
         let n = (val >> 1) | ((c as u8) << 7);
@@ -611,7 +644,8 @@ impl CPU {
         self.pc = retaddr + 1;
     }
 
-    pub fn sbc(&mut self, val: u8) {
+    pub fn sbc(&mut self, addr: u16) {
+        let val = self.read(addr).expect("SBC addr");
         let n: i8 = (self.a as i8)
             .wrapping_sub(val as i8)
             .wrapping_sub(1 - self.c as i8) ;
@@ -688,14 +722,16 @@ impl CPU {
     // Illegal instructions
     //
 
-    pub fn anc(&mut self, val: u8) {
+    pub fn anc(&mut self, addr: u16) {
+        let val = self.read(addr).expect("ANC addr");
         let a = self.a & val;
         self.a = a;
         self.update_sz(a);
         self.c = (a as i8) < 0;
     }
 
-    pub fn lax(&mut self, val: u8) {
+    pub fn lax(&mut self, addr: u16) {
+        let val = self.read(addr).expect("LAX addr");
         self.a = val;
         self.x = val;
         self.update_sz(val);
@@ -707,7 +743,8 @@ impl CPU {
             .expect("SAX failed");
     }
 
-    pub fn dcp(&mut self, addr: u16, val: u8) {
+    pub fn dcp(&mut self, addr: u16) {
+        let val = self.read(addr).expect("DCP addr");
         // dec value
         let n = val.wrapping_sub(1);
         self.update_sz(n);
@@ -720,40 +757,106 @@ impl CPU {
         self.update_sz(n);
     }
 
-    pub fn isb(&mut self, addr: u16, val: u8) {
-        self.inc(addr, val);
-        let n = self.read(addr)
-            .expect("ISB failed");
-        self.sbc(n);
-        self.c = (n as i8) >= 0;
+    pub fn isb(&mut self, addr: u16) {
+        // Copied from inc
+        let val = self.read(addr).expect("ISB addr");
+        let n = val.wrapping_add(1);
+        self.write(addr, n).expect("ISB failed");
+        self.update_sz(n);
+
+        // Copied from sbc
+        let val = n;
+        let n: i8 = (self.a as i8)
+            .wrapping_sub(val as i8)
+            .wrapping_sub(1 - self.c as i8) ;
+
+        let a = n as u8;
+        self.update_sz(a);
+        self.v = ((self.a ^ val) & 0x80 > 0) && ((self.a ^ n as u8) & 0x80 > 0);
+        self.a = a;
+        self.c = (val as i8) >= 0;
     }
 
-    pub fn slo(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
-        self.asl(addr, val, addr_mode);
-        let val = self.read(addr)
-            .expect("SLO failed");
-        self.ora(val);
+    pub fn slo(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        // Copied from asl
+        let val = self.read(addr).expect("SLO addr");
+        self.c = val & 0x80 != 0;
+        let n = (val << 1) & 0xff;
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.write(addr, n).expect("SLO failed"); }
+        };
+
+        self.update_sz(n);
+
+        // Copied from ora
+        let val = n;
+        let na = self.a | val;
+        self.a = na;
+        self.update_sz(na);
     }
 
-    pub fn rla(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
-        self.rol(addr, val, addr_mode);
-        let val = self.read(addr)
-            .expect("RLA failed");
-        self.and(val);
+    pub fn rla(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        // Copied from rol
+        let val = self.read(addr).expect("RLA addr");
+        let c = self.c;
+        self.c = val & 0x80 != 0;
+        let n = (val << 1) | (c as u8);
+        self.update_sz(n);
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.write(addr, n).expect("RLA failed"); }
+        };
+
+        // Copied from and
+        let val = n;
+        self.a &= val;
+        let a = self.a;
+        self.update_sz(a);
     }
 
-    pub fn sre(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
-        self.lsr(addr, val, addr_mode);
-        let val = self.read(addr)
-            .expect("SRE failed");
-        self.eor(val);
+    pub fn sre(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        // Copied from lsr
+        let val = self.read(addr).expect("SRE addr");
+        self.c = val & 0x01 == 1;
+        let n = val >> 1;
+        self.update_sz(n);
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.write(addr, n).expect("SRE failed"); }
+        };
+
+        // Copied from eor
+        let val = n;
+        let val = val ^ self.a;
+        self.a = val;
+        self.update_sz(val);
     }
 
-    pub fn rra(&mut self, addr: u16, val: u8, addr_mode: &AddressingMode) {
-        self.ror(addr, val, addr_mode);
-        let val = self.read(addr)
-            .expect("RRA failed");
-        self.adc(val);
+    pub fn rra(&mut self, addr: u16, addr_mode: &AddressingMode) {
+        // Copied from ror
+        let val = self.read(addr).expect("RRA addr");
+        let c = self.c;
+        self.c = val & 0x01 == 1;
+        let n = (val >> 1) | ((c as u8) << 7);
+        self.update_sz(n);
+
+        match *addr_mode {
+            AddressingMode::Accumulator => { self.a = n; },
+            _ => { self.write(addr, n).expect("RRA failed"); }
+        };
+
+        // Copied from adc
+        let val = n;
+        let n = (val as u16) + (self.a as u16) + (self.c as u16);
+        let a = (n & 0xff) as u8;
+        self.update_sz(a);
+        self.c = n > 0xff;
+        self.v = ((self.a ^ val) & 0x80 == 0) && ((self.a ^ n as u8) & 0x80 > 0);
+        self.a = a;
     }
 
     pub fn jam(&mut self) {
