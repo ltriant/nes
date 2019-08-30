@@ -10,8 +10,21 @@ impl Memory for OAM {
     }
 
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
-        self.data[address as usize % 0x100] = val;
-        Ok(val)
+        let i = address as usize % 0x100;
+
+        // http://wiki.nesdev.com/w/index.php/PPU_OAM#Byte_2
+        // The three unimplemented bits of each sprite's byte 2 do not exist in
+        // the PPU and always read back as 0 on PPU revisions that allow reading
+        // PPU OAM through OAMDATA ($2004).
+        if i % 4 == 2 {
+            let v = val & 0xe3;
+            self.data[i] = v;
+            Ok(v)
+        }
+        else {
+            self.data[i] = val;
+            Ok(val)
+        }
     }
 }
 
