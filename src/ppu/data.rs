@@ -22,16 +22,16 @@ impl Memory for PPUData {
                 Ok(self.nametables[address as usize % 0x1000])
             }
             0x3f00 ... 0x3fff => {
-                let mut address = address as usize % 0x20;
+                let mut i = address as usize % 0x20;
 
-                match address & 0x00ff {
+                match i & 0x00ff {
                     // Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of
                     // $3F00/$3F04/$3F08/$3F0C
-                    0x10 | 0x14 | 0x18 | 0x1c => { address &= 0xff0f; },
+                    0x10 | 0x14 | 0x18 | 0x1c => { i &= 0xff0f; },
                     _ => { },
                 }
 
-                Ok(self.palette[address])
+                Ok(self.palette[i])
             },
             _ => Err(format!("PPUData out of bounds 0x{:04X}", address))
         }
@@ -58,17 +58,16 @@ impl Memory for PPUData {
             },
             0x3f00 ... 0x3fff => {
                 debug!("writing 0x{:02X} to palette 0x{:04X}", val, address);
+                let mut i = address as usize % 0x20;
 
-                let mut address = address as usize % 0x20;
-
-                match address & 0x00ff {
+                match i & 0x00ff {
                     // Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of
                     // $3F00/$3F04/$3F08/$3F0C
-                    0x10 | 0x14 | 0x18 | 0x1c => { address &= 0xff0f; },
+                    0x10 | 0x14 | 0x18 | 0x1c => { i &= 0xff0f; },
                     _ => { },
                 }
 
-                self.palette[address] = val;
+                self.palette[i] = val;
                 Ok(val)
             },
             _ => Err(format!("PPUData out of bounds 0x{:04X}", address))
