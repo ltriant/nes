@@ -521,15 +521,23 @@ impl PPU {
                 }
             },
             (Some(background), Some((i, sprite))) => {
-                if self.sprite_indexes[i] == 0 && x < 255 {
-                    self.status.set_sprite_zero_hit();
+                if x < 8 && !self.mask.show_sprites_leftmost() {
+                    0
                 }
-
-                if self.sprite_priorities[i] == 0 {
-                    sprite as u16 | 0x10
+                else if x < 8 && !self.mask.show_background_leftmost() {
+                    0
                 }
                 else {
-                    background as u16
+                    if self.sprite_indexes[i] == 0 && x < 255 && background != 0 {
+                        self.status.set_sprite_zero_hit();
+                    }
+
+                    if self.sprite_priorities[i] == 0 {
+                        sprite as u16 | 0x10
+                    }
+                    else {
+                        background as u16
+                    }
                 }
             }
         };
