@@ -43,7 +43,7 @@ pub struct PPU {
     sprite_patterns: [u32; 8],
     sprite_positions: [u8; 8],
     sprite_priorities: [u8; 8],
-    sprite_indexes: [u8; 8],
+    sprite_indexes: [usize; 8],
 
     // Odd/even frame state
     odd_frame: bool,
@@ -462,9 +462,10 @@ impl PPU {
         let mut count = 0;
 
         for i in 0 .. 64 {
-            let y = self.oam.read(i * 4 + 0).unwrap();
-            let a = self.oam.read(i * 4 + 2).unwrap();
-            let x = self.oam.read(i * 4 + 3).unwrap();
+            let sprite = i as u16;
+            let y = self.oam.read(sprite * 4 + 0).unwrap();
+            let a = self.oam.read(sprite * 4 + 2).unwrap();
+            let x = self.oam.read(sprite * 4 + 3).unwrap();
 
             let row: i16 = (self.scanline as i16) - (y as i16);
 
@@ -473,10 +474,10 @@ impl PPU {
             }
 
             if count < 8 {
-                self.sprite_patterns[count] = self.fetch_sprite_pattern(i, row);
+                self.sprite_patterns[count] = self.fetch_sprite_pattern(sprite, row);
                 self.sprite_positions[count] = x;
                 self.sprite_priorities[count] = (a >> 5) & 1;
-                self.sprite_indexes[count] = i as u8;
+                self.sprite_indexes[count] = i;
             }
 
             count += 1;
