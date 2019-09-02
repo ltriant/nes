@@ -123,12 +123,12 @@ impl Console {
             let result = self.cpu.mem.read(0x6000).unwrap();
 
             if result <= 0x7F {
+                let result_string = self.read_string(0x6004).unwrap();
+                println!("{}", result_string);
+
                 println!("Emulator test complete, final status: 0x{:02X}", result);
                 process::exit(0);
             }
-
-            let result_string = self.read_string(0x6004).unwrap();
-            println!("{}", result_string);
         }
     }
 
