@@ -431,13 +431,11 @@ impl PPU {
                 + row as u16;
         }
 
-        let a = (attributes & 3) << 2;
-        let mut low_tile_byte = self.data.read(address).unwrap();
-        let mut high_tile_byte = self.data.read(address + 8).unwrap();
+        let a = ((attributes & 3) << 2) as u32;
+        let mut low_tile_byte = self.data.read(address).unwrap() as u32;
+        let mut high_tile_byte = self.data.read(address + 8).unwrap() as u32;
 
-        let mut data = 0;
-
-        for _ in 0 .. 8 {
+        (0 .. 8).fold(0, |acc, _| {
             let p1;
             let p2;
 
@@ -454,11 +452,8 @@ impl PPU {
                 high_tile_byte <<= 1;
             }
 
-            data <<= 4;
-            data |= (a | p1 | p2) as u32;
-        }
-
-        data
+            (acc << 4) | (a | p1 | p2)
+        } )
     }
 
     fn evaluate_sprites(&mut self) {
