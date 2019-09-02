@@ -759,15 +759,15 @@ impl CPU {
 
         // Copied from sbc
         let val = n;
-        let n: i8 = (self.a as i8)
-            .wrapping_sub(val as i8)
-            .wrapping_sub(1 - self.c as i8) ;
+        let n: i16 = (self.a as i16)
+            .wrapping_sub(val as i16)
+            .wrapping_sub(1 - self.c as i16);
 
         let a = n as u8;
         self.update_sz(a);
         self.v = ((self.a ^ val) & 0x80 > 0) && ((self.a ^ n as u8) & 0x80 > 0);
         self.a = a;
-        self.c = (val as i8) >= 0;
+        self.c = n >= 0;
     }
 
     pub fn slo(&mut self, addr: u16, addr_mode: &AddressingMode) {
