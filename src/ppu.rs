@@ -150,7 +150,7 @@ impl Memory for PPU {
                 self.mask = PPUMask(val);
                 Ok(val)
             },
-            0x2002 => Err(String::from("PPUStatus is readonly")),
+            0x2002 => Ok(0),
             0x2003 => {
                 self.oam_addr = val;
                 Ok(val)
