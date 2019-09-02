@@ -644,9 +644,9 @@ impl CPU {
 
     pub fn sbc(&mut self, addr: u16) {
         let val = self.read(addr).expect("SBC addr");
-        let n: i8 = (self.a as i8)
-            .wrapping_sub(val as i8)
-            .wrapping_sub(1 - self.c as i8) ;
+        let n: i16 = (self.a as i16)
+            .wrapping_sub(val as i16)
+            .wrapping_sub(1 - self.c as i16);
 
         let a = n as u8;
         self.update_sz(a);
