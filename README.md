@@ -39,6 +39,21 @@ The emulator can then be run by supplying the path to the ROM as an argument:
 $ target/release/nes roms/donkey_kong.nes
 ```
 
+## Controller 1 Keys
+
+```
+Up     -- W
+Left   -- A
+Down   -- S
+Right  -- D
+
+A      -- N
+B      -- M
+
+Start  -- Enter
+Select -- Space
+```
+
 ## Debugging Information
 
 Some limited graphical debugging information can be displayed by toggling the `NES_PPU_DEBUG` environment variable. In time this will be enhanced to show more useful stuff.
@@ -58,21 +73,6 @@ In order to run the nestest ROM, the CPU debugging output can be combined with t
 ```
 $ NES_CPU_NESTEST=1 NES_CPU_DEBUG=1 cargo run -- roms/nestest.nes
 ``` 
-
-## Controller 1 Keys
-
-```
-Up     -- W
-Left   -- A
-Down   -- S
-Right  -- D
-
-A      -- N
-B      -- M
-
-Start  -- Enter
-Select -- Space
-```
 
 ## Blog Posts
 
