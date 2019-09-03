@@ -66,6 +66,7 @@ impl PPUCtrl {
         }
     }
 
+    #[allow(dead_code)]
     pub fn base_nametable_addr(&self) -> u16 {
         let PPUCtrl(val) = *self;
 

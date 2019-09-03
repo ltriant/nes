@@ -10,11 +10,10 @@ I've tried to keep the code as simple as possible, in order to facilitate others
 
 Currently, only a subset of the full system has been emulated. The following limitations apply, in order of most likely to be fixed:
 
-1. Scrolling is very buggy
-2. Only NROM (mapper 0) games are supported
-3. No sound
-4. No second controller support
-5. No PAL cartridge support
+1. Only NROM (mapper 0) games are supported
+2. No sound
+3. No second controller support
+4. No PAL cartridge support
 
 ## Building and Running
 

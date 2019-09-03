@@ -555,7 +555,7 @@ impl PPU {
     fn fetch_nametable_byte(&mut self) -> u8 {
         let v = self.ppu_addr;
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
-        let addr = self.ctrl.base_nametable_addr() | (v & 0x0fff);
+        let addr = 0x2000 | (v & 0x0fff);
         debug!("fetching NT byte from 0x{:04X}", addr);
         self.data.read(addr).expect("unable to fetch NT byte")
     }
