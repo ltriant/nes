@@ -35,8 +35,8 @@ lazy_static!{
     };
 }
 
-const NES_FPS: u64 = 60;
-const FRAME_DURATION: Duration = Duration::from_millis((1 / NES_FPS) * 1_000);
+const NES_FPS: f64 = 60.0;
+const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0) as u64);
 
 pub struct Console {
     sdl_ctx: Sdl,
