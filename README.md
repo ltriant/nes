@@ -52,6 +52,8 @@ B      -- M
 
 Start  -- Enter
 Select -- Space
+
+P      -- Pause
 ```
 
 ## Debugging Information

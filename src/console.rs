@@ -138,42 +138,53 @@ impl Console {
         self.cpu.init();
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
-
         let mut fps_start = Instant::now();
+        let mut paused = false;
 
         'running: loop {
+            let mut poll_keyboard = false;
             self.debug_tests();
 
-            let cpu_cycles = self.cpu.step();
-            let ppu_cycles = cpu_cycles * 3;
+            if paused {
+                poll_keyboard = true;
+                thread::sleep(Duration::from_millis(200));
+            }
+            else {
+                let cpu_cycles = self.cpu.step();
+                let ppu_cycles = cpu_cycles * 3;
 
-            let mut frame_finished = false;
-            for _ in 0 .. ppu_cycles {
-                let res = self.cpu.mem.ppu.step(&mut self.canvas);
+                let mut frame_finished = false;
+                for _ in 0 .. ppu_cycles {
+                    let res = self.cpu.mem.ppu.step(&mut self.canvas);
 
-                if res.trigger_nmi {
-                    self.cpu.trigger_nmi();
+                    if res.trigger_nmi {
+                        self.cpu.trigger_nmi();
+                    }
+
+                    if res.frame_finished {
+                        frame_finished = true;
+                    }
                 }
 
-                if res.frame_finished {
-                    frame_finished = true;
+                if frame_finished {
+                    self.canvas.present();
+
+                    if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
+                        debug!("sleeping for {}ms", delay.as_millis());
+                        thread::sleep(delay);
+                    }
+
+                    fps_start = Instant::now();
+
+                    // Polling for events once per loop slows the emulator
+                    // right the fuck down, so I've moved to when a frame has
+                    // finished instead.
+                    poll_keyboard = true;
                 }
+
             }
 
-            if frame_finished {
-                self.canvas.present();
-
-                if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
-                    debug!("sleeping for {}ms", delay.as_millis());
-                    thread::sleep(delay);
-                }
-
-                fps_start = Instant::now();
-
-                // Polling for events once per loop slows the emulator right the
-                // fuck down, so I've moved to when a frame has finished
-                // instead.
-                //
+            if poll_keyboard {
                 // I feel like this shouldn't be so damned slow...
                 for event in event_pump.poll_iter() {
                     match event {
@@ -191,6 +202,8 @@ impl Console {
 
                                 Keycode::N => { self.cpu.mem.controller.a(true) },
                                 Keycode::M => { self.cpu.mem.controller.b(true) },
+
+                                Keycode::P => { paused = ! paused },
 
                                 _ => {},
                             }
