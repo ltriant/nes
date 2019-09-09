@@ -6,6 +6,7 @@ mod controller;
 mod cpu;
 mod opcode;
 mod inst;
+mod mapper;
 mod mem;
 mod ines;
 mod addr;

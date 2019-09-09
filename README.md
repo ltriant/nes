@@ -10,7 +10,7 @@ I've tried to keep the code as simple as possible, in order to facilitate others
 
 Currently, only a subset of the full system has been emulated. The following limitations apply, in order of most likely to be fixed:
 
-1. Only NROM (mapper 0) games are supported
+1. Only NROM (mapper 0) and SxROM (mapper 1) games are supported
 2. No sound
 3. No second controller support
 4. No PAL cartridge support

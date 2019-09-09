@@ -8,7 +8,8 @@ use crate::controller::Controller;
 use crate::cpu::CPU;
 use crate::mem::{Memory, NESMemory};
 use crate::ppu::PPU;
-use crate::ines::{Cartridge, CartridgeError};
+use crate::ines::CartridgeError;
+use crate::ines;
 
 use sdl2::Sdl;
 use sdl2::pixels::Color;
@@ -87,7 +88,7 @@ impl Console {
     {
         info!("loading cartridge: {}", filename);
         let mut fh = File::open(filename).map_err(CartridgeError::IO)?;
-        Cartridge::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
+        ines::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
         Ok(())
     }
 
@@ -160,6 +161,9 @@ impl Console {
                     if res.trigger_nmi {
                         self.cpu.trigger_nmi();
                     }
+
+                    // TODO so ugly
+                    self.cpu.mem.ppu.data.mapper.step();
 
                     if res.frame_finished {
                         frame_finished = true;

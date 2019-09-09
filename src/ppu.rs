@@ -25,7 +25,7 @@ pub struct PPU {
     oam_addr: u8,
     oam: OAM,
     ppu_addr: u16,
-    data: PPUData,
+    pub data: PPUData,
 
     // State for frame timing
     dot: u16,
@@ -260,10 +260,6 @@ impl PPU {
 
             last_value: 0,
         }
-    }
-
-    pub fn load_vrom(&mut self, data: &Vec<u8>) {
-        self.data.load_vrom(data);
     }
 
     fn rendering_enabled(&self) -> bool {
