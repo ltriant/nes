@@ -1,5 +1,6 @@
+use crate::mapper::Mapper0;
+use crate::mapper::Mapper1;
 use crate::mem::NESMemory;
-use crate::mapper::{Mapper0, Mapper1};
 
 use std::fs::File;
 use std::io::Read;
