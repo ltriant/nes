@@ -43,12 +43,20 @@ pub trait Mapper {
 }
 
 
+//
+// This is an empty mapper that implements the Mapper trait, because I need to
+// initialise the mapper to _something_ when I create the Console object.
+//
+
 pub struct MapperEmpty;
 impl Mapper for MapperEmpty {
     fn read(&mut self, _address: u16) -> Result<u8, String> { Ok(0) }
     fn write(&mut self, _address: u16, _val: u8) -> Result<u8, String> { Ok(0) }
 }
 
+//
+// NROM (mapper 0)
+//
 pub struct Mapper0 {
     chr_rom: Vec<u8>,
     prg_rom: Vec<u8>,
@@ -101,6 +109,9 @@ impl Mapper0 {
     }
 }
 
+//
+// SxROM (mapper 1)
+//
 pub struct Mapper1 {
     chr_rom: Vec<u8>,
     prg_rom: Vec<u8>,
