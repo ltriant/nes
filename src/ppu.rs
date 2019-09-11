@@ -537,7 +537,7 @@ impl PPU {
         let palette_index = self.data.read(address)
             .expect("unable to read palette index") % 64;
         let color = PALETTE[palette_index as usize];
-        let rect = Rect::new((x as i32) * 2, (y as i32) * 2, 2, 2);
+        let rect = Rect::new((x as i32) * 3, (y as i32) * 3, 3, 3);
 
         /*
         debug!("color_addr = 0x{:04x}, palette_index = {}, color = {:?}",

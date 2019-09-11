@@ -50,14 +50,14 @@ impl Console {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
-        let mut width = 256 * 2;
+        let mut width = 256 * 3;
 
         if *NES_PPU_DEBUG {
             // Make room for the palettes
             width += 50;
         }
 
-        let height = 240 * 2;
+        let height = 240 * 3;
         let window = video_subsystem.window("nes", width, height)
             .position_centered()
             .build()
