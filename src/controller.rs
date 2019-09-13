@@ -1,3 +1,13 @@
+// Controller code
+//
+// http://wiki.nesdev.com/w/index.php/Standard_controller
+//
+// Essentially there are 8 bits, set to a 1 if the button is pressed down, and
+// set to 0 if not pressed down.
+//
+// bit    |   7   |   6   |   5   |  4   |   3   |   2    |   1   |   0   |
+// button | right | left  | down  |  up  | start | select |   b   |   a   |
+
 use crate::mem::Memory;
 
 pub struct Controller {
@@ -19,7 +29,6 @@ impl Memory for Controller {
             self.index = 0;
         }
 
-        debug!("controller read: {}", value);
         Ok(value)
     }
 
@@ -30,7 +39,6 @@ impl Memory for Controller {
             self.index = 0;
         }
 
-        //debug!("controller write: {}", val);
         Ok(val)
     }
 }

@@ -23,20 +23,20 @@ pub struct CPU {
     pub y: u8,  // Y Index
 
     // Status register flags
-    pub c: bool,  // Carry
-    pub z: bool,  // Zero
-    pub i: bool,  // Interrupt
-    pub d: bool,  // Decimal mode
-    pub b: bool,  // Software interrupt (BRK)
-    pub u: bool,  // Unused flag
-    pub v: bool,  // Overflow
-    pub s: bool,  // Sign
+    c: bool,  // Carry
+    z: bool,  // Zero
+    i: bool,  // Interrupt
+    d: bool,  // Decimal mode
+    b: bool,  // Software interrupt (BRK)
+    u: bool,  // Unused flag
+    v: bool,  // Overflow
+    s: bool,  // Sign
 
     // Program counter
     pub pc: u16,
 
     // Stack pointer
-    pub sp: u8,
+    sp: u8,
 
     interrupt: Option<Interrupt>,
 
@@ -153,8 +153,9 @@ impl CPU {
                    opcode);
         }
 
-        let bytes = addr_mode.get_bytes(self)
-            .iter()
+        let raw_bytes = addr_mode.get_bytes(self);
+
+        let bytes = raw_bytes.iter()
             .map(|arg| String::from(format!("{:02X}", arg)))
             .collect::<Vec<_>>()
             .join(" ");
