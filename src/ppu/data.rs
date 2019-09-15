@@ -2,7 +2,7 @@ use crate::mapper::{Mapper, MapperEmpty};
 use crate::mem::Memory;
 
 pub struct PPUData {
-    pub mapper: Box<Mapper>,
+    pub mapper: Box<dyn Mapper>,
     nametables: [u8; 0x1000],
     palette: [u8; 0x20],
 }
@@ -15,8 +15,8 @@ impl Memory for PPUData {
     fn read(&mut self, address: u16) -> Result<u8, String> {
         let address = address % 0x4000;
         match address {
-            0x0000 ... 0x1fff => self.mapper.read(address),
-            0x2000 ... 0x3eff => {
+            0x0000 ..= 0x1fff => self.mapper.read(address),
+            0x2000 ..= 0x3eff => {
                 let address = (address - 0x2000) % 0x1000;
                 let table = address / 0x0400;
                 let offset = address % 0x0400;
@@ -25,7 +25,7 @@ impl Memory for PPUData {
                     + offset as usize;
                 Ok(self.nametables[index % 2048])
             }
-            0x3f00 ... 0x3fff => {
+            0x3f00 ..= 0x3fff => {
                 let mut i = address as usize % 0x20;
 
                 match i & 0x00ff {
@@ -44,8 +44,8 @@ impl Memory for PPUData {
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
         let address = address % 0x4000;
         match address {
-            0x0000 ... 0x1fff => self.mapper.write(address, val),
-            0x2000 ... 0x3eff => {
+            0x0000 ..= 0x1fff => self.mapper.write(address, val),
+            0x2000 ..= 0x3eff => {
                 debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
                 let address = (address - 0x2000) % 0x1000;
                 let table = address / 0x0400;
@@ -56,7 +56,7 @@ impl Memory for PPUData {
                 self.nametables[index % 2048] = val;
                 Ok(val)
             },
-            0x3f00 ... 0x3fff => {
+            0x3f00 ..= 0x3fff => {
                 debug!("writing 0x{:02X} to palette 0x{:04X}", val, address);
                 let mut i = address as usize % 0x20;
 

@@ -151,7 +151,9 @@ impl Console {
                 thread::sleep(Duration::from_millis(200));
             }
             else {
+
                 let cpu_cycles = self.cpu.step();
+
                 let ppu_cycles = cpu_cycles * 3;
 
                 let mut frame_finished = false;

@@ -74,16 +74,16 @@ impl Mapper1 {
 
     fn write_register(&mut self, address: u16, val: u8) {
         match address {
-            0x0000 ... 0x9fff => {
+            0x0000 ..= 0x9fff => {
                 self.control = val;
             },
-            0xa000 ... 0xbfff => {
+            0xa000 ..= 0xbfff => {
                 self.chr_bank0 = val & 0b1_1111;
             },
-            0xc000 ... 0xdfff => {
+            0xc000 ..= 0xdfff => {
                 self.chr_bank1 = val & 0b1_1111;
             },
-            0xe000 ... 0xffff => {
+            0xe000 ..= 0xffff => {
                 self.prg_bank = val & 0b1111;
             },
         }
@@ -98,7 +98,7 @@ impl Mapper for Mapper1 {
     fn read(&mut self, address: u16) -> Result<u8, String> {
         match address {
             // CHR-ROM
-            0x0000 ... 0x0fff => {
+            0x0000 ..= 0x0fff => {
                 let bank = match self.chr_mode() {
                     0 => self.chr_bank0,
                     1 => self.chr_bank0,
@@ -108,7 +108,7 @@ impl Mapper for Mapper1 {
                 let index = (4096 * bank) | (address as usize & 0x3fff);
                 Ok(self.chr_rom[index])
             },
-            0x1000 ... 0x1fff => {
+            0x1000 ..= 0x1fff => {
                 let bank = match self.chr_mode() {
                     0 => self.chr_bank0 + 1,
                     1 => self.chr_bank1,
@@ -120,12 +120,12 @@ impl Mapper for Mapper1 {
             },
 
             // SRAM
-            0x6000 ... 0x7fff => {
+            0x6000 ..= 0x7fff => {
                 Ok(self.sram[address as usize - 0x6000])
             },
 
             // PRG-ROM
-            0x8000 ... 0xbfff => {
+            0x8000 ..= 0xbfff => {
                 let bank = match self.prg_mode() {
                     0 | 1 => self.prg_bank as usize & 0xfe,
                     2     => 0,
@@ -137,7 +137,7 @@ impl Mapper for Mapper1 {
                 let val = self.prg_rom[index];
                 Ok(val)
             },
-            0xc000 ... 0xffff => {
+            0xc000 ..= 0xffff => {
                 let bank = match self.prg_mode() {
                     0 | 1 => (self.prg_bank as usize & 0xfe) | 1,
                     2     => self.prg_bank as usize,
@@ -157,7 +157,7 @@ impl Mapper for Mapper1 {
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
         match address {
             // CHR-ROM
-            0x0000 ... 0x0fff => {
+            0x0000 ..= 0x0fff => {
                 let bank = match self.chr_mode() {
                     0 => self.chr_bank0,
                     1 => self.chr_bank0,
@@ -168,7 +168,7 @@ impl Mapper for Mapper1 {
                 self.chr_rom[index] = val;
                 Ok(val)
             },
-            0x1000 ... 0x1fff => {
+            0x1000 ..= 0x1fff => {
                 let bank = match self.chr_mode() {
                     0 => self.chr_bank0 + 1,
                     1 => self.chr_bank1,
@@ -181,13 +181,13 @@ impl Mapper for Mapper1 {
             },
 
             // SRAM
-            0x6000 ... 0x7fff => {
+            0x6000 ..= 0x7fff => {
                 self.sram[address as usize - 0x6000] = val;
                 Ok(val)
             },
 
             // PRG-ROM
-            0x8000 ... 0xffff => self.load_register(address, val),
+            0x8000 ..= 0xffff => self.load_register(address, val),
 
             _ => Ok(0),
         }

@@ -120,6 +120,7 @@ impl CPU {
 
         Ok(val)
     }
+
     fn flags(&self) -> u8 {
            (self.c as u8)
         | ((self.z as u8) << 1)

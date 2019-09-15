@@ -19,24 +19,24 @@ impl Mapper for Mapper0 {
 
     fn read(&mut self, address: u16) -> Result<u8, String> {
         match address {
-            0x0000 ... 0x1fff => {
+            0x0000 ..= 0x1fff => {
                 let len = self.chr_rom.len();
                 Ok(self.chr_rom[address as usize % len])
             },
-            0x6000 ... 0x7fff => Ok(self.sram[address as usize - 0x6000]),
-            0x8000 ... 0xffff => Ok(self.prg_rom[address as usize % self.prg_rom.len()]),
+            0x6000 ..= 0x7fff => Ok(self.sram[address as usize - 0x6000]),
+            0x8000 ..= 0xffff => Ok(self.prg_rom[address as usize % self.prg_rom.len()]),
             _ => Ok(0),
         }
     }
 
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
         match address {
-            0x0000 ... 0x1fff => {
+            0x0000 ..= 0x1fff => {
                 let len = self.chr_rom.len();
                 self.chr_rom[address as usize % len] = val;
                 Ok(val)
             },
-            0x6000 ... 0x7fff => {
+            0x6000 ..= 0x7fff => {
                 self.sram[address as usize - 0x6000] = val;
                 Ok(val)
             },
