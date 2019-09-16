@@ -76,6 +76,14 @@ impl Mapper1 {
         match address {
             0x0000 ..= 0x9fff => {
                 self.control = val;
+
+                match val & 3 {
+                    0 => { self.mirror_mode = MirrorMode::Single0 },
+                    1 => { self.mirror_mode = MirrorMode::Single1 },
+                    2 => { self.mirror_mode = MirrorMode::Vertical },
+                    3 => { self.mirror_mode = MirrorMode::Horizontal },
+                    _ => {},
+                }
             },
             0xa000 ..= 0xbfff => {
                 self.chr_bank0 = val & 0b1_1111;
