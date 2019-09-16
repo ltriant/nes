@@ -6,7 +6,7 @@ use std::convert::From;
 pub use mapper0::Mapper0;
 pub use mapper1::Mapper1;
 
-enum MirrorMode {
+pub enum MirrorMode {
     Horizontal = 0,
     Vertical   = 1,
     Single0    = 2,
@@ -15,7 +15,7 @@ enum MirrorMode {
 }
 
 impl MirrorMode {
-    fn lookup(&self) -> Vec<usize> {
+    pub fn coefficients(&self) -> Vec<usize> {
         match *self {
             MirrorMode::Horizontal => vec![0, 0, 1, 1],
             MirrorMode::Vertical   => vec![0, 1, 0, 1],
@@ -40,7 +40,7 @@ impl From<u8> for MirrorMode {
 }
 
 pub trait Mapper {
-    fn nametable_offset(&self, _table: usize) -> usize { 0 }
+    fn mirror_mode(&self) -> &MirrorMode { &MirrorMode::Vertical }
 
     fn read(&mut self, address: u16) -> Result<u8, String>;
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String>;

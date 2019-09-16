@@ -21,7 +21,7 @@ pub struct Mapper1 {
     // The number of PRG-ROM banks in this cartridge
     n_banks: usize,
 
-    mirror_mode: MirrorMode,
+    pub mirror_mode: MirrorMode,
 }
 
 impl Mapper1 {
@@ -91,8 +91,8 @@ impl Mapper1 {
 }
 
 impl Mapper for Mapper1 {
-    fn nametable_offset(&self, table: usize) -> usize {
-        self.mirror_mode.lookup()[table]
+    fn mirror_mode(&self) -> &MirrorMode {
+        &self.mirror_mode
     }
 
     fn read(&mut self, address: u16) -> Result<u8, String> {

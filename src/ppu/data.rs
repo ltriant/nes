@@ -3,7 +3,7 @@ use crate::mem::Memory;
 
 pub struct PPUData {
     pub mapper: Box<dyn Mapper>,
-    nametables: [u8; 0x1000],
+    nametables: [u8; 4096],
     palette: [u8; 0x20],
 }
 
@@ -17,13 +17,8 @@ impl Memory for PPUData {
         match address {
             0x0000 ..= 0x1fff => self.mapper.read(address),
             0x2000 ..= 0x3eff => {
-                let address = (address - 0x2000) % 0x1000;
-                let table = address / 0x0400;
-                let offset = address % 0x0400;
-                let index = 0x2000
-                    + self.mapper.nametable_offset(table as usize) * 0x400
-                    + offset as usize;
-                Ok(self.nametables[index % 2048])
+                let mirrored_address = self.nametable_mirror_address(address);
+                Ok(self.nametables[mirrored_address])
             }
             0x3f00 ..= 0x3fff => {
                 let mut i = address as usize % 0x20;
@@ -47,13 +42,8 @@ impl Memory for PPUData {
             0x0000 ..= 0x1fff => self.mapper.write(address, val),
             0x2000 ..= 0x3eff => {
                 debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
-                let address = (address - 0x2000) % 0x1000;
-                let table = address / 0x0400;
-                let offset = address % 0x0400;
-                let index = 0x2000
-                    + self.mapper.nametable_offset(table as usize) * 0x400
-                    + offset as usize;
-                self.nametables[index % 2048] = val;
+                let mirrored_address = self.nametable_mirror_address(address);
+                self.nametables[mirrored_address] = val;
                 Ok(val)
             },
             0x3f00 ..= 0x3fff => {
@@ -79,7 +69,7 @@ impl PPUData {
     pub fn new_ppu_data() -> Self {
         Self {
             mapper: Box::new(MapperEmpty{}),
-            nametables: [0; 0x1000],
+            nametables: [0; 4096],
             palette: [
                 // These are the start-up palette values to pass blarrg's PPU tests
                 0x09,0x01,0x00,0x01,
@@ -92,5 +82,20 @@ impl PPUData {
                 0x00,0x20,0x2C,0x08
             ],
         }
+    }
+
+    fn nametable_mirror_address(&self, address: u16) -> usize {
+        // Calculates the mirrored nametable address (as an index into the
+        // nametable array)
+        // https://wiki.nesdev.com/w/index.php/Mirroring#Nametable_Mirroring
+
+        let address = (address - 0x2000) % 0x1000;
+        let table = address / 0x400;
+        let offset = address % 0x400;
+        let index = 0x2000
+            + self.mapper.mirror_mode().coefficients()[table as usize] * 0x400
+            + offset as usize;
+
+        index % 2048
     }
 }

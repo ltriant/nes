@@ -9,12 +9,12 @@ pub struct Mapper0 {
     prg_rom: Vec<u8>,
     sram: [u8; 0x2000],
 
-    mirror_mode: MirrorMode,
+    pub mirror_mode: MirrorMode,
 }
 
 impl Mapper for Mapper0 {
-    fn nametable_offset(&self, table: usize) -> usize {
-        self.mirror_mode.lookup()[table]
+    fn mirror_mode(&self) -> &MirrorMode {
+        &self.mirror_mode
     }
 
     fn read(&mut self, address: u16) -> Result<u8, String> {
