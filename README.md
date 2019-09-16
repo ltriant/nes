@@ -54,6 +54,8 @@ Start  -- Enter
 Select -- Space
 
 P      -- Pause
+
+F12    -- Reset
 ```
 
 ## Debugging Information

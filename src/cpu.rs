@@ -91,7 +91,7 @@ impl CPU {
         }
     }
 
-    pub fn init(&mut self) {
+    pub fn reset (&mut self) {
         let lo = self.read(0xFFFC).expect("low PC byte") as u16;
         let hi = self.read(0xFFFD).expect("high PC byte") as u16;
         let addr = (hi << 8) | lo;
@@ -100,6 +100,20 @@ impl CPU {
 
         self.set_flags(0x24);
         debug!("flags: 0x{:02X}", self.flags());
+
+        self.sp = STACK_INIT;
+        debug!("SP: 0x{:02X}", self.sp);
+
+        self.a = 0;
+        debug!("A: 0x{:02X}", self.a);
+        self.x = 0;
+        debug!("X: 0x{:02X}", self.x);
+        self.y = 0;
+        debug!("Y: 0x{:02X}", self.y);
+
+        self.interrupt = None;
+        self.stall = None;
+        self.cycles = 0;
     }
 
     fn dma(&mut self, val: u8) -> Result<u8, String> {

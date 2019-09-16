@@ -136,7 +136,7 @@ impl Console {
     pub fn power_up(&mut self) {
         info!("powering up");
 
-        self.cpu.init();
+        self.cpu.reset();
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
         let mut fps_start = Instant::now();
@@ -210,6 +210,11 @@ impl Console {
                                 Keycode::M => { self.cpu.mem.controller.b(true) },
 
                                 Keycode::P => { paused = ! paused },
+
+                                Keycode::F2  => { },  // TODO save
+                                Keycode::F3  => { },  // TODO load
+
+                                Keycode::F12 => { self.cpu.reset() },
 
                                 _ => {},
                             }
