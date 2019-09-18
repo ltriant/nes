@@ -1,5 +1,6 @@
 use crate::mapper::Mapper0;
 use crate::mapper::Mapper1;
+use crate::mapper::Mapper2;
 use crate::mem::NESMemory;
 
 use std::fs::File;
@@ -102,6 +103,10 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
         },
         1 => {
             let mapper = Mapper1::new_mapper(rom, vrom, mirror_mode, n_rom_banks);
+            mem.ppu.data.mapper = Box::new(mapper);
+        },
+        2 => {
+            let mapper = Mapper2::new_mapper(rom, vrom, mirror_mode, n_rom_banks);
             mem.ppu.data.mapper = Box::new(mapper);
         },
         _ => {

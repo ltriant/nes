@@ -1,10 +1,12 @@
 mod mapper0;
 mod mapper1;
+mod mapper2;
 
 use std::convert::From;
 
 pub use mapper0::Mapper0;
 pub use mapper1::Mapper1;
+pub use mapper2::Mapper2;
 
 pub enum MirrorMode {
     Horizontal = 0,

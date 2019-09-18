@@ -1,5 +1,6 @@
 use std::env;
 use std::fs::File;
+use std::io::{Read, Write};
 use std::process;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -133,10 +134,47 @@ impl Console {
         }
     }
 
+    fn save(&mut self, outfile: &str) {
+        let ram = (0x000 .. 0x800)
+            .map(|offset| self.cpu.mem.read(offset).unwrap())
+            .collect::<Vec<_>>();
+
+        let sram = (0x0000 .. 0x2000)
+            .map(|offset| self.cpu.mem.ppu.data.mapper.read(0x6000 + offset).unwrap())
+            .collect::<Vec<_>>();
+
+        let mut fh = File::create(outfile).unwrap();
+        fh.write_all(ram.as_slice()).unwrap();
+        fh.write_all(sram.as_slice()).unwrap();
+
+        info!("saved SRAM to {}", outfile);
+    }
+
+    fn load(&mut self, infile: &str) {
+        if let Ok(mut fh) = File::open(infile) {
+            let mut ram  = vec![0; 0x800];
+            let mut sram = vec![0; 0x2000];
+
+            fh.read(&mut ram).unwrap();
+            fh.read(&mut sram).unwrap();
+
+            for offset in 0x000 .. 0x800 {
+                self.cpu.mem.write(offset, ram[offset as usize]).unwrap();
+            }
+
+            for offset in 0x0000 .. 0x2000 {
+                self.cpu.mem.ppu.data.mapper.write(0x6000 + offset, sram[offset as usize]).unwrap();
+            }
+
+            info!("loaded SRAM from {}", infile);
+        }
+    }
+
     pub fn power_up(&mut self) {
         info!("powering up");
 
         self.cpu.reset();
+        self.load("foo.data");
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
         let mut fps_start = Instant::now();
@@ -211,8 +249,8 @@ impl Console {
 
                                 Keycode::P => { paused = ! paused },
 
-                                Keycode::F2  => { },  // TODO save
-                                Keycode::F3  => { },  // TODO load
+                                Keycode::F2  => { self.save("foo.data") },
+                                Keycode::F3  => { },
 
                                 Keycode::F12 => { self.cpu.reset() },
 
