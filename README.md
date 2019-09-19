@@ -19,6 +19,7 @@ The following cartridge mappers are supported:
 1. NROM (mapper 0)
 2. SxROM (mapper 1)
 3. UxROM (mapper 2)
+4. CNROM (mapper 3)
 
 ## Building and Running
 
