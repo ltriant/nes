@@ -1,9 +1,13 @@
 use std::process;
+use std::io;
+use std::fs::File;
 
-use crate::console::{NES_CPU_DEBUG, NES_CPU_NESTEST};
 use crate::addr::AddressingMode;
+use crate::console::{NES_CPU_DEBUG, NES_CPU_NESTEST};
 use crate::mem::{Memory, NESMemory};
 use crate::opcode::{Opcode, OPCODES};
+use crate::serde;
+use crate::serde::Storeable;
 
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: u64 = 341;
@@ -59,6 +63,56 @@ impl Memory for CPU {
         else {
             self.mem.write(addr, val)
         }
+    }
+}
+
+impl Storeable for CPU {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_u8(output, self.a)?;
+        serde::encode_u8(output, self.x)?;
+        serde::encode_u8(output, self.y)?;
+        serde::encode_u8(output, self.flags())?;
+        serde::encode_u16(output, self.pc)?;
+        serde::encode_u8(output, self.sp)?;
+
+        match &self.interrupt {
+            Some(interrupt) => {
+                match interrupt {
+                    Interrupt::IRQ => serde::encode_u8(output, 1)?,
+                    Interrupt::NMI => serde::encode_u8(output, 2)?,
+                }
+            },
+            None => { serde::encode_u8(output, 0)? },
+        };
+
+        match &self.stall {
+            Some(stall) => { serde::encode_u64(output, *stall)? },
+            None        => { serde::encode_u64(output, 0)? }
+        };
+
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.a = serde::decode_u8(input)?;
+        self.x = serde::decode_u8(input)?;
+        self.y = serde::decode_u8(input)?;
+        self.set_flags(serde::decode_u8(input)?);
+        self.pc = serde::decode_u16(input)?;
+        self.sp = serde::decode_u8(input)?;
+
+        self.interrupt = match serde::decode_u8(input)? {
+            1 => Some(Interrupt::IRQ),
+            2 => Some(Interrupt::NMI),
+            _ => None,
+        };
+
+        self.stall = match serde::decode_u64(input)? {
+            0 => None,
+            i => Some(i),
+        };
+
+        Ok(())
     }
 }
 

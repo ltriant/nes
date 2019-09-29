@@ -1,5 +1,10 @@
+use std::io::{Read, Write};
+use std::io;
+use std::fs::File;
+
 use crate::mapper::Mapper;
 use crate::mapper::MirrorMode;
+use crate::serde;
 
 //
 // CNROM (mapper 3)
@@ -78,5 +83,21 @@ impl Mapper for Mapper3 {
             },
             _ => Ok(0),
         }
+    }
+
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_vec(output, &self.chr_rom)?;
+        serde::encode_vec(output, &self.prg_rom)?;
+        output.write(&self.sram)?;
+        serde::encode_u8(output, self.chr_bank)?;
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.chr_rom = serde::decode_vec(input)?;
+        self.prg_rom = serde::decode_vec(input)?;
+        input.read(&mut self.sram)?;
+        self.chr_bank = serde::decode_u8(input)?;
+        Ok(())
     }
 }

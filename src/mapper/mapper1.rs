@@ -1,5 +1,10 @@
+use std::io::{Read, Write};
+use std::io;
+use std::fs::File;
+
 use crate::mapper::Mapper;
 use crate::mapper::MirrorMode;
+use crate::serde;
 
 //
 // SxROM (mapper 1)
@@ -199,5 +204,35 @@ impl Mapper for Mapper1 {
 
             _ => Ok(0),
         }
+    }
+
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_vec(output, &self.chr_rom)?;
+        serde::encode_vec(output, &self.prg_rom)?;
+        output.write(&self.sram)?;
+        serde::encode_u8(output, self.control)?;
+        serde::encode_u8(output, self.chr_bank0)?;
+        serde::encode_u8(output, self.chr_bank1)?;
+        serde::encode_u8(output, self.prg_bank)?;
+        serde::encode_u8(output, self.shift_register)?;
+        serde::encode_u8(output, self.write_count)?;
+        serde::encode_usize(output, self.n_banks)?;
+        serde::encode_u8(output, self.mirror_mode as u8)?;
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.chr_rom = serde::decode_vec(input)?;
+        self.prg_rom = serde::decode_vec(input)?;
+        input.read(&mut self.sram)?;
+        self.control = serde::decode_u8(input)?;
+        self.chr_bank0 = serde::decode_u8(input)?;
+        self.chr_bank1 = serde::decode_u8(input)?;
+        self.prg_bank = serde::decode_u8(input)?;
+        self.shift_register = serde::decode_u8(input)?;
+        self.write_count = serde::decode_u8(input)?;
+        self.n_banks = serde::decode_usize(input)?;
+        self.mirror_mode = MirrorMode::from(serde::decode_u8(input)?);
+        Ok(())
     }
 }

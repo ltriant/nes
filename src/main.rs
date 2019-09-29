@@ -12,6 +12,7 @@ mod ines;
 mod addr;
 mod ppu;
 mod palette;
+mod serde;
 
 use std::env;
 use std::process;

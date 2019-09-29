@@ -4,12 +4,15 @@ mod mapper2;
 mod mapper3;
 
 use std::convert::From;
+use std::io;
+use std::fs::File;
 
 pub use mapper0::Mapper0;
 pub use mapper1::Mapper1;
 pub use mapper2::Mapper2;
 pub use mapper3::Mapper3;
 
+#[derive(Clone, Copy)]
 pub enum MirrorMode {
     Horizontal = 0,
     Vertical   = 1,
@@ -50,6 +53,9 @@ pub trait Mapper {
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String>;
 
     fn step(&mut self) {}
+
+    fn save(&self, output: &mut File) -> io::Result<()>;
+    fn load(&mut self, input: &mut File) -> io::Result<()>;
 }
 
 
@@ -62,5 +68,7 @@ pub struct MapperEmpty;
 impl Mapper for MapperEmpty {
     fn read(&mut self, _address: u16) -> Result<u8, String> { Ok(0) }
     fn write(&mut self, _address: u16, _val: u8) -> Result<u8, String> { Ok(0) }
+    fn save(&self, _output: &mut File) -> io::Result<()> { Ok(()) }
+    fn load(&mut self, _input: &mut File) -> io::Result<()> { Ok(()) }
 }
 

@@ -4,6 +4,9 @@ mod status;
 mod oam;
 mod data;
 
+use std::io;
+use std::fs::File;
+
 use crate::console::NES_PPU_DEBUG;
 use crate::palette::PALETTE;
 use crate::mem::Memory;
@@ -12,6 +15,8 @@ use crate::ppu::mask::PPUMask;
 use crate::ppu::status::PPUStatus;
 use crate::ppu::oam::OAM;
 use crate::ppu::data::{PPUData, PALETTE_ADDRESSES};
+use crate::serde;
+use crate::serde::Storeable;
 
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
@@ -211,6 +216,99 @@ impl Memory for PPU {
             },
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
+    }
+}
+
+impl Storeable for PPU {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        let PPUCtrl(v) = self.ctrl;
+        serde::encode_u8(output, v)?;
+
+        let PPUMask(v) = self.mask;
+        serde::encode_u8(output, v)?;
+
+        let PPUStatus(v) = self.status;
+        serde::encode_u8(output, v)?;
+
+        serde::encode_u8(output, self.oam_addr)?;
+        self.oam.save(output)?;
+        serde::encode_u16(output, self.ppu_addr)?;
+
+        self.data.save(output)?;
+
+        serde::encode_u16(output, self.dot)?;
+        serde::encode_u16(output, self.scanline)?;
+
+        serde::encode_u8(output, self.nametable_byte)?;
+        serde::encode_u8(output, self.attrtable_byte)?;
+        serde::encode_u8(output, self.low_tile_byte)?;
+        serde::encode_u8(output, self.high_tile_byte)?;
+        serde::encode_u64(output, self.tile_data)?;
+
+        serde::encode_usize(output, self.sprite_count)?;
+        for i in 0 .. 7 {
+            serde::encode_u32(output, self.sprite_patterns[i])?;
+            serde::encode_u8(output, self.sprite_positions[i])?;
+            serde::encode_u8(output, self.sprite_priorities[i])?;
+            serde::encode_usize(output, self.sprite_indexes[i])?;
+        }
+
+        serde::encode_u8(output, self.odd_frame as u8)?;
+        serde::encode_u8(output, self.nmi_occurred as u8)?;
+        serde::encode_u8(output, self.nmi_output as u8)?;
+        serde::encode_usize(output, self.nmi_delay)?;
+
+        serde::encode_u16(output, self.t)?;
+        serde::encode_u8(output, self.x)?;
+        serde::encode_u8(output, self.w as u8)?;
+
+        serde::encode_u8(output, self.buffered_data)?;
+        serde::encode_u8(output, self.last_value)?;
+
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.ctrl = PPUCtrl(serde::decode_u8(input)?);
+        self.mask = PPUMask(serde::decode_u8(input)?);
+        self.status = PPUStatus(serde::decode_u8(input)?);
+        self.oam_addr = serde::decode_u8(input)?;
+        self.oam.load(input)?;
+        self.ppu_addr = serde::decode_u16(input)?;
+
+        self.data.load(input)?;
+
+        self.dot = serde::decode_u16(input)?;
+        self.scanline = serde::decode_u16(input)?;
+
+        self.nametable_byte = serde::decode_u8(input)?;
+        self.attrtable_byte = serde::decode_u8(input)?;
+        self.low_tile_byte = serde::decode_u8(input)?;
+        self.high_tile_byte = serde::decode_u8(input)?;
+        self.tile_data = serde::decode_u64(input)?;
+
+        self.sprite_count = serde::decode_usize(input)?;
+        for i in 0 .. 7 {
+            self.sprite_patterns[i] = serde::decode_u32(input)?;
+            self.sprite_positions[i] = serde::decode_u8(input)?;
+            self.sprite_priorities[i] = serde::decode_u8(input)?;
+            self.sprite_indexes[i] = serde::decode_usize(input)?;
+        }
+
+        self.odd_frame = serde::decode_u8(input)? != 0;
+        self.nmi_occurred = serde::decode_u8(input)? != 0;
+        self.nmi_output = serde::decode_u8(input)? != 0;
+        self.nmi_previous = serde::decode_u8(input)? != 0;
+        self.nmi_delay = serde::decode_usize(input)?;
+
+        self.t = serde::decode_u16(input)?;
+        self.x = serde::decode_u8(input)?;
+        self.w = serde::decode_u8(input)? != 0;
+
+        self.buffered_data = serde::decode_u8(input)?;
+        self.last_value = serde::decode_u8(input)?;
+
+        Ok(())
     }
 }
 

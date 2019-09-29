@@ -1,4 +1,9 @@
+use std::io::{Read, Write};
+use std::io;
+use std::fs::File;
+
 use crate::mem::Memory;
+use crate::serde::Storeable;
 
 pub struct OAM {
     data: [u8; 0x100],
@@ -25,6 +30,18 @@ impl Memory for OAM {
             self.data[i] = val;
             Ok(val)
         }
+    }
+}
+
+impl Storeable for OAM {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        output.write(&self.data)?;
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        input.read(&mut self.data)?;
+        Ok(())
     }
 }
 

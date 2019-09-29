@@ -1,5 +1,10 @@
+use std::io::{Read, Write};
+use std::io;
+use std::fs::File;
+
 use crate::mapper::{Mapper, MapperEmpty};
 use crate::mem::Memory;
+use crate::serde::Storeable;
 
 pub struct PPUData {
     pub mapper: Box<dyn Mapper>,
@@ -62,6 +67,24 @@ impl Memory for PPUData {
             },
             _ => Err(format!("PPUData out of bounds 0x{:04X}", address))
         }
+    }
+}
+
+impl Storeable for PPUData {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        self.mapper.save(output)?;
+        output.write(&self.nametables)?;
+        output.write(&self.palette)?;
+
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.mapper.load(input)?;
+        input.read(&mut self.nametables)?;
+        input.read(&mut self.palette)?;
+
+        Ok(())
     }
 }
 

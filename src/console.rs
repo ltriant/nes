@@ -1,6 +1,6 @@
 use std::env;
+use std::fs;
 use std::fs::File;
-use std::io::{Read, Write};
 use std::process;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -11,6 +11,7 @@ use crate::mem::{Memory, NESMemory};
 use crate::ppu::PPU;
 use crate::ines::CartridgeError;
 use crate::ines;
+use crate::serde::Storeable;
 
 use sdl2::Sdl;
 use sdl2::pixels::Color;
@@ -41,9 +42,10 @@ const NES_FPS: f64 = 60.0;
 const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0) as u64);
 
 pub struct Console {
-    sdl_ctx: Sdl,
-    canvas:  Canvas<Window>,
-    cpu:     CPU,
+    sdl_ctx:   Sdl,
+    canvas:    Canvas<Window>,
+    cpu:       CPU,
+    save_path: String,
 }
 
 impl Console {
@@ -78,18 +80,27 @@ impl Console {
         let mem = NESMemory::new_nes_mem(ppu, controller);
 
         Self {
-            sdl_ctx: sdl_context,
-            canvas:  canvas,
-            cpu:     CPU::new_nes_cpu(mem),
+            sdl_ctx:   sdl_context,
+            canvas:    canvas,
+            cpu:       CPU::new_nes_cpu(mem),
+            save_path: String::new(),
         }
     }
 
     pub fn insert_cartridge(&mut self, filename: &String)
         -> Result<(), CartridgeError>
     {
-        info!("loading cartridge: {}", filename);
-        let mut fh = File::open(filename).map_err(CartridgeError::IO)?;
+        let full_path = fs::canonicalize(filename).map_err(CartridgeError::IO)?;
+
+        info!("loading cartridge: {}", full_path.display());
+
+        let path = full_path.file_name().unwrap()
+            .to_str().unwrap();
+        self.save_path = format!("{:x}.data", md5::compute(path)).into();
+
+        let mut fh = File::open(full_path).map_err(CartridgeError::IO)?;
         ines::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
+
         Ok(())
     }
 
@@ -134,39 +145,20 @@ impl Console {
         }
     }
 
-    fn save(&mut self, outfile: &str) {
-        let ram = (0x000 .. 0x800)
-            .map(|offset| self.cpu.mem.read(offset).unwrap())
-            .collect::<Vec<_>>();
-
-        let sram = (0x0000 .. 0x2000)
-            .map(|offset| self.cpu.mem.ppu.data.mapper.read(0x6000 + offset).unwrap())
-            .collect::<Vec<_>>();
-
-        let mut fh = File::create(outfile).unwrap();
-        fh.write_all(ram.as_slice()).unwrap();
-        fh.write_all(sram.as_slice()).unwrap();
-
-        info!("saved SRAM to {}", outfile);
+    fn save(&mut self) {
+        let mut fh = File::create(&self.save_path).unwrap();
+        self.cpu.save(&mut fh).expect("unable to save CPU state");
+        self.cpu.mem.save(&mut fh).expect("unable to save memory state");
+        self.cpu.mem.ppu.save(&mut fh).expect("unable to save PPU state");
+        println!("saved state to {}", self.save_path);
     }
 
-    fn load(&mut self, infile: &str) {
-        if let Ok(mut fh) = File::open(infile) {
-            let mut ram  = vec![0; 0x800];
-            let mut sram = vec![0; 0x2000];
-
-            fh.read(&mut ram).unwrap();
-            fh.read(&mut sram).unwrap();
-
-            for offset in 0x000 .. 0x800 {
-                self.cpu.mem.write(offset, ram[offset as usize]).unwrap();
-            }
-
-            for offset in 0x0000 .. 0x2000 {
-                self.cpu.mem.ppu.data.mapper.write(0x6000 + offset, sram[offset as usize]).unwrap();
-            }
-
-            info!("loaded SRAM from {}", infile);
+    fn load(&mut self) {
+        if let Ok(mut fh) = File::open(&self.save_path) {
+            self.cpu.load(&mut fh).expect("unable to load CPU state");
+            self.cpu.mem.load(&mut fh).expect("unable to load memory state");
+            self.cpu.mem.ppu.load(&mut fh).expect("unable to save PPU state");
+            println!("loaded state from {}", self.save_path);
         }
     }
 
@@ -174,7 +166,6 @@ impl Console {
         info!("powering up");
 
         self.cpu.reset();
-        self.load("foo.data");
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
         let mut fps_start = Instant::now();
@@ -249,8 +240,8 @@ impl Console {
 
                                 Keycode::P => { paused = ! paused },
 
-                                Keycode::F2  => { self.save("foo.data") },
-                                Keycode::F3  => { },
+                                Keycode::F2  => { self.save() },
+                                Keycode::F3  => { self.load() },
 
                                 Keycode::F12 => { self.cpu.reset() },
 

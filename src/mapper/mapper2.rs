@@ -1,5 +1,10 @@
+use std::io::{Read, Write};
+use std::io;
+use std::fs::File;
+
 use crate::mapper::Mapper;
 use crate::mapper::MirrorMode;
+use crate::serde;
 
 //
 // UxROM (mapper 2)
@@ -83,5 +88,23 @@ impl Mapper for Mapper2 {
             },
             _ => Ok(0),
         }
+    }
+
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_vec(output, &self.chr_rom)?;
+        serde::encode_vec(output, &self.prg_rom)?;
+        output.write(&self.sram)?;
+        serde::encode_u8(output, self.prg_bank1)?;
+        serde::encode_u8(output, self.prg_bank2)?;
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.chr_rom = serde::decode_vec(input)?;
+        self.prg_rom = serde::decode_vec(input)?;
+        input.read(&mut self.sram)?;
+        self.prg_bank1 = serde::decode_u8(input)?;
+        self.prg_bank2 = serde::decode_u8(input)?;
+        Ok(())
     }
 }

@@ -1,5 +1,10 @@
+use std::io::{Read, Write};
+use std::io;
+use std::fs::File;
+
 use crate::controller::Controller;
 use crate::ppu::PPU;
+use crate::serde::Storeable;
 
 pub trait Memory {
     fn read(&mut self, address: u16) -> Result<u8, String>;
@@ -105,6 +110,18 @@ impl Memory for NESMemory {
 
             _ => Err(format!("write out of bounds 0x{:04X}", address)),
         }
+    }
+}
+
+impl Storeable for NESMemory {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        output.write(&self.ram)?;
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        input.read(&mut self.ram)?;
+        Ok(())
     }
 }
 
