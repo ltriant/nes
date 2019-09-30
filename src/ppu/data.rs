@@ -12,9 +12,14 @@ pub struct PPUData {
     palette: [u8; 0x20],
 }
 
-pub const PALETTE_ADDRESSES: [u16; 8] =
-    [0x3f01, 0x3f05, 0x3f09, 0x3f0d,   // these are the background palettes
-     0x3f11, 0x3f15, 0x3f19, 0x3f1d];  // these are the sprite palettes
+pub const BACKGROUND_PALETTE_ADDRESSES: [u16; 4] =
+    [0x3f01, 0x3f05, 0x3f09, 0x3f0d];
+
+pub const SPRITE_PALETTE_ADDRESSES: [u16; 4] =
+    [0x3f11, 0x3f15, 0x3f19, 0x3f1d];
+
+pub const PATTERN_TABLE_ADDRESSES: [u16; 2] =
+    [0x0000, 0x1000];
 
 impl Memory for PPUData {
     fn read(&mut self, address: u16) -> Result<u8, String> {

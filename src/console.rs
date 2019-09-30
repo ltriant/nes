@@ -54,13 +54,13 @@ impl Console {
         let video_subsystem = sdl_context.video().unwrap();
 
         let mut width = 256 * 3;
+        let height = 240 * 3;
 
         if *NES_PPU_DEBUG {
-            // Make room for the palettes
-            width += 50;
+            // Make room for the two pattern tables, side by side
+            width += 2 * 144 + 20;
         }
 
-        let height = 240 * 3;
         let window = video_subsystem.window("nes", width, height)
             .position_centered()
             .build()

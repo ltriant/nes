@@ -14,10 +14,16 @@ use crate::ppu::ctrl::PPUCtrl;
 use crate::ppu::mask::PPUMask;
 use crate::ppu::status::PPUStatus;
 use crate::ppu::oam::OAM;
-use crate::ppu::data::{PPUData, PALETTE_ADDRESSES};
+use crate::ppu::data::{
+    PPUData,
+    BACKGROUND_PALETTE_ADDRESSES,
+    SPRITE_PALETTE_ADDRESSES,
+    PATTERN_TABLE_ADDRESSES,
+};
 use crate::serde;
 use crate::serde::Storeable;
 
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
@@ -491,6 +497,9 @@ impl PPU {
         None
     }
 
+    // Fetches the sprite pattern for a single row of a tile. If you wanted the
+    // pattern tables for every row of a sprite, you would call this with the
+    // `row' parameter being the values from 0 to 7 (inclusive).
     fn fetch_sprite_pattern(&mut self, i: u16, row: i16) -> u32 {
         let mut tile = self.oam.read(i * 4 + 1).unwrap() as u16;
         let attributes = self.oam.read(i * 4 + 2).unwrap();
@@ -529,10 +538,25 @@ impl PPU {
         let mut low_tile_byte = self.data.read(address).unwrap() as u32;
         let mut high_tile_byte = self.data.read(address + 8).unwrap() as u32;
 
+        // Now we need to return a 32-bit unsigned value, representing the 8
+        // pixels of this row of the sprite. This means we have 4 bits per
+        // pixel. The 4 bits are made up of 2 bits of attribute data, and 2 bits
+        // of palette data.
+        //
+        // The attribute data contains the palette offset that this pixel
+        // selects.
+        //
+        // The low tile byte contains one bit of the pattern table data. And the
+        // high tile byte contains the other bit of pattern table data. These
+        // two bits are OR'd together and values 0, 1, and 2 map to an index
+        // within the palette.
+
         (0 .. 8).fold(0, |acc, _| {
             let p1;
             let p2;
 
+            // Flip the sprite vertically, so we read from the other end of the
+            // low and high tile bytes
             if attributes & 0x40 == 0x40 {
                 p1 = (low_tile_byte & 1) << 0;
                 p2 = (high_tile_byte & 1) << 1;
@@ -637,11 +661,6 @@ impl PPU {
         let color = PALETTE[palette_index as usize];
         let rect = Rect::new((x as i32) * 3, (y as i32) * 3, 3, 3);
 
-        /*
-        debug!("color_addr = 0x{:04x}, palette_index = {}, color = {:?}",
-               address, palette_index, color);
-           */
-
         canvas.set_draw_color(color);
         canvas.fill_rect(rect).expect("unable to fill rectangle");
     }
@@ -713,24 +732,101 @@ impl PPU {
         self.tile_data |= data as u64;
     }
 
-    fn render_palettes(&mut self, canvas: &mut Canvas<Window>) {
-        let x = 256 * 2 + 1;
+    // For debugging purposes. Renders a pattern table at `x' and `y'.
+    fn render_pattern_table(&mut self,
+                            canvas: &mut Canvas<Window>,
+                            pattern_table: u16,
+                            x: i32,
+                            y: i32)
+    {
+        let mut y = y;
+        let mut temp_x = 0;
+
+        for tile in 0 .. 256 {
+            for row in 0 ..= 7 {
+                let addr = pattern_table + (tile * 16) + row;
+                let mut low_byte = self.data.read(addr).unwrap();
+                let mut high_byte = self.data.read(addr + 8).unwrap();
+
+                for col in 0 .. 8 {
+                    let p1 = (low_byte & 0x80) >> 7;
+                    let p2 = (high_byte & 0x80) >> 6;
+                    low_byte <<= 1;
+                    high_byte <<= 1;
+
+                    let palette_index = p1 | p2;
+                    let color = match palette_index {
+                        0 => Color::RGB(30, 30, 30),
+                        1 => Color::RGB(128, 128, 128),
+                        2 => Color::RGB(255, 255, 255),
+                        _ => Color::RGB(0, 0, 0),
+                    };
+
+                    canvas.set_draw_color(color);
+
+                    let rect = Rect::new(x + temp_x + 2 * col,
+                                         y + 2 * row as i32,
+                                         2, 2);
+                    canvas.fill_rect(rect).unwrap();
+                }
+            }
+
+            temp_x += 16;
+
+            if temp_x == 128 {
+                temp_x = 0;
+                y += 16;
+            }
+        }
+    }
+
+    // For debugging purposes. Displays the palettes and CHR data on the right
+    // side of the screen.
+    fn render_tile_data(&mut self, canvas: &mut Canvas<Window>) {
+        let mut x = 256 * 3 + 20;
+        let mut y = 10;
+
+        //
+        // Palettes
+        //
+
         let width = 12;
-        let height = 12;
+        let height = 8;
 
-        let mut y = 0;
-
-        for base in PALETTE_ADDRESSES.iter() {
+        for base in BACKGROUND_PALETTE_ADDRESSES.iter() {
             for offset in 0 ..= 3 {
                 let i = self.data.read(*base + offset as u16).unwrap() as usize;
-                canvas.set_draw_color(PALETTE[i]);
+                canvas.set_draw_color(PALETTE[i % 64]);
 
                 let rect = Rect::new(x + (width as i32) * offset, y, width, height);
                 canvas.fill_rect(rect).unwrap();
             }
 
-            y += 20;
+            y += 10;
         }
+
+        y = 10;
+        x = 256 * 3 + 20 + 48;
+        for base in SPRITE_PALETTE_ADDRESSES.iter() {
+            for offset in 0 ..= 3 {
+                let i = self.data.read(*base + offset as u16).unwrap() as usize;
+                canvas.set_draw_color(PALETTE[i % 64]);
+
+                let rect = Rect::new(x + (width as i32) * offset, y, width, height);
+                canvas.fill_rect(rect).unwrap();
+            }
+
+            y += 10;
+        }
+
+        y += 20;
+
+        //
+        // CHR
+        //
+        x = 256 * 3 + 20;
+        self.render_pattern_table(canvas, PATTERN_TABLE_ADDRESSES[0], x, y);
+        self.render_pattern_table(canvas, PATTERN_TABLE_ADDRESSES[1], x + 144, y);
     }
 
     pub fn step(&mut self, canvas: &mut Canvas<Window>) -> StepResult {
@@ -836,7 +932,7 @@ impl PPU {
             self.nmi_change();
 
             if *NES_PPU_DEBUG {
-                self.render_palettes(canvas);
+                self.render_tile_data(canvas);
             }
 
             res.frame_finished = true;

@@ -66,7 +66,7 @@ F12    -- Reset
 
 ## Debugging Information
 
-Some limited graphical debugging information can be displayed by toggling the `NES_PPU_DEBUG` environment variable. In time this will be enhanced to show more useful stuff.
+Some graphical debugging information can be displayed by toggling the `NES_PPU_DEBUG` environment variable. At the moment this shows the palettes and the pattern table information.
 
 ```
 $ NES_PPU_DEBUG=1 cargo run --release -- roms/donkey_kong.nes
