@@ -6,6 +6,8 @@ use crate::mapper::Mapper;
 use crate::mapper::MirrorMode;
 use crate::serde;
 
+const CHR_BANK_SIZE: usize = 8192;
+
 //
 // CNROM (mapper 3)
 //
@@ -42,7 +44,7 @@ impl Mapper for Mapper3 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => {
-                let index = 8192 * self.chr_bank as usize + address as usize;
+                let index = CHR_BANK_SIZE * self.chr_bank as usize + address as usize;
                 Ok(self.chr_rom[index])
             },
 
@@ -63,7 +65,7 @@ impl Mapper for Mapper3 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => {
-                let index = 8192 * self.chr_bank as usize + address as usize;
+                let index = CHR_BANK_SIZE * self.chr_bank as usize + address as usize;
                 self.chr_rom[index] = val;
                 Ok(val)
             },
