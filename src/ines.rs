@@ -82,14 +82,14 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
         // Read the banks of ROM data
         rom = vec![0; n_rom_banks * 16 * 1024];
         let bytes = fh.read(&mut rom).map_err(CartridgeError::IO)?;
-        debug!("read {} banks ({} bytes) of 16KB ROM data", n_rom_banks, bytes);
+        debug!("read {} banks ({} bytes) of 16KB PRG-ROM data", n_rom_banks, bytes);
     }
 
     if n_vrom_banks > 0 {
         // Read the banks of VROM data
         vrom = vec![0; n_vrom_banks * 8 * 1024];
         let bytes = fh.read(&mut vrom).map_err(CartridgeError::IO)?;
-        debug!("read {} banks ({} bytes) of 8KB VROM data", n_vrom_banks, bytes);
+        debug!("read {} banks ({} bytes) of 8KB CHR-ROM data", n_vrom_banks, bytes);
     }
 
     if n_vrom_banks == 0 {
