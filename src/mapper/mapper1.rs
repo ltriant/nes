@@ -6,8 +6,11 @@ use crate::mapper::Mapper;
 use crate::mapper::MirrorMode;
 use crate::serde;
 
+const PRG_BANK_SIZE: usize = 16384;
+const CHR_BANK_SIZE: usize = 4096;
+
 //
-// SxROM (mapper 1)
+// MMC1/SxROM (mapper 1)
 //
 pub struct Mapper1 {
     chr_rom: Vec<u8>,
@@ -26,11 +29,16 @@ pub struct Mapper1 {
     // The number of PRG-ROM banks in this cartridge
     n_banks: usize,
 
-    pub mirror_mode: MirrorMode,
+    mirror_mode: MirrorMode,
 }
 
 impl Mapper1 {
-    pub fn new_mapper(rom: Vec<u8>, vrom: Vec<u8>, mirror_mode: u8, n_prg_banks: usize) -> Self {
+    pub fn new_mapper(rom: Vec<u8>,
+                      vrom: Vec<u8>,
+                      mirror_mode: u8,
+                      n_prg_banks: usize)
+        -> Self
+    {
         Self {
             chr_rom: vrom,
             prg_rom: rom,
@@ -118,7 +126,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (4096 * bank) | (address as usize & 0x3fff);
+                let index = (CHR_BANK_SIZE * bank) | (address as usize & 0x3fff);
                 Ok(self.chr_rom[index])
             },
             0x1000 ..= 0x1fff => {
@@ -128,7 +136,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (4096 * bank) | ((address as usize - 0x1000) & 0x3fff);
+                let index = (CHR_BANK_SIZE * bank) | ((address as usize - 0x1000) & 0x3fff);
                 Ok(self.chr_rom[index])
             },
 
@@ -145,7 +153,7 @@ impl Mapper for Mapper1 {
                     3     => self.prg_bank as usize,
                     _     => panic!("bad prg_mode"),
                 };
-                let index = (16384 * bank) | (address as usize & 0x3fff);
+                let index = (PRG_BANK_SIZE * bank) | (address as usize & 0x3fff);
 
                 let val = self.prg_rom[index];
                 Ok(val)
@@ -157,7 +165,7 @@ impl Mapper for Mapper1 {
                     3     => self.n_banks - 1,
                     _     => panic!("bad prg_mode"),
                 };
-                let index = (16384 * bank) | (address as usize & 0x3fff);
+                let index = (PRG_BANK_SIZE * bank) | (address as usize & 0x3fff);
 
                 let val = self.prg_rom[index];
                 Ok(val)
@@ -177,7 +185,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (4096 * bank) | address as usize;
+                let index = (CHR_BANK_SIZE * bank) | address as usize;
                 self.chr_rom[index] = val;
                 Ok(val)
             },
@@ -188,7 +196,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (4096 * bank) | (address as usize - 0x1000);
+                let index = (CHR_BANK_SIZE * bank) | (address as usize - 0x1000);
                 self.chr_rom[index] = val;
                 Ok(val)
             },
