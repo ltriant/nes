@@ -6,6 +6,8 @@ use crate::mapper::Mapper;
 use crate::mapper::MirrorMode;
 use crate::serde;
 
+const PRG_BANK_SIZE: usize = 16384;
+
 //
 // UxROM (mapper 2)
 //
@@ -54,12 +56,12 @@ impl Mapper for Mapper2 {
 
             // PRG-ROM
             0x8000 ..= 0xbfff => {
-                let index = (self.prg_bank1 as usize * 16384)
+                let index = (self.prg_bank1 as usize * PRG_BANK_SIZE)
                           + (address as usize - 0x8000);
                 Ok(self.prg_rom[index])
             },
             0xc000 ..= 0xffff => {
-                let index = (self.prg_bank2 as usize * 16384)
+                let index = (self.prg_bank2 as usize * PRG_BANK_SIZE)
                           + (address as usize - 0xc000);
                 Ok(self.prg_rom[index])
             },
