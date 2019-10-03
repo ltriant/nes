@@ -2,6 +2,7 @@ use crate::mapper::Mapper0;
 use crate::mapper::Mapper1;
 use crate::mapper::Mapper2;
 use crate::mapper::Mapper3;
+use crate::mapper::Mapper4;
 use crate::mem::NESMemory;
 
 use std::fs::File;
@@ -43,12 +44,8 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
     debug!("mirroring: {}", if mirror_mode == 0 { "horizontal" } else { "vertical" });
 
     // Get the mapper
-    // TODO the low 4 bits are for things?
-    let mapper_low = (header[6] & 0xf0) >> 4;
-
-    // TODO the low 4 bits are for things?
-    let mapper_high = header[7] & 0xf0 >> 4;
-
+    let mapper_low =  (header[6] & 0xf0) >> 4;
+    let mapper_high = (header[7] & 0xf0) >> 4;
     let mapper = (mapper_high << 4) | mapper_low;
     debug!("mapper: {}", mapper);
 
@@ -103,15 +100,19 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
             mem.ppu.data.mapper = Box::new(mapper);
         },
         1 => {
-            let mapper = Mapper1::new_mapper(rom, vrom, mirror_mode, n_rom_banks);
+            let mapper = Mapper1::new_mapper(rom, vrom, mirror_mode);
             mem.ppu.data.mapper = Box::new(mapper);
         },
         2 => {
-            let mapper = Mapper2::new_mapper(rom, vrom, mirror_mode, n_rom_banks);
+            let mapper = Mapper2::new_mapper(rom, vrom, mirror_mode);
             mem.ppu.data.mapper = Box::new(mapper);
         },
         3 => {
             let mapper = Mapper3::new_mapper(rom, vrom, mirror_mode);
+            mem.ppu.data.mapper = Box::new(mapper);
+        },
+        4 => {
+            let mapper = Mapper4::new_mapper(rom, vrom, mirror_mode);
             mem.ppu.data.mapper = Box::new(mapper);
         },
         _ => {

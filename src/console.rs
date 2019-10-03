@@ -189,12 +189,19 @@ impl Console {
                 for _ in 0 .. ppu_cycles {
                     let res = self.cpu.mem.ppu.step(&mut self.canvas);
 
+                    // TODO uglyyyyy
+                    if self.cpu.mem.ppu.data.mapper.irq_flag() {
+                        self.cpu.trigger_irq();
+                    }
+
+                    if res.signal_scanline {
+                        // TODO uuuuuuugly
+                        self.cpu.mem.ppu.data.mapper.signal_scanline();
+                    }
+
                     if res.trigger_nmi {
                         self.cpu.trigger_nmi();
                     }
-
-                    // TODO so ugly
-                    self.cpu.mem.ppu.data.mapper.step();
 
                     if res.frame_finished {
                         frame_finished = true;

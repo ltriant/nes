@@ -2,6 +2,7 @@ mod mapper0;
 mod mapper1;
 mod mapper2;
 mod mapper3;
+mod mapper4;
 
 use std::convert::From;
 use std::io;
@@ -11,6 +12,7 @@ pub use mapper0::Mapper0;
 pub use mapper1::Mapper1;
 pub use mapper2::Mapper2;
 pub use mapper3::Mapper3;
+pub use mapper4::Mapper4;
 
 #[derive(Clone, Copy)]
 pub enum MirrorMode {
@@ -52,7 +54,8 @@ pub trait Mapper {
     fn read(&mut self, address: u16) -> Result<u8, String>;
     fn write(&mut self, address: u16, val: u8) -> Result<u8, String>;
 
-    fn step(&mut self) {}
+    fn irq_flag(&self) -> bool { false }
+    fn signal_scanline(&mut self) {}
 
     fn save(&self, output: &mut File) -> io::Result<()>;
     fn load(&mut self, input: &mut File) -> io::Result<()>;

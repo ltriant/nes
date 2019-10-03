@@ -321,6 +321,7 @@ impl Storeable for PPU {
 pub struct StepResult {
     pub trigger_nmi: bool,
     pub frame_finished: bool,
+    pub signal_scanline: bool,
 }
 
 impl PPU {
@@ -806,7 +807,7 @@ impl PPU {
         }
 
         y = 10;
-        x = 256 * 3 + 20 + 48;
+        x = 256 * 3 + 20 + 48 + 16;
         for base in SPRITE_PALETTE_ADDRESSES.iter() {
             for offset in 0 ..= 3 {
                 let i = self.data.read(*base + offset as u16).unwrap() as usize;
@@ -844,6 +845,7 @@ impl PPU {
         let mut res = StepResult{
             trigger_nmi: false,
             frame_finished: false,
+            signal_scanline: false,
         };
 
         self.tick(&mut res);
@@ -937,6 +939,11 @@ impl PPU {
 
             res.frame_finished = true;
             return res;
+        }
+
+        if (pre_line || visible_line) && self.rendering_enabled() && self.dot == 260 {
+            debug!("scanline ended");
+            res.signal_scanline = true;
         }
 
         if pre_line && self.dot == 1 {
