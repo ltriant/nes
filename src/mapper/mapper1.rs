@@ -35,10 +35,11 @@ pub struct Mapper1 {
 impl Mapper1 {
     pub fn new_mapper(rom: Vec<u8>,
                       vrom: Vec<u8>,
-                      mirror_mode: u8,
-                      n_prg_banks: usize)
+                      mirror_mode: u8)
         -> Self
     {
+        let n_banks = rom.len() / PRG_BANK_SIZE;
+
         Self {
             chr_rom: vrom,
             prg_rom: rom,
@@ -51,7 +52,7 @@ impl Mapper1 {
 
             shift_register: 0,
             write_count: 0,
-            n_banks: n_prg_banks,
+            n_banks: n_banks,
 
             mirror_mode: MirrorMode::from(mirror_mode),
         }

@@ -23,14 +23,16 @@ pub struct Mapper2 {
 }
 
 impl Mapper2 {
-    pub fn new_mapper(rom: Vec<u8>, vrom: Vec<u8>, mirror_mode: u8, n_prg_banks: usize) -> Self {
+    pub fn new_mapper(rom: Vec<u8>, vrom: Vec<u8>, mirror_mode: u8) -> Self {
+        let n_banks = rom.len() / PRG_BANK_SIZE;
+
         Self {
             chr_rom: vrom,
             prg_rom: rom,
             sram: [0; 0x2000],
 
             prg_bank1: 1,
-            prg_bank2: n_prg_banks as u8 - 1,
+            prg_bank2: n_banks as u8 - 1,
 
             mirror_mode: MirrorMode::from(mirror_mode),
         }
