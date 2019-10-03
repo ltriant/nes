@@ -247,6 +247,12 @@ impl CPU {
         self.interrupt = Some(Interrupt::NMI);
     }
 
+    pub fn trigger_irq(&mut self) {
+        if !self.i {
+            self.interrupt = Some(Interrupt::IRQ);
+        }
+    }
+
     fn nmi(&mut self) {
         let pc = self.pc;
         self.stack_push16(pc);
@@ -259,6 +265,21 @@ impl CPU {
         self.cycles += 7;
 
         debug!("NMI: {:04X}", addr);
+        self.pc = addr;
+    }
+
+    fn irq(&mut self) {
+        let pc = self.pc;
+        self.stack_push16(pc);
+        self.php();
+
+        let lo = self.read(0xFFFE).expect("low IRQ byte") as u16;
+        let hi = self.read(0xFFFF).expect("high IRQ byte") as u16;
+        let addr = (hi << 8) | lo;
+        self.i = true;
+        self.cycles += 7;
+
+        debug!("IRQ: {:04X}", addr);
         self.pc = addr;
     }
 
@@ -327,7 +348,7 @@ impl CPU {
         if let Some(interrupt) = &self.interrupt {
             match interrupt {
                 Interrupt::NMI => { self.nmi() }
-                Interrupt::IRQ => { }
+                Interrupt::IRQ => { self.irq() }
             }
 
             self.interrupt = None;
