@@ -68,12 +68,10 @@ impl Console {
 
         let mut canvas = window.into_canvas().build().unwrap();
 
-        for _ in 0 .. 2 {
-            canvas.clear();
-            canvas.set_draw_color(Color::RGB(0, 0, 0));
-            canvas.fill_rect(Rect::new(0, 0, width, height)).unwrap();
-            canvas.present();
-        }
+        canvas.clear();
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.fill_rect(Rect::new(0, 0, width, height)).unwrap();
+        canvas.present();
 
         let ppu = PPU::new_nes_ppu();
         let controller = Controller::new_controller();
