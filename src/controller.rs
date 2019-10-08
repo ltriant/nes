@@ -17,7 +17,7 @@ pub struct Controller {
 }
 
 impl Memory for Controller {
-    fn read(&mut self, _address: u16) -> Result<u8, String> {
+    fn read(&mut self, _address: u16) -> u8 {
         let mut value = 0;
 
         if self.index < 8 && self.buttons[self.index] {
@@ -29,17 +29,15 @@ impl Memory for Controller {
             self.index = 0;
         }
 
-        Ok(value)
+        value
     }
 
-    fn write(&mut self, _address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, _address: u16, val: u8) {
         self.strobe = val;
 
         if self.strobe & 1 == 1 {
             self.index = 0;
         }
-
-        Ok(val)
     }
 }
 

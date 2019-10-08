@@ -10,11 +10,11 @@ pub struct OAM {
 }
 
 impl Memory for OAM {
-    fn read(&mut self, address: u16) -> Result<u8, String> {
-        Ok(self.data[address as usize % 0x100])
+    fn read(&mut self, address: u16) -> u8 {
+        self.data[address as usize % 0x100]
     }
 
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, address: u16, val: u8) {
         let i = address as usize % 0x100;
 
         // http://wiki.nesdev.com/w/index.php/PPU_OAM#Byte_2
@@ -24,11 +24,9 @@ impl Memory for OAM {
         if i % 4 == 2 {
             let v = val & 0xe3;
             self.data[i] = v;
-            Ok(v)
         }
         else {
             self.data[i] = val;
-            Ok(val)
         }
     }
 }

@@ -40,50 +40,42 @@ impl Mapper for Mapper3 {
         &self.mirror_mode
     }
 
-    fn read(&mut self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> u8 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => {
                 let index = CHR_BANK_SIZE * self.chr_bank as usize + address as usize;
-                Ok(self.chr_rom[index])
+                self.chr_rom[index]
             },
 
             // SRAM
-            0x6000 ..= 0x7fff => {
-                Ok(self.sram[address as usize - 0x6000])
-            },
+            0x6000 ..= 0x7fff => self.sram[address as usize - 0x6000],
 
             // PRG-ROM
-            0x8000 ..= 0xffff => {
-                Ok(self.prg_rom[address as usize - 0x8000])
-            },
-            _ => Ok(0),
+            0x8000 ..= 0xffff => self.prg_rom[address as usize - 0x8000],
+
+            _ => 0,
         }
     }
 
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, address: u16, val: u8) {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => {
                 let index = CHR_BANK_SIZE * self.chr_bank as usize + address as usize;
                 self.chr_rom[index] = val;
-                Ok(val)
             },
 
             // SRAM
-            0x6000 ..= 0x7fff => {
-                self.sram[address as usize - 0x6000] = val;
-                Ok(val)
-            },
+            0x6000 ..= 0x7fff => { self.sram[address as usize - 0x6000] = val },
 
             // PRG-ROM
             0x8000 ..= 0xffff => {
                 // CNROM only uses the first 2 bits, but other boards may use
                 // the rest, apparently.
                 self.chr_bank = val;
-                Ok(val)
             },
-            _ => Ok(0),
+            _ =>  { },
         }
     }
 

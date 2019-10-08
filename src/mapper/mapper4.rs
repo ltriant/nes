@@ -63,7 +63,7 @@ impl Mapper for Mapper4 {
         &self.mirror_mode
     }
 
-    fn read(&mut self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> u8 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => {
@@ -89,13 +89,11 @@ impl Mapper for Mapper4 {
 
                 let offset = address as usize % 0x0400;
                 let index = (CHR_BANK_SIZE * bank) | offset;
-                Ok(self.chr_rom[index])
+                self.chr_rom[index]
             },
 
             // SRAM
-            0x6000 ..= 0x7fff => {
-                Ok(self.sram[address as usize - 0x6000])
-            },
+            0x6000 ..= 0x7fff => self.sram[address as usize - 0x6000],
 
             // PRG-ROM
             0x8000 ..= 0x9fff => {
@@ -108,13 +106,13 @@ impl Mapper for Mapper4 {
 
                 let offset = address as usize & 0x1fff;
                 let index = (PRG_BANK_SIZE * bank) | offset;
-                Ok(self.prg_rom[index])
+                self.prg_rom[index]
             },
             0xa000 ..= 0xbfff => {
                 let bank = self.regs[7];
                 let offset = address as usize & 0x1fff;
                 let index = (PRG_BANK_SIZE * bank) | offset;
-                Ok(self.prg_rom[index])
+                self.prg_rom[index]
             },
             0xc000 ..= 0xdfff => {
                 let bank = if self.prg_mode {
@@ -126,34 +124,28 @@ impl Mapper for Mapper4 {
 
                 let offset = address as usize & 0x1fff;
                 let index = (PRG_BANK_SIZE * bank) | offset;
-                Ok(self.prg_rom[index])
+                self.prg_rom[index]
             },
             0xe000 ..= 0xffff => {
                 let bank = self.n_prg_banks - 1;
                 let offset = address as usize & 0x1fff;
                 let index = (PRG_BANK_SIZE * bank) | offset;
-                Ok(self.prg_rom[index])
+                self.prg_rom[index]
             },
 
-            _ => Ok(0),
+            _ => 0,
         }
     }
 
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, address: u16, val: u8) {
         let even = address & 1 == 0;
 
         match address {
             // CHR-ROM
-            0x0000 ..= 0x1fff => {
-                self.chr_rom[address as usize] = val;
-                Ok(val)
-            },
+            0x0000 ..= 0x1fff => { self.chr_rom[address as usize] = val },
 
             // SRAM
-            0x6000 ..= 0x7fff => {
-                self.sram[address as usize - 0x6000] = val;
-                Ok(val)
-            },
+            0x6000 ..= 0x7fff => { self.sram[address as usize - 0x6000] = val },
 
             // PRG-ROM
             0x8000 ..= 0x9fff => {
@@ -167,8 +159,6 @@ impl Mapper for Mapper4 {
                     // Bank data
                     self.regs[self.index] = val as usize;
                 }
-
-                Ok(0)
             },
             0xa000 ..= 0xbfff => {
                 if even {
@@ -187,8 +177,6 @@ impl Mapper for Mapper4 {
                     // Many emulators choose not to implement them as part of
                     // iNES Mapper 4 to avoid an incompatibility with the MMC6.
                 }
-
-                Ok(0)
             },
 
             0xc000 ..= 0xdfff => {
@@ -200,8 +188,6 @@ impl Mapper for Mapper4 {
                     // IRQ reload
                     self.irq_counter = 0;
                 }
-
-                Ok(0)
             },
 
             0xe000 ..= 0xffff => {
@@ -214,10 +200,9 @@ impl Mapper for Mapper4 {
                     // IRQ enable
                     self.irq_enabled = true;
                 }
-
-                Ok(0)
             },
-            _ => Ok(0),
+
+            _ => { },
         }
     }
 

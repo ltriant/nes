@@ -79,18 +79,18 @@ pub struct PPU {
 }
 
 impl Memory for PPU {
-    fn read(&mut self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> u8 {
         // The PPU registers exist from 0x2000 to 0x2007, the rest of the
         // address space is just a mirror of these first eight bytes.
         let address = address % 8 + 0x2000;
         match address {
             0x2000 => {
                 let PPUCtrl(n) = self.ctrl;
-                Ok(n)
+                n
             },
             0x2001 => {
                 let PPUMask(n) = self.mask;
-                Ok(n)
+                n
             },
             0x2002 => {
                 let PPUStatus(mut n) = self.status;
@@ -110,12 +110,12 @@ impl Memory for PPU {
                 // w:                  = 0
                 self.w = false;
 
-                Ok(n)
+                n
             },
-            0x2003 => Ok(0), // OAMADDR is write-only
+            0x2003 => 0, // OAMADDR is write-only
             0x2004 => self.oam.read(self.oam_addr as u16),
-            0x2005 => Ok(0), // PPUSCROLL is write-only
-            0x2006 => Ok(0), // PPUADDR is write-only
+            0x2005 => 0, // PPUSCROLL is write-only
+            0x2006 => 0, // PPUADDR is write-only
             0x2007 => {
                 let rv;
 
@@ -123,24 +123,25 @@ impl Memory for PPU {
                 // Palette reads aren't buffered
                 if self.ppu_addr % 0x4000 <= 0x3eff {
                     rv = self.buffered_data;
-                    self.buffered_data = self.data.read(self.ppu_addr)?;
+                    self.buffered_data = self.data.read(self.ppu_addr);
                 }
                 else {
                     // TODO why do we subtract 0x1000 ?
-                    self.buffered_data = self.data.read(self.ppu_addr - 0x1000)?;
-                    rv = self.data.read(self.ppu_addr)?;
+                    self.buffered_data = self.data.read(self.ppu_addr - 0x1000);
+                    rv = self.data.read(self.ppu_addr);
                 }
 
                 self.ppu_addr = self.ppu_addr.wrapping_add(
                     self.ctrl.vram_addr_increment());
 
-                Ok(rv)
+                rv
             },
+
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
 
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, address: u16, val: u8) {
         self.last_value = val;
 
         let address = address % 8 + 0x2000;
@@ -154,22 +155,13 @@ impl Memory for PPU {
 
                 self.nmi_output = (val >> 7) & 1 == 1;
                 self.nmi_change();
-
-                Ok(val)
             },
-            0x2001 => {
-                self.mask = PPUMask(val);
-                Ok(val)
-            },
-            0x2002 => Ok(0),
-            0x2003 => {
-                self.oam_addr = val;
-                Ok(val)
-            },
+            0x2001 => { self.mask = PPUMask(val) },
+            0x2002 => { },
+            0x2003 => { self.oam_addr = val },
             0x2004 => {
-                self.oam.write(self.oam_addr as u16, val)?;
+                self.oam.write(self.oam_addr as u16, val);
                 self.oam_addr = self.oam_addr.wrapping_add(1);
-                Ok(val)
             },
             0x2005 => {
                 if self.w {
@@ -190,8 +182,6 @@ impl Memory for PPU {
                     self.x = val & 0x07;
                     self.w = true;
                 }
-
-                Ok(val)
             },
             0x2006 => {
                 if self.w {
@@ -211,15 +201,14 @@ impl Memory for PPU {
                            | (((val as u16) & 0x3f) << 8);
                     self.w = true;
                 }
-
-                Ok(val)
             },
             0x2007 => {
-                let rv = self.data.write(self.ppu_addr, val)?;
+                let rv = self.data.write(self.ppu_addr, val);
                 self.ppu_addr = self.ppu_addr.wrapping_add(
                     self.ctrl.vram_addr_increment());
-                Ok(rv)
+                rv
             },
+
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
@@ -320,6 +309,7 @@ impl Storeable for PPU {
 
 pub struct StepResult {
     pub trigger_nmi: bool,
+    pub trigger_irq: bool,
     pub frame_finished: bool,
     pub signal_scanline: bool,
 }
@@ -502,8 +492,8 @@ impl PPU {
     // pattern tables for every row of a sprite, you would call this with the
     // `row' parameter being the values from 0 to 7 (inclusive).
     fn fetch_sprite_pattern(&mut self, i: u16, row: i16) -> u32 {
-        let mut tile = self.oam.read(i * 4 + 1).unwrap() as u16;
-        let attributes = self.oam.read(i * 4 + 2).unwrap();
+        let mut tile = self.oam.read(i * 4 + 1) as u16;
+        let attributes = self.oam.read(i * 4 + 2);
 
         let address: u16;
         let mut row = row;
@@ -536,8 +526,8 @@ impl PPU {
         }
 
         let a = ((attributes & 3) << 2) as u32;
-        let mut low_tile_byte = self.data.read(address).unwrap() as u32;
-        let mut high_tile_byte = self.data.read(address + 8).unwrap() as u32;
+        let mut low_tile_byte = self.data.read(address) as u32;
+        let mut high_tile_byte = self.data.read(address + 8) as u32;
 
         // Now we need to return a 32-bit unsigned value, representing the 8
         // pixels of this row of the sprite. This means we have 4 bits per
@@ -582,9 +572,9 @@ impl PPU {
 
         for i in 0 .. 64 {
             let sprite = i as u16;
-            let y = self.oam.read(sprite * 4 + 0).unwrap();
-            let a = self.oam.read(sprite * 4 + 2).unwrap();
-            let x = self.oam.read(sprite * 4 + 3).unwrap();
+            let y = self.oam.read(sprite * 4 + 0);
+            let a = self.oam.read(sprite * 4 + 2);
+            let x = self.oam.read(sprite * 4 + 3);
 
             let row: i16 = (self.scanline as i16) - (y as i16);
 
@@ -657,13 +647,12 @@ impl PPU {
         // Set the base palette address
         let address = 0x3f00 | address_low_nyb;
 
-        let palette_index = self.data.read(address)
-            .expect("unable to read palette index") % 64;
+        let palette_index = self.data.read(address) % 64;
         let color = PALETTE[palette_index as usize];
         let rect = Rect::new((x as i32) * 3, (y as i32) * 3, 3, 3);
 
         canvas.set_draw_color(color);
-        canvas.fill_rect(rect).expect("unable to fill rectangle");
+        canvas.fill_rect(rect).unwrap();
     }
 
     fn fetch_nametable_byte(&mut self) -> u8 {
@@ -671,7 +660,7 @@ impl PPU {
         // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Tile_and_attribute_fetching
         let addr = 0x2000 | (v & 0x0fff);
         debug!("fetching NT byte from 0x{:04X}", addr);
-        self.data.read(addr).expect("unable to fetch NT byte")
+        self.data.read(addr)
     }
 
     fn fetch_attrtable_byte(&mut self) -> u8 {
@@ -684,7 +673,7 @@ impl PPU {
                  | ((v >> 2) & 0x07);
 
         debug!("fetching AT byte from 0x{:04X}", addr);
-        let attrbyte = self.data.read(addr).expect("unable to fetch AT byte");
+        let attrbyte = self.data.read(addr);
 
         let shift = ((v >> 4) & 4) | (v & 2);
         ((attrbyte >> shift) & 3) << 2
@@ -698,7 +687,7 @@ impl PPU {
             + (16 * tile);
 
         debug!("fetching low tile byte from 0x{:04X}", addr);
-        self.data.read(addr).expect("unable to fetch low tile byte")
+        self.data.read(addr)
     }
 
     fn fetch_high_tile_byte(&mut self) -> u8 {
@@ -709,7 +698,7 @@ impl PPU {
             + (16 * tile);
 
         debug!("fetching high tile byte from 0x{:04X}", addr + 8);
-        self.data.read(addr + 8).expect("unable to fetch high tile byte")
+        self.data.read(addr + 8)
     }
 
     fn fetch_tile_data(&self) -> u32 {
@@ -746,8 +735,8 @@ impl PPU {
         for tile in 0 .. 256 {
             for row in 0 ..= 7 {
                 let addr = pattern_table + (tile * 16) + row;
-                let mut low_byte = self.data.read(addr).unwrap();
-                let mut high_byte = self.data.read(addr + 8).unwrap();
+                let mut low_byte = self.data.read(addr);
+                let mut high_byte = self.data.read(addr + 8);
 
                 for col in 0 .. 8 {
                     let p1 = (low_byte & 0x80) >> 7;
@@ -796,7 +785,7 @@ impl PPU {
 
         for base in BACKGROUND_PALETTE_ADDRESSES.iter() {
             for offset in 0 ..= 3 {
-                let i = self.data.read(*base + offset as u16).unwrap() as usize;
+                let i = self.data.read(*base + offset as u16) as usize;
                 canvas.set_draw_color(PALETTE[i % 64]);
 
                 let rect = Rect::new(x + (width as i32) * offset, y, width, height);
@@ -810,7 +799,7 @@ impl PPU {
         x = 256 * 3 + 20 + 48 + 16;
         for base in SPRITE_PALETTE_ADDRESSES.iter() {
             for offset in 0 ..= 3 {
-                let i = self.data.read(*base + offset as u16).unwrap() as usize;
+                let i = self.data.read(*base + offset as u16) as usize;
                 canvas.set_draw_color(PALETTE[i % 64]);
 
                 let rect = Rect::new(x + (width as i32) * offset, y, width, height);
@@ -844,6 +833,7 @@ impl PPU {
 
         let mut res = StepResult{
             trigger_nmi: false,
+            trigger_irq: false,
             frame_finished: false,
             signal_scanline: false,
         };
@@ -938,6 +928,7 @@ impl PPU {
             }
 
             res.frame_finished = true;
+            res.trigger_irq = self.data.mapper.irq_flag();
             return res;
         }
 
@@ -955,6 +946,7 @@ impl PPU {
             self.nmi_change();
         }
 
+        res.trigger_irq = self.data.mapper.irq_flag();
         return res;
     }
 }

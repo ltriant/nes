@@ -103,13 +103,13 @@ impl Console {
     }
 
     // Reads a null-terminated string starting at `addr'
-    fn read_string(&mut self, addr: u16) -> Result<String, String> {
+    fn read_string(&mut self, addr: u16) -> String {
         let mut addr = addr;
 
         let mut rv = String::new();
 
         loop {
-            let b = self.cpu.mem.read(addr)?;
+            let b = self.cpu.mem.read(addr);
 
             if b == 0 {
                 break;
@@ -120,21 +120,21 @@ impl Console {
             addr += 1;
         }
 
-        Ok(rv)
+        rv
     }
 
     // Detects if we're running a instr_test-v5 rom, and if so, it will output
     // the test results.
     fn debug_tests(&mut self) {
-        let a = self.cpu.mem.read(0x6001).unwrap();
-        let b = self.cpu.mem.read(0x6002).unwrap();
-        let c = self.cpu.mem.read(0x6003).unwrap();
+        let a = self.cpu.mem.read(0x6001);
+        let b = self.cpu.mem.read(0x6002);
+        let c = self.cpu.mem.read(0x6003);
 
         if a == 0xDE && b == 0xB0 && c == 0x61 {
-            let result = self.cpu.mem.read(0x6000).unwrap();
+            let result = self.cpu.mem.read(0x6000);
 
             if result <= 0x7F {
-                let result_string = self.read_string(0x6004).unwrap();
+                let result_string = self.read_string(0x6004);
                 println!("{}", result_string);
 
                 println!("Emulator test complete, final status: 0x{:02X}", result);
@@ -187,8 +187,7 @@ impl Console {
                 for _ in 0 .. ppu_cycles {
                     let res = self.cpu.mem.ppu.step(&mut self.canvas);
 
-                    // TODO uglyyyyy
-                    if self.cpu.mem.ppu.data.mapper.irq_flag() {
+                    if res.trigger_irq {
                         self.cpu.trigger_irq();
                     }
 

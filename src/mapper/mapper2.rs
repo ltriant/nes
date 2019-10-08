@@ -44,53 +44,42 @@ impl Mapper for Mapper2 {
         &self.mirror_mode
     }
 
-    fn read(&mut self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> u8 {
         match address {
             // CHR-ROM
-            0x0000 ..= 0x1fff => {
-                Ok(self.chr_rom[address as usize])
-            },
+            0x0000 ..= 0x1fff => self.chr_rom[address as usize],
 
             // SRAM
-            0x6000 ..= 0x7fff => {
-                Ok(self.sram[address as usize - 0x6000])
-            },
+            0x6000 ..= 0x7fff => self.sram[address as usize - 0x6000],
 
             // PRG-ROM
             0x8000 ..= 0xbfff => {
                 let index = (self.prg_bank1 as usize * PRG_BANK_SIZE)
                           + (address as usize - 0x8000);
-                Ok(self.prg_rom[index])
+                self.prg_rom[index]
             },
             0xc000 ..= 0xffff => {
                 let index = (self.prg_bank2 as usize * PRG_BANK_SIZE)
                           + (address as usize - 0xc000);
-                Ok(self.prg_rom[index])
+                self.prg_rom[index]
             },
-            _ => Ok(0),
+
+            _ => 0,
         }
     }
 
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, address: u16, val: u8) {
         match address {
             // CHR-ROM
-            0x0000 ..= 0x1fff => {
-                self.chr_rom[address as usize] = val;
-                Ok(val)
-            },
+            0x0000 ..= 0x1fff => { self.chr_rom[address as usize] = val },
 
             // SRAM
-            0x6000 ..= 0x7fff => {
-                self.sram[address as usize - 0x6000] = val;
-                Ok(val)
-            },
+            0x6000 ..= 0x7fff => { self.sram[address as usize - 0x6000] = val },
 
             // PRG-ROM
-            0x8000 ..= 0xffff => {
-                self.prg_bank1 = val & 0x0f;
-                Ok(val)
-            },
-            _ => Ok(0),
+            0x8000 ..= 0xffff => { self.prg_bank1 = val & 0x0f },
+
+            _ => { },
         }
     }
 

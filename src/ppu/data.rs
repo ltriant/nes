@@ -22,13 +22,13 @@ pub const PATTERN_TABLE_ADDRESSES: [u16; 2] =
     [0x0000, 0x1000];
 
 impl Memory for PPUData {
-    fn read(&mut self, address: u16) -> Result<u8, String> {
+    fn read(&mut self, address: u16) -> u8 {
         let address = address % 0x4000;
         match address {
             0x0000 ..= 0x1fff => self.mapper.read(address),
             0x2000 ..= 0x3eff => {
                 let mirrored_address = self.nametable_mirror_address(address);
-                Ok(self.nametables[mirrored_address])
+                self.nametables[mirrored_address]
             }
             0x3f00 ..= 0x3fff => {
                 let mut i = address as usize % 0x20;
@@ -40,13 +40,13 @@ impl Memory for PPUData {
                     _ => { },
                 }
 
-                Ok(self.palette[i])
+                self.palette[i]
             },
-            _ => Err(format!("PPUData out of bounds 0x{:04X}", address))
+            _ => panic!("PPUData out of bounds 0x{:04X}", address)
         }
     }
 
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String> {
+    fn write(&mut self, address: u16, val: u8) {
         let address = address % 0x4000;
         match address {
             0x0000 ..= 0x1fff => self.mapper.write(address, val),
@@ -54,7 +54,6 @@ impl Memory for PPUData {
                 debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
                 let mirrored_address = self.nametable_mirror_address(address);
                 self.nametables[mirrored_address] = val;
-                Ok(val)
             },
             0x3f00 ..= 0x3fff => {
                 debug!("writing 0x{:02X} to palette 0x{:04X}", val, address);
@@ -68,9 +67,8 @@ impl Memory for PPUData {
                 }
 
                 self.palette[i] = val;
-                Ok(val)
             },
-            _ => Err(format!("PPUData out of bounds 0x{:04X}", address))
+            _ => panic!("PPUData out of bounds 0x{:04X}", address)
         }
     }
 }

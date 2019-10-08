@@ -51,8 +51,8 @@ impl From<u8> for MirrorMode {
 pub trait Mapper {
     fn mirror_mode(&self) -> &MirrorMode { &MirrorMode::Vertical }
 
-    fn read(&mut self, address: u16) -> Result<u8, String>;
-    fn write(&mut self, address: u16, val: u8) -> Result<u8, String>;
+    fn read(&mut self, address: u16) -> u8;
+    fn write(&mut self, address: u16, val: u8);
 
     fn irq_flag(&self) -> bool { false }
     fn signal_scanline(&mut self) {}
@@ -69,8 +69,8 @@ pub trait Mapper {
 
 pub struct MapperEmpty;
 impl Mapper for MapperEmpty {
-    fn read(&mut self, _address: u16) -> Result<u8, String> { Ok(0) }
-    fn write(&mut self, _address: u16, _val: u8) -> Result<u8, String> { Ok(0) }
+    fn read(&mut self, _address: u16) -> u8 { 0 }
+    fn write(&mut self, _address: u16, _val: u8) { }
     fn save(&self, _output: &mut File) -> io::Result<()> { Ok(()) }
     fn load(&mut self, _input: &mut File) -> io::Result<()> { Ok(()) }
 }
