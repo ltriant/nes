@@ -84,11 +84,3 @@ In order to run the nestest ROM, the CPU debugging output can be combined with t
 ```
 $ NES_CPU_NESTEST=1 NES_CPU_DEBUG=1 cargo run -- roms/nestest.nes
 ``` 
-
-## Blog Posts
-
-I wrote a series of blog posts about developing this emulator.
-
-* [NES Emulator, Part 1: I have no idea what I'm doing](https://ltriant.github.io/2018/03/09/nes-emulator-part-1-i-have-no-idea-what-im-doing.html)
-* [NES Emulator, Part 2: I sort of know what I’m doing](https://ltriant.github.io/2018/06/29/nes-emulator-part-2-i-sort-of-know-what-im-doing.html)
-* [NES Emulator, Part 3: It's alive!](https://ltriant.github.io/2019/09/04/nes-emulator-part-3.html)
