@@ -819,6 +819,21 @@ impl PPU {
         self.render_pattern_table(canvas, PATTERN_TABLE_ADDRESSES[1], x + 144, y);
     }
 
+    fn render_tile_borders(&mut self, canvas: &mut Canvas<Window>) {
+        let scale = 3;
+        canvas.set_draw_color(Color::RGB(200, 200, 200));
+
+        for x in 0 .. 32 {
+            for y in 0 .. 30 {
+                let rect = Rect::new(8 * x * scale,
+                                     8 * y * scale,
+                                     8 * scale as u32,
+                                     8 * scale as u32);
+                canvas.draw_rect(rect).unwrap();
+            }
+        }
+    }
+
     pub fn step(&mut self, canvas: &mut Canvas<Window>) -> StepResult {
         // http://wiki.nesdev.com/w/index.php/PPU_rendering#Line-by-line_timing
         //
@@ -925,6 +940,7 @@ impl PPU {
 
             if *NES_PPU_DEBUG {
                 self.render_tile_data(canvas);
+                self.render_tile_borders(canvas);
             }
 
             res.frame_finished = true;
