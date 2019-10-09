@@ -125,7 +125,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (CHR_BANK_SIZE * bank) | (address as usize & 0x3fff);
+                let index = ((CHR_BANK_SIZE * bank) | (address as usize & 0x3fff)) % self.chr_rom.len();
                 self.chr_rom[index]
             },
             0x1000 ..= 0x1fff => {
@@ -135,7 +135,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (CHR_BANK_SIZE * bank) | ((address as usize - 0x1000) & 0x3fff);
+                let index = ((CHR_BANK_SIZE * bank) | ((address as usize - 0x1000) & 0x3fff)) % self.chr_rom.len();
                 self.chr_rom[index]
             },
 
@@ -152,10 +152,9 @@ impl Mapper for Mapper1 {
                     3     => self.prg_bank as usize,
                     _     => panic!("bad prg_mode"),
                 };
-                let index = (PRG_BANK_SIZE * bank) | (address as usize & 0x3fff);
+                let index = ((PRG_BANK_SIZE * bank) | (address as usize & 0x3fff)) % self.prg_rom.len();
 
-                let val = self.prg_rom[index];
-                val
+                self.prg_rom[index]
             },
             0xc000 ..= 0xffff => {
                 let bank = match self.prg_mode() {
@@ -164,10 +163,9 @@ impl Mapper for Mapper1 {
                     3     => self.n_banks - 1,
                     _     => panic!("bad prg_mode"),
                 };
-                let index = (PRG_BANK_SIZE * bank) | (address as usize & 0x3fff);
+                let index = ((PRG_BANK_SIZE * bank) | (address as usize & 0x3fff)) % self.prg_rom.len();
 
-                let val = self.prg_rom[index];
-                val
+                self.prg_rom[index]
             },
 
             _ => 0,
@@ -184,7 +182,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (CHR_BANK_SIZE * bank) | address as usize;
+                let index = ((CHR_BANK_SIZE * bank) | address as usize) % self.chr_rom.len();
                 self.chr_rom[index] = val;
             },
             0x1000 ..= 0x1fff => {
@@ -194,7 +192,7 @@ impl Mapper for Mapper1 {
                     _ => panic!("bad chr_mode"),
                 } as usize;
 
-                let index = (CHR_BANK_SIZE * bank) | (address as usize - 0x1000);
+                let index = ((CHR_BANK_SIZE * bank) | (address as usize - 0x1000)) % self.chr_rom.len();
                 self.chr_rom[index] = val;
             },
 

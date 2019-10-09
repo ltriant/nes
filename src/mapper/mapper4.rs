@@ -88,7 +88,7 @@ impl Mapper for Mapper4 {
                 };
 
                 let offset = address as usize % 0x0400;
-                let index = (CHR_BANK_SIZE * bank) | offset;
+                let index = ((CHR_BANK_SIZE * bank) | offset) % self.chr_rom.len();
                 self.chr_rom[index]
             },
 
@@ -105,13 +105,13 @@ impl Mapper for Mapper4 {
                 };
 
                 let offset = address as usize & 0x1fff;
-                let index = (PRG_BANK_SIZE * bank) | offset;
+                let index = ((PRG_BANK_SIZE * bank) | offset) % self.prg_rom.len();
                 self.prg_rom[index]
             },
             0xa000 ..= 0xbfff => {
                 let bank = self.regs[7];
                 let offset = address as usize & 0x1fff;
-                let index = (PRG_BANK_SIZE * bank) | offset;
+                let index = ((PRG_BANK_SIZE * bank) | offset) % self.prg_rom.len();
                 self.prg_rom[index]
             },
             0xc000 ..= 0xdfff => {
@@ -123,13 +123,13 @@ impl Mapper for Mapper4 {
                 };
 
                 let offset = address as usize & 0x1fff;
-                let index = (PRG_BANK_SIZE * bank) | offset;
+                let index = ((PRG_BANK_SIZE * bank) | offset) % self.prg_rom.len();
                 self.prg_rom[index]
             },
             0xe000 ..= 0xffff => {
                 let bank = self.n_prg_banks - 1;
                 let offset = address as usize & 0x1fff;
-                let index = (PRG_BANK_SIZE * bank) | offset;
+                let index = ((PRG_BANK_SIZE * bank) | offset) % self.prg_rom.len();
                 self.prg_rom[index]
             },
 
