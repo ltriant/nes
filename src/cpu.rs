@@ -372,18 +372,18 @@ impl CPU {
 
     pub fn adc(&mut self, addr: u16) {
         let val = self.read(addr);
-        let n = (val as u16) + (self.a as u16) + (self.c as u16);
+        let n = (self.a as u16) + (val as u16) + (self.c as u16);
+        let a = (n & 0x00ff) as u8;
 
-        let a = (n & 0xff) as u8;
         self.update_sz(a);
-
         self.c = n > 0xff;
 
-        // I took this from the NesDev forums.
-        // It's only concerned with the 8th bit, which indicates the sign of each
-        // value. The overflow bit is set if adding two positive numbers results
-        // in a negative, or if adding two negative numbers results in a positive.
-        self.v = ((self.a ^ val) & 0x80 == 0) && ((self.a ^ n as u8) & 0x80 > 0);
+        // The first condition checks if the sign of the accumulator and the
+        // the sign of value that we're adding are the same.
+        //
+        // The second condition checks if the result of the addition has a
+        // different sign to either of the values we added together.
+        self.v = ((self.a ^ val) & 0x80 == 0) && ((self.a ^ a as u8) & 0x80 != 0);
 
         self.a = a;
     }
@@ -710,14 +710,22 @@ impl CPU {
 
     pub fn sbc(&mut self, addr: u16) {
         let val = self.read(addr);
-        let n: i16 = (self.a as i16)
-            .wrapping_sub(val as i16)
-            .wrapping_sub(1 - self.c as i16);
+        let val = ! val;
 
-        let a = n as u8;
+        // Everything below is exactly the same as the adc function.
+        let n = (self.a as u16) + (val as u16) + (self.c as u16);
+        let a = (n & 0x00ff) as u8;
+
         self.update_sz(a);
-        self.c = n >= 0;
-        self.v = ((self.a ^ val) & 0x80 > 0) && ((self.a ^ n as u8) & 0x80 > 0);
+        self.c = n > 0xff;
+
+        // The first condition checks if the sign of the accumulator and the
+        // the sign of value that we're adding are the same.
+        //
+        // The second condition checks if the result of the addition has a
+        // different sign to either of the values we added together.
+        self.v = ((self.a ^ val) & 0x80 == 0) && ((self.a ^ a as u8) & 0x80 != 0);
+
         self.a = a;
     }
 
