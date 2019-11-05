@@ -2,6 +2,7 @@ use std::io::{Read, Write};
 use std::io;
 use std::fs::File;
 
+use crate::apu::APU;
 use crate::controller::Controller;
 use crate::ppu::PPU;
 use crate::serde::Storeable;
@@ -13,6 +14,7 @@ pub trait Memory {
 
 pub struct NESMemory {
     pub ppu: PPU,
+    pub apu: APU,
     pub controller: Controller,
     ram: [u8; 0x800],
 }
@@ -28,23 +30,14 @@ impl Memory for NESMemory {
             // address space is just a mirror of these first eight bytes.
             0x2000 ..= 0x3fff => self.ppu.read(address),
 
-            // APU pulses
-            0x4000 ..= 0x4007 => 0,
-
-            // APU triangle
-            0x4008 ..= 0x400b => 0,
-
-            // APU noise
-            0x400c ..= 0x400f => 0,
-
-            // APU DMC
-            0x4010 ..= 0x4013 => 0,
+            // APU registers
+            0x4000 ..= 0x4013 => self.apu.read(address),
 
             // OAM DMA
             0x4014            => 0,  // TODO is this right?
 
-            // APU sound channel
-            0x4015            => 0,
+            // APU registers
+            0x4015            => self.apu.read(address),
 
             // Controller 1
             0x4016            => self.controller.read(address),
@@ -72,23 +65,14 @@ impl Memory for NESMemory {
 
             0x2000 ..= 0x3fff => self.ppu.write(address, val),
 
-            // APU pulses
-            0x4000 ..= 0x4007 => { },
-
-            // APU triangle
-            0x4008 ..= 0x400b => { },
-
-            // APU noise
-            0x400c ..= 0x400f => { },
-
-            // APU DMC
-            0x4010 ..= 0x4013 => { },
+            // APU registers
+            0x4000 ..= 0x4013 => self.apu.write(address, val),
 
             // OAM DMA
             0x4014            => panic!("this should've been intercepted by the CPU"),
 
-            // APU sound channel
-            0x4015            => { },
+            // APU registers
+            0x4015            => self.apu.write(address, val),
 
             // Controller 1
             0x4016            => self.controller.write(address, val),
@@ -123,9 +107,10 @@ impl Storeable for NESMemory {
 }
 
 impl NESMemory {
-    pub fn new_nes_mem(ppu: PPU, controller: Controller) -> Self {
+    pub fn new_nes_mem(ppu: PPU, apu: APU, controller: Controller) -> Self {
         Self {
             ppu: ppu,
+            apu: apu,
             controller: controller,
             ram: [0; 0x800],
         }

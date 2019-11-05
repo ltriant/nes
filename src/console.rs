@@ -5,6 +5,7 @@ use std::process;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::apu::APU;
 use crate::controller::Controller;
 use crate::cpu::CPU;
 use crate::mem::{Memory, NESMemory};
@@ -14,6 +15,7 @@ use crate::ines;
 use crate::serde::Storeable;
 
 use sdl2::Sdl;
+use sdl2::audio::AudioSpecDesired;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -40,6 +42,7 @@ lazy_static!{
 
 const NES_FPS: f64 = 60.0;
 const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0) as u64);
+const SAMPLES_PER_FRAME: usize = 1024;
 
 pub struct Console {
     sdl_ctx:   Sdl,
@@ -75,9 +78,10 @@ impl Console {
             canvas.present();
         }
 
+        let apu = APU::new_nes_apu();
         let ppu = PPU::new_nes_ppu();
         let controller = Controller::new_controller();
-        let mem = NESMemory::new_nes_mem(ppu, controller);
+        let mem = NESMemory::new_nes_mem(ppu, apu, controller);
 
         Self {
             sdl_ctx:   sdl_context,
@@ -165,6 +169,17 @@ impl Console {
     pub fn power_up(&mut self) {
         info!("powering up");
 
+        let audio_subsystem = self.sdl_ctx.audio().unwrap();
+        let desired_spec = AudioSpecDesired {
+            freq:     Some(44_100),
+            channels: Some(2),
+            samples:  Some(1024),
+        };
+        let audio_device = audio_subsystem.open_queue(None, &desired_spec).unwrap();
+        audio_device.resume();
+        let mut samples = Vec::with_capacity(SAMPLES_PER_FRAME);
+        let mut audio_sampling = true;
+
         self.cpu.reset();
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
@@ -182,8 +197,8 @@ impl Console {
             else {
 
                 let cpu_cycles = self.cpu.step();
-
                 let ppu_cycles = cpu_cycles * 3;
+                let apu_cycles = cpu_cycles;
 
                 let mut frame_finished = false;
                 for _ in 0 .. ppu_cycles {
@@ -207,8 +222,30 @@ impl Console {
                     }
                 }
 
+                for _ in 0 .. apu_cycles {
+                    let res = self.cpu.mem.apu.step(self.cpu.cycles);
+
+                    if res.trigger_irq {
+                        self.cpu.trigger_irq();
+                    }
+
+                    if let Some(signal) = res.signal {
+                        if audio_sampling {
+                            samples.push(signal);
+                            samples.push(signal);
+
+                            if samples.len() >= SAMPLES_PER_FRAME {
+                                audio_sampling = false;
+                            }
+                        }
+                    }
+                }
+
                 if frame_finished {
                     self.canvas.present();
+                    audio_device.queue(&samples);
+                    samples.clear();
+                    audio_sampling = true;
 
                     if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
                         debug!("sleeping for {}ms", delay.as_millis());
