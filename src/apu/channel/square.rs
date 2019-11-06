@@ -1,7 +1,9 @@
 use crate::apu::channel::Voice;
 
 const LENGTH_TABLE: [u8; 32] = [
-    10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22,
+    10, 254, 20, 2, 40, 4, 80, 6,
+    160, 8, 60, 10, 14, 12, 26, 14,
+    12, 16, 24, 18, 48, 20, 96, 22,
     192, 24, 72, 26, 16, 28, 32, 30,
 ];
 
@@ -74,7 +76,8 @@ impl Voice for SquareWave {
 
         if self.envelope_enabled {
             return self.envelope_volume;
-        } else {
+        }
+        else {
             return self.constant_volume;
         }
     }
@@ -116,12 +119,15 @@ impl SquareWave {
             self.envelope_volume = 15;
             self.envelope_value = self.envelope_period;
             self.envelope_start = false;
-        } else if self.envelope_value > 0 {
+        }
+        else if self.envelope_value > 0 {
             self.envelope_value -= 1;
-        } else {
+        }
+        else {
             if self.envelope_volume > 0 {
                 self.envelope_volume -= 1;
-            } else if self.envelope_loop {
+            }
+            else if self.envelope_loop {
                 self.envelope_volume = 15;
             }
 
@@ -138,7 +144,8 @@ impl SquareWave {
             if self.channel == 1 {
                 self.timer_period -= 1;
             }
-        } else {
+        }
+        else {
             self.timer_period += delta;
         }
     }
@@ -151,9 +158,11 @@ impl SquareWave {
 
             self.sweep_value = self.sweep_period;
             self.sweep_reload = false;
-        } else if self.sweep_value > 0 {
+        }
+        else if self.sweep_value > 0 {
             self.sweep_value -= 1;
-        } else {
+        }
+        else {
             if self.sweep_enabled {
                 self.sweep();
             }
@@ -172,7 +181,8 @@ impl SquareWave {
         if self.timer_value == 0 {
             self.timer_value = self.timer_period;
             self.duty_value = (self.duty_value + 1) % 8;
-        } else {
+        }
+        else {
             self.timer_value -= 1;
         }
     }
