@@ -204,10 +204,10 @@ impl SquareWave {
     //
     // The divider's period is set to p + 1.
     pub fn write_sweep(&mut self, val: u8) {
-        self.sweep_enabled = (val & 0b1000_0000) != 0;
-        self.sweep_period = ((val & 0b0111_0000) >> 4) + 1;
-        self.sweep_negate = (val & 0b0000_1000) != 0;
-        self.sweep_shift = val & 0b0000_0111;
+        self.sweep_enabled =  (val & 0b1000_0000) != 0;
+        self.sweep_period  = ((val & 0b0111_0000) >> 4) + 1;
+        self.sweep_negate  =  (val & 0b0000_1000) != 0;
+        self.sweep_shift   =   val & 0b0000_0111;
 
         self.sweep_reload = true;
     }
@@ -222,7 +222,7 @@ impl SquareWave {
     pub fn write_timer_high(&mut self, val: u8) {
         // llll lppp   length index, period high
         let length_index = (val & 0b1111_1000) >> 3;
-        let period_high = (val & 0b0000_0111) as u16;
+        let period_high  = (val & 0b0000_0111) as u16;
 
         self.length_value = LENGTH_TABLE[length_index as usize];
         self.timer_period = (self.timer_period & 0x00ff) | (period_high << 8);
