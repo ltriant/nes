@@ -1,10 +1,8 @@
-use crate::apu::Voice;
+use crate::apu::channel::Voice;
 
 const LENGTH_TABLE: [u8; 32] = [
-    10,  254, 20, 2,  40, 4,  80, 6,
-    160, 8,   60, 10, 14, 12, 26, 14,
-    12,  16,  24, 18, 48, 20, 96, 22,
-    192, 24,  72, 26, 16, 28, 32, 30,
+    10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22,
+    192, 24, 72, 26, 16, 28, 32, 30,
 ];
 
 const DUTY_TABLE: [[u8; 8]; 4] = [
@@ -51,7 +49,7 @@ impl Voice for SquareWave {
         // The mixer receives the current envelope volume except when
 
         // The sequencer output is zero, or
-        if ! self.enabled {
+        if !self.enabled {
             return 0;
         }
 
@@ -76,8 +74,7 @@ impl Voice for SquareWave {
 
         if self.envelope_enabled {
             return self.envelope_volume;
-        }
-        else {
+        } else {
             return self.constant_volume;
         }
     }
@@ -119,15 +116,12 @@ impl SquareWave {
             self.envelope_volume = 15;
             self.envelope_value = self.envelope_period;
             self.envelope_start = false;
-        }
-        else if self.envelope_value > 0 {
+        } else if self.envelope_value > 0 {
             self.envelope_value -= 1;
-        }
-        else {
+        } else {
             if self.envelope_volume > 0 {
                 self.envelope_volume -= 1;
-            }
-            else if self.envelope_loop {
+            } else if self.envelope_loop {
                 self.envelope_volume = 15;
             }
 
@@ -144,8 +138,7 @@ impl SquareWave {
             if self.channel == 1 {
                 self.timer_period -= 1;
             }
-        }
-        else {
+        } else {
             self.timer_period += delta;
         }
     }
@@ -158,11 +151,9 @@ impl SquareWave {
 
             self.sweep_value = self.sweep_period;
             self.sweep_reload = false;
-        }
-        else if self.sweep_value > 0 {
+        } else if self.sweep_value > 0 {
             self.sweep_value -= 1;
-        }
-        else {
+        } else {
             if self.sweep_enabled {
                 self.sweep();
             }
@@ -181,8 +172,7 @@ impl SquareWave {
         if self.timer_value == 0 {
             self.timer_value = self.timer_period;
             self.duty_value = (self.duty_value + 1) % 8;
-        }
-        else {
+        } else {
             self.timer_value -= 1;
         }
     }
@@ -205,9 +195,8 @@ impl SquareWave {
         self.envelope_enabled = (val & 0b0001_0000) == 0;
         self.envelope_period  =  val & 0b0000_1111;
         self.constant_volume  =  val & 0b0000_1111;
-        self.envelope_start = true;
+        self.envelope_start   = true;
     }
-
 
     // A channel's second register configures the sweep unit:
     //
@@ -215,10 +204,10 @@ impl SquareWave {
     //
     // The divider's period is set to p + 1.
     pub fn write_sweep(&mut self, val: u8) {
-        self.sweep_enabled =  (val & 0b1000_0000) != 0;
-        self.sweep_period  = ((val & 0b0111_0000) >> 4) + 1;
-        self.sweep_negate  =  (val & 0b0000_1000) != 0;
-        self.sweep_shift   =   val & 0b0000_0111;
+        self.sweep_enabled = (val & 0b1000_0000) != 0;
+        self.sweep_period = ((val & 0b0111_0000) >> 4) + 1;
+        self.sweep_negate = (val & 0b0000_1000) != 0;
+        self.sweep_shift = val & 0b0000_0111;
 
         self.sweep_reload = true;
     }
@@ -233,7 +222,7 @@ impl SquareWave {
     pub fn write_timer_high(&mut self, val: u8) {
         // llll lppp   length index, period high
         let length_index = (val & 0b1111_1000) >> 3;
-        let period_high  = (val & 0b0000_0111) as u16;
+        let period_high = (val & 0b0000_0111) as u16;
 
         self.length_value = LENGTH_TABLE[length_index as usize];
         self.timer_period = (self.timer_period & 0x00ff) | (period_high << 8);

@@ -1,18 +1,14 @@
+mod channel;
 mod filter;
-mod square;
 
+use crate::apu::channel::{SquareWave, Voice};
+use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
 use crate::mem::Memory;
-use crate::apu::square::SquareWave;
-use crate::apu::filter::{Filter, LowPassFilter, HighPassFilter};
 
 lazy_static!{
     static ref PULSE_TABLE: Vec<f32> = (0 .. 31)
         .map(|i| 95.52 / (8128.0 / i as f32 + 100.0))
         .collect::<Vec<_>>();
-}
-
-trait Voice {
-    fn signal(&self) -> u8;
 }
 
 pub struct APU {
