@@ -190,8 +190,8 @@ impl SquareWave {
     // square wave, without resetting the position of the sequencer:
     pub fn write_control(&mut self, val: u8) {
         self.duty_mode        = (val & 0b1100_0000) >> 6;
-        self.envelope_loop    = (val & 0b0010_0000) == 0;
-        self.length_enabled   = (val & 0b0010_0000) != 0;
+        self.envelope_loop    = (val & 0b0010_0000) != 0;
+        self.length_enabled   = (val & 0b0010_0000) == 0;
         self.envelope_enabled = (val & 0b0001_0000) == 0;
         self.envelope_period  =  val & 0b0000_1111;
         self.constant_volume  =  val & 0b0000_1111;
