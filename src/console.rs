@@ -42,7 +42,10 @@ lazy_static!{
 
 const NES_FPS: f64 = 60.0;
 const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0) as u64);
-const SAMPLES_PER_FRAME: usize = 1024;
+
+// The queue is full of f32s, and we want to maintain roughly 4096 samples in
+// the queue at all times, so 4 * 4096 is the goal size.
+const AUDIO_QUEUE_LOW_WATER_MARK: u32 = 4 * 4096;
 
 pub struct Console {
     sdl_ctx:   Sdl,
@@ -170,6 +173,8 @@ impl Console {
         info!("powering up");
 
         let audio_subsystem = self.sdl_ctx.audio().unwrap();
+        debug!("audio driver: {}", audio_subsystem.current_audio_driver());
+
         let desired_spec = AudioSpecDesired {
             freq:     Some(44_100),
             channels: Some(2),
@@ -177,7 +182,7 @@ impl Console {
         };
         let audio_device = audio_subsystem.open_queue(None, &desired_spec).unwrap();
         audio_device.resume();
-        let mut samples = Vec::with_capacity(SAMPLES_PER_FRAME);
+        let mut samples = Vec::new();
         let mut audio_sampling = true;
 
         self.cpu.reset();
@@ -233,12 +238,31 @@ impl Console {
                         if audio_sampling {
                             samples.push(signal);
                             samples.push(signal);
-
-                            if samples.len() >= SAMPLES_PER_FRAME {
-                                audio_sampling = false;
-                            }
                         }
                     }
+                }
+
+                // Super basic dynamic sampling implementation.
+                //
+                // If the number of samples is too low, we'll end up with
+                // crackling and popping because the audio backend is consuming
+                // the samples faster than we can produce them, but if we have
+                // too many samples, the audio will get more and more out of
+                // sync with the video.
+                //
+                // We want to keep the audio queue full of samples, and we want
+                // to maintain at least AUDIO_QUEUE_LOW_WATER_MARK samples. So
+                // if we've got more than that many in the queue, we stop
+                // sampling, and if we drop below, we start sampling again.
+                //
+                // This is much better than what I had before, but is still
+                // noticeably crackly.
+                if audio_sampling && audio_device.size() > AUDIO_QUEUE_LOW_WATER_MARK {
+                    audio_sampling = false;
+                }
+
+                if !audio_sampling && audio_device.size() < AUDIO_QUEUE_LOW_WATER_MARK {
+                    audio_sampling = true;
                 }
 
                 if frame_finished {
