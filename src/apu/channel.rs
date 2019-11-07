@@ -1,10 +1,10 @@
 mod square;
-//mod triangle;
+mod triangle;
 //mod noise;
 //mod dmc;
 
 pub use crate::apu::channel::square::SquareWave;
-//pub use crate::apu::channel::triangle::TriangleWave;
+pub use crate::apu::channel::triangle::TriangleWave;
 //pub use crate::apu::channel::noise::Noise;
 //pub use crate::apu::channel::dmc::DMC;
 

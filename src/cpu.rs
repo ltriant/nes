@@ -48,7 +48,7 @@ pub struct CPU {
     stall: Option<u64>,
 
     // Total number of cycles executed
-    pub cycles: u64,
+    cycles: u64,
 }
 
 impl Memory for CPU {

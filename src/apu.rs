@@ -1,13 +1,17 @@
 mod channel;
 mod filter;
 
-use crate::apu::channel::{SquareWave, Voice};
+use crate::apu::channel::{SquareWave, TriangleWave, Voice};
 use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
 use crate::mem::Memory;
 
 lazy_static!{
     static ref PULSE_TABLE: Vec<f32> = (0 .. 31)
         .map(|i| 95.52 / (8128.0 / i as f32 + 100.0))
+        .collect::<Vec<_>>();
+
+    static ref TND_TABLE: Vec<f32> = (0 .. 203)
+        .map(|i| 163.37 / (24329.0 / i as f32 + 100.0))
         .collect::<Vec<_>>();
 }
 
@@ -18,13 +22,15 @@ enum SequencerMode {
 }
 
 pub struct APU {
-    square1: SquareWave,
-    square2: SquareWave,
+    square1:  SquareWave,
+    square2:  SquareWave,
+    triangle: TriangleWave,
 
     cycles: u64,
 
-    frame_mode: SequencerMode,
+    frame_mode:  SequencerMode,
     frame_value: u8,
+
     irq: bool, // true = generates IRQ on the last tick of a 4-step sequence
 
     filters: [Box<dyn Filter>; 3],
@@ -42,19 +48,22 @@ impl Memory for APU {
     fn write(&mut self, address: u16, val: u8) {
         match address {
             // Square 1
-            0x4000 => { self.square1.write_control(val) },
-            0x4001 => { self.square1.write_sweep(val) },
-            0x4002 => { self.square1.write_timer_low(val) },
-            0x4003 => { self.square1.write_timer_high(val) },
+            0x4000 => self.square1.write_control(val),
+            0x4001 => self.square1.write_sweep(val),
+            0x4002 => self.square1.write_timer_low(val),
+            0x4003 => self.square1.write_timer_high(val),
 
             // Square 2
-            0x4004 => { self.square2.write_control(val) },
-            0x4005 => { self.square2.write_sweep(val) },
-            0x4006 => { self.square2.write_timer_low(val) },
-            0x4007 => { self.square2.write_timer_high(val) },
+            0x4004 => self.square2.write_control(val),
+            0x4005 => self.square2.write_sweep(val),
+            0x4006 => self.square2.write_timer_low(val),
+            0x4007 => self.square2.write_timer_high(val),
 
             // Triangle
-            0x4008 ..= 0x400b => { },
+            0x4008 => self.triangle.write_control(val),
+            0x4009 => { },  // unused
+            0x400a => self.triangle.write_timer_low(val),
+            0x400b => self.triangle.write_timer_high(val),
 
             // Noise
             0x400c ..= 0x400f => { },
@@ -63,10 +72,10 @@ impl Memory for APU {
             0x4010 ..= 0x4013 => { },
 
             // Channel enable, length counter status
-            0x4015            => { self.write_control(val) },
+            0x4015            => self.write_control(val),
 
             // Frame counter
-            0x4017            => { self.write_frame_counter(val) },
+            0x4017            => self.write_frame_counter(val),
 
             _                 => panic!("bad APU address: 0x{:04X}", address),
         }
@@ -81,13 +90,15 @@ pub struct StepResult {
 impl APU {
     pub fn new_nes_apu() -> Self {
         Self {
-            square1: SquareWave::new_square_wave(1),
-            square2: SquareWave::new_square_wave(2),
+            square1:  SquareWave::new_square_wave(1),
+            square2:  SquareWave::new_square_wave(2),
+            triangle: TriangleWave::new_triangle_wave(),
 
             cycles: 0,
 
-            frame_mode: SequencerMode::FourStep,
+            frame_mode:  SequencerMode::FourStep,
             frame_value: 0,
+
             irq: false,
 
             // The NES hardware follows the DACs with a surprisingly involved
@@ -113,6 +124,10 @@ impl APU {
 
         if self.square2.length_value > 0 {
             rv |= 2;
+        }
+
+        if self.triangle.length_value > 0 {
+            rv |= 4;
         }
 
         debug!("read_status: {:08b}", rv);
@@ -147,8 +162,9 @@ impl APU {
     }
 
     fn write_control(&mut self, val: u8) {
-        self.square1.enabled = (val & 0b0000_0001) != 0;
-        self.square2.enabled = (val & 0b0000_0010) != 0;
+        self.square1.enabled  = (val & 0b0000_0001) != 0;
+        self.square2.enabled  = (val & 0b0000_0010) != 0;
+        self.triangle.enabled = (val & 0b0000_0100) != 0;
 
         if !self.square1.enabled {
             self.square1.length_value = 0;
@@ -157,6 +173,10 @@ impl APU {
         if !self.square2.enabled {
             self.square2.length_value = 0;
         }
+
+        if !self.triangle.enabled {
+            self.triangle.length_value = 0;
+        }
     }
 
     fn signal(&mut self) -> f32 {
@@ -164,16 +184,21 @@ impl APU {
 
         let sq1 = self.square1.signal() as usize;
         let sq2 = self.square2.signal() as usize;
+        let tr  = self.triangle.signal() as usize;
 
-        let signal = PULSE_TABLE[sq1 + sq2];
+        let signal = PULSE_TABLE[sq1 + sq2] + TND_TABLE[3 * tr];
 
-        self.filters.iter_mut().fold(signal, |sig, filter| { filter.process(sig) } )
+        self.filters
+            .iter_mut()
+            .fold(signal, |sig, filter| filter.process(sig)  )
+
         //signal
     }
 
     fn step_envelopes(&mut self) {
         self.square1.step_envelope();
         self.square2.step_envelope();
+        self.triangle.step_counter();
     }
 
     fn step_sweeps(&mut self) {
@@ -184,11 +209,19 @@ impl APU {
     fn step_lengths(&mut self) {
         self.square1.step_length();
         self.square2.step_length();
+        self.triangle.step_length();
     }
 
     fn step_timers(&mut self) {
-        self.square1.step_timer();
-        self.square2.step_timer();
+        // The triangle channel ticks on every cycle. The other channels tick on
+        // every other cycle.
+
+        self.triangle.step_timer();
+
+        if self.cycles % 2 == 0 {
+            self.square1.step_timer();
+            self.square2.step_timer();
+        }
     }
 
     fn step_frame_counter(&mut self, res: &mut StepResult) {
@@ -245,7 +278,7 @@ impl APU {
         }
     }
 
-    pub fn step(&mut self, cpu_cycles: u64) -> StepResult {
+    pub fn step(&mut self) -> StepResult {
         let mut res = StepResult{
             trigger_irq: false,
             signal:      None,
@@ -259,7 +292,6 @@ impl APU {
         let frame_counter_rate = 1789773.0 / 240.0;
         let f1 = (cycle1 / frame_counter_rate) as u32;
         let f2 = (cycle2 / frame_counter_rate) as u32;
-        //if cpu_cycles % 2 == 1 {
         if f1 != f2 {
             self.step_frame_counter(&mut res);
         }
@@ -267,9 +299,7 @@ impl APU {
         let sample_rate = 1789773.0 / 44100.0;
         let s1 = (cycle1 / sample_rate) as u32;
         let s2 = (cycle2 / sample_rate) as u32;
-        if self.cycles % 20 == 0 {  // TODO why 18?
-        //if cpu_cycles % 40 == 0 {
-        //if s1 != s2 {
+        if s1 != s2 {
             res.signal = Some(self.signal());
         }
 

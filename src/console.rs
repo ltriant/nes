@@ -228,7 +228,7 @@ impl Console {
                 }
 
                 for _ in 0 .. apu_cycles {
-                    let res = self.cpu.mem.apu.step(self.cpu.cycles);
+                    let res = self.cpu.mem.apu.step();
 
                     if res.trigger_irq {
                         self.cpu.trigger_irq();
