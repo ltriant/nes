@@ -254,7 +254,7 @@ impl APU {
         let sample_rate = 1789773.0 / 44100.0;
         let s1 = (cycle1 / sample_rate) as u32;
         let s2 = (cycle2 / sample_rate) as u32;
-        if self.cycles % 18 == 0 {  // TODO why 18?
+        if self.cycles % 20 == 0 {  // TODO why 18?
         //if cpu_cycles % 40 == 0 {
         //if s1 != s2 {
             res.signal = Some(self.signal());
