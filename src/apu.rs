@@ -11,13 +11,19 @@ lazy_static!{
         .collect::<Vec<_>>();
 }
 
+#[derive(PartialEq)]
+enum SequencerMode {
+    FourStep,
+    FiveStep,
+}
+
 pub struct APU {
     square1: SquareWave,
     square2: SquareWave,
 
     cycles: u64,
 
-    frame_mode: bool, // false = 4-step, true = 5-step
+    frame_mode: SequencerMode,
     frame_value: u8,
     irq: bool, // true = generates IRQ on the last tick of a 4-step sequence
 
@@ -80,7 +86,7 @@ impl APU {
 
             cycles: 0,
 
-            frame_mode: false,
+            frame_mode: SequencerMode::FourStep,
             frame_value: 0,
             irq: false,
 
@@ -118,7 +124,12 @@ impl APU {
         // MI-- ----       mode, IRQ disable
 
         // Mode (0 = 4-step, 1 = 5-step)
-        self.frame_mode = (val & 0b1000_0000) != 0;
+        self.frame_mode = if (val & 0b1000_0000) == 0 {
+            SequencerMode::FourStep
+        }
+        else {
+            SequencerMode::FiveStep
+        };
 
         // IRQ inhibit flag. If this is set, we DON'T want to generate an IRQ.
         // Hello, double-negatives.
@@ -127,7 +138,7 @@ impl APU {
         // If the mode flag is clear, the 4-step sequence is selected,
         // otherwise the 5-step sequence is selected and the sequencer is
         // immediately clocked once.
-        if self.frame_mode {
+        if self.frame_mode == SequencerMode::FiveStep {
             // TODO is this right?
             self.step_envelopes();
             self.step_sweeps();
@@ -181,53 +192,55 @@ impl APU {
     }
 
     fn step_frame_counter(&mut self, res: &mut StepResult) {
-        if self.frame_mode {
-            self.frame_value = (self.frame_value + 1) % 5;
+        match self.frame_mode {
+            SequencerMode::FiveStep => {
+                self.frame_value = (self.frame_value + 1) % 5;
 
-            // mode 1: 5-step
-            // ---------------------------------------
-            //     - - - - -   IRQ flag (never set)
-            //     l - l - -   length counter + sweep
-            //     e e e e -   envelope + linear counter
-            match self.frame_value {
-                0 | 2 => {
-                    self.step_envelopes();
-                    self.step_sweeps();
-                    self.step_lengths();
-                },
-                1 | 3 => {
-                    self.step_envelopes();
-                },
-                _ => { },
-            }
-        }
-        else {
-            self.frame_value = (self.frame_value + 1) % 4;
+                // mode 1: 5-step
+                // ---------------------------------------
+                //     - - - - -   IRQ flag (never set)
+                //     l - l - -   length counter + sweep
+                //     e e e e -   envelope + linear counter
+                match self.frame_value {
+                    0 | 2 => {
+                        self.step_envelopes();
+                        self.step_sweeps();
+                        self.step_lengths();
+                    },
+                    1 | 3 => {
+                        self.step_envelopes();
+                    },
+                    _ => { },
+                }
+            },
+            SequencerMode::FourStep => {
+                self.frame_value = (self.frame_value + 1) % 4;
 
-            // mode 0: 4-step
-            // ---------------------------------------
-            //     - - - f     IRQ flag
-            //     - l - l     length counter + sweep
-            //     e e e e     envelope + linear counter
-            match self.frame_value {
-                0 | 2 => {
-                    self.step_envelopes();
-                },
-                1 => {
-                    self.step_envelopes();
-                    self.step_sweeps();
-                    self.step_lengths();
-                },
-                3 => {
-                    self.step_envelopes();
-                    self.step_sweeps();
-                    self.step_lengths();
+                // mode 0: 4-step
+                // ---------------------------------------
+                //     - - - f     IRQ flag
+                //     - l - l     length counter + sweep
+                //     e e e e     envelope + linear counter
+                match self.frame_value {
+                    0 | 2 => {
+                        self.step_envelopes();
+                    },
+                    1 => {
+                        self.step_envelopes();
+                        self.step_sweeps();
+                        self.step_lengths();
+                    },
+                    3 => {
+                        self.step_envelopes();
+                        self.step_sweeps();
+                        self.step_lengths();
 
-                    if self.irq {
-                        res.trigger_irq = true;
-                    }
-                },
-                _ => { },
+                        if self.irq {
+                            res.trigger_irq = true;
+                        }
+                    },
+                    _ => { },
+                }
             }
         }
     }
