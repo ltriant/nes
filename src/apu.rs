@@ -1,7 +1,7 @@
 mod channel;
 mod filter;
 
-use crate::apu::channel::{SquareWave, TriangleWave, Voice};
+use crate::apu::channel::{Noise, SquareWave, TriangleWave, Voice};
 use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
 use crate::mem::Memory;
 
@@ -25,6 +25,7 @@ pub struct APU {
     square1:  SquareWave,
     square2:  SquareWave,
     triangle: TriangleWave,
+    noise:    Noise,
 
     cycles: u64,
 
@@ -66,7 +67,10 @@ impl Memory for APU {
             0x400b => self.triangle.write_timer_high(val),
 
             // Noise
-            0x400c ..= 0x400f => { },
+            0x400c => self.noise.write_control(val),
+            0x400d => { },  // unused
+            0x400e => self.noise.write_mode(val),
+            0x400f => self.noise.write_length_index(val),
 
             // DMC
             0x4010 ..= 0x4013 => { },
@@ -93,6 +97,7 @@ impl APU {
             square1:  SquareWave::new_square_wave(1),
             square2:  SquareWave::new_square_wave(2),
             triangle: TriangleWave::new_triangle_wave(),
+            noise:    Noise::new_noise_channel(),
 
             cycles: 0,
 
@@ -165,6 +170,7 @@ impl APU {
         self.square1.enabled  = (val & 0b0000_0001) != 0;
         self.square2.enabled  = (val & 0b0000_0010) != 0;
         self.triangle.enabled = (val & 0b0000_0100) != 0;
+        self.noise.enabled    = (val & 0b0000_1000) != 0;
 
         if !self.square1.enabled {
             self.square1.length_value = 0;
@@ -177,6 +183,10 @@ impl APU {
         if !self.triangle.enabled {
             self.triangle.length_value = 0;
         }
+
+        if !self.noise.enabled {
+            self.noise.length_value = 0;
+        }
     }
 
     fn signal(&mut self) -> f32 {
@@ -185,8 +195,9 @@ impl APU {
         let sq1 = self.square1.signal() as usize;
         let sq2 = self.square2.signal() as usize;
         let tr  = self.triangle.signal() as usize;
+        let n   = self.noise.signal() as usize;
 
-        let signal = PULSE_TABLE[sq1 + sq2] + TND_TABLE[3 * tr];
+        let signal = PULSE_TABLE[sq1 + sq2] + TND_TABLE[3 * tr + 2 * n];
 
         self.filters
             .iter_mut()
@@ -199,6 +210,7 @@ impl APU {
         self.square1.step_envelope();
         self.square2.step_envelope();
         self.triangle.step_counter();
+        self.noise.step_envelope();
     }
 
     fn step_sweeps(&mut self) {
@@ -210,6 +222,7 @@ impl APU {
         self.square1.step_length();
         self.square2.step_length();
         self.triangle.step_length();
+        self.noise.step_length();
     }
 
     fn step_timers(&mut self) {
@@ -221,6 +234,7 @@ impl APU {
         if self.cycles % 2 == 0 {
             self.square1.step_timer();
             self.square2.step_timer();
+            self.noise.step_timer();
         }
     }
 
@@ -283,6 +297,11 @@ impl APU {
             trigger_irq: false,
             signal:      None,
         };
+
+        // XXX XXX XXX XXX
+        // All of this is a bit of black magic that I don't understand yet. It
+        // would be great if I actually understood what was going on here.
+        // XXX XXX XXX XXX
 
         let cycle1 = self.cycles as f32;
         self.cycles += 1;
