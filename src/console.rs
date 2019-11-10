@@ -43,9 +43,9 @@ lazy_static!{
 const NES_FPS: f64 = 60.0;
 const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0) as u64);
 
-// The queue is full of f32s, and we want to maintain roughly 4096 samples in
-// the queue at all times, so 4 * 4096 is the goal size.
-const AUDIO_QUEUE_LOW_WATER_MARK: u32 = 4 * 4096;
+// The queue is full of f32s, and we want to maintain roughly 16384 samples in
+// the queue at all times, so 4 * 16384 is the goal size.
+const AUDIO_QUEUE_HIGH_WATER_MARK: u32 = 4 * 16384;
 
 pub struct Console {
     sdl_ctx:   Sdl,
@@ -251,17 +251,18 @@ impl Console {
                 // sync with the video.
                 //
                 // We want to keep the audio queue full of samples, and we want
-                // to maintain at least AUDIO_QUEUE_LOW_WATER_MARK samples. So
-                // if we've got more than that many in the queue, we stop
+                // to maintain at roughly AUDIO_QUEUE_HIGH_WATER_MARK samples.
+                // So if we've got more than that many in the queue, we stop
                 // sampling, and if we drop below, we start sampling again.
                 //
-                // This is much better than what I had before, but is still
-                // noticeably crackly.
-                if audio_sampling && audio_device.size() > AUDIO_QUEUE_LOW_WATER_MARK {
+                // This is much better than past attempts, and only
+                // occasionally results in some cracking and popping. I can
+                // live with this for now :)
+                if audio_sampling && audio_device.size() > AUDIO_QUEUE_HIGH_WATER_MARK {
                     audio_sampling = false;
                 }
 
-                if !audio_sampling && audio_device.size() < AUDIO_QUEUE_LOW_WATER_MARK {
+                if !audio_sampling && audio_device.size() < AUDIO_QUEUE_HIGH_WATER_MARK {
                     audio_sampling = true;
                 }
 
