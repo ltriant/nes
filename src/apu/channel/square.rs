@@ -117,7 +117,8 @@ impl SquareWave {
     pub fn step_envelope(&mut self) {
         if self.envelope_start {
             self.envelope_volume = 15;
-            self.envelope_value = self.envelope_period;
+            // The divider's period is set to n + 1.
+            self.envelope_value = self.envelope_period + 1;
             self.envelope_start = false;
         }
         else if self.envelope_value > 0 {
@@ -131,7 +132,7 @@ impl SquareWave {
                 self.envelope_volume = 15;
             }
 
-            self.envelope_value = self.envelope_period;
+            self.envelope_value = self.envelope_period + 1;
         }
     }
 
@@ -156,7 +157,7 @@ impl SquareWave {
                 self.sweep();
             }
 
-            self.sweep_value = self.sweep_period;
+            self.sweep_value = self.sweep_period + 1;
             self.sweep_reload = false;
         }
         else if self.sweep_value > 0 {
@@ -167,7 +168,7 @@ impl SquareWave {
                 self.sweep();
             }
 
-            self.sweep_value = self.sweep_period;
+            self.sweep_value = self.sweep_period + 1;
         }
     }
 
@@ -179,7 +180,7 @@ impl SquareWave {
 
     pub fn step_timer(&mut self) {
         if self.timer_value == 0 {
-            self.timer_value = self.timer_period;
+            self.timer_value = self.timer_period + 1;
             self.duty_value = (self.duty_value + 1) % 8;
         }
         else {
@@ -214,16 +215,18 @@ impl SquareWave {
     //
     // The divider's period is set to p + 1.
     pub fn write_sweep(&mut self, val: u8) {
-        self.sweep_enabled =  (val & 0b1000_0000) != 0;
-        self.sweep_period  = ((val & 0b0111_0000) >> 4) + 1;
-        self.sweep_negate  =  (val & 0b0000_1000) != 0;
-        self.sweep_shift   =   val & 0b0000_0111;
+        self.sweep_enabled = (val & 0b1000_0000) != 0;
+        self.sweep_period  = (val & 0b0111_0000) >> 4;
+        self.sweep_negate  = (val & 0b0000_1000) != 0;
+        self.sweep_shift   =  val & 0b0000_0111;
 
         self.sweep_reload = true;
     }
 
     // For the square and triangle channels, the third and fourth registers form
     // an 11-bit value and the divider's period is set to this value *plus one*.
+    //
+    // We add this *plus one* to the period in the step function.
     pub fn write_timer_low(&mut self, val: u8) {
         // pppp pppp   period low
         self.timer_period = (self.timer_period & 0xff00) | val as u16;

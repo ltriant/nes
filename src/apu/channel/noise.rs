@@ -84,6 +84,7 @@ impl Noise {
             timer_period: 0,
             timer_value: 0,
 
+            // On power-up, the shift register is loaded with the value 1.
             shift_register: 1,
         }
     }
@@ -91,7 +92,8 @@ impl Noise {
     pub fn step_envelope(&mut self) {
         if self.envelope_start {
             self.envelope_volume = 15;
-            self.envelope_value = self.envelope_period;
+            // The divider's period is set to n + 1.
+            self.envelope_value = self.envelope_period + 1;
             self.envelope_start = false;
         }
         else if self.envelope_value > 0 {
@@ -105,7 +107,7 @@ impl Noise {
                 self.envelope_volume = 15;
             }
 
-            self.envelope_value = self.envelope_period;
+            self.envelope_value = self.envelope_period + 1;
         }
     }
 
@@ -151,6 +153,7 @@ impl Noise {
         self.envelope_start   = true;
     }
 
+    // The noise channel and DMC use lookup tables to set the timer's period.
     pub fn write_mode(&mut self, val: u8) {
         // s--- pppp   short mode, period index
         self.mode = if (val & 0x80) != 0 {

@@ -7,6 +7,7 @@ const LENGTH_TABLE: [u8; 32] = [
     192, 24, 72, 26, 16, 28, 32, 30,
 ];
 
+// These volume values form the triangle shape
 const TRIANGLE_WAVEFORM: [u8; 32] = [
     15, 14, 13, 12, 11, 10, 9, 8,
     7, 6, 5, 4, 3, 2, 1, 0,
@@ -73,7 +74,7 @@ impl TriangleWave {
 
     pub fn step_timer(&mut self) {
         if self.timer_value == 0 {
-            self.timer_value = self.timer_period;
+            self.timer_value = self.timer_period + 1;
 
             if self.length_value > 0 && self.counter_value > 0 {
                 self.duty_value = (self.duty_value + 1) % 32;
@@ -103,6 +104,10 @@ impl TriangleWave {
         self.counter_period =  val & 0b0111_1111;
     }
 
+    // For the square and triangle channels, the third and fourth registers form
+    // an 11-bit value and the divider's period is set to this value *plus one*.
+    //
+    // We add this *plus one* to the period in the step function.
     pub fn write_timer_low(&mut self, val: u8) {
         // pppp pppp   period low
         self.timer_period = (self.timer_period & 0xff00) | val as u16;
