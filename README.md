@@ -10,7 +10,7 @@ I've tried to keep the code as simple as possible, in order to facilitate others
 
 Currently, only a subset of the full system has been emulated. The following limitations apply, in order of most likely to be fixed:
 
-1. No sound
+1. Almost complete sound support (no DMC channel)
 2. No second controller support
 3. No PAL cartridge support
 
