@@ -125,6 +125,14 @@ impl APU {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.square1.reset();
+        self.square2.reset();
+        self.triangle.reset();
+        self.noise.reset();
+        self.dmc.reset();
+    }
+
     //  $4015   if-d nt21   DMC IRQ, frame IRQ, length counter statuses
     fn read_status(&mut self) -> u8 {
         let mut rv = 0;

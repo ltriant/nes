@@ -89,6 +89,23 @@ impl Noise {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.enabled = false;
+        self.mode = ShiftRegisterMode::One;
+        self.length_enabled = false;
+        self.length_value = 0;
+        self.envelope_enabled = false;
+        self.envelope_start = false;
+        self.envelope_loop = false;
+        self.envelope_volume = 0;
+        self.envelope_period = 0;
+        self.envelope_value = 0;
+        self.constant_volume = 0;
+        self.timer_period = 0;
+        self.timer_value = 0;
+        self.shift_register = 1;
+    }
+
     pub fn step_envelope(&mut self) {
         if self.envelope_start {
             self.envelope_volume = 15;

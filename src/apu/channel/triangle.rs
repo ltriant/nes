@@ -66,6 +66,18 @@ impl TriangleWave {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.enabled = false;
+        self.length_enabled = false;
+        self.length_value = 0;
+        self.counter_reload = false;
+        self.counter_period = 0;
+        self.counter_value = 0;
+        self.timer_value = 0;
+        self.timer_period = 0;
+        self.duty_value = 0;
+    }
+
     pub fn step_length(&mut self) {
         if self.length_enabled && self.length_value > 0 {
             self.length_value -= 1;

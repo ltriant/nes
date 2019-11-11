@@ -311,7 +311,10 @@ impl Console {
                                 Keycode::F2  => { self.save() },
                                 Keycode::F3  => { self.load() },
 
-                                Keycode::F12 => { self.cpu.reset() },
+                                Keycode::F12 => {
+                                    self.cpu.reset();
+                                    self.cpu.mem.apu.reset();
+                                },
 
                                 _ => {},
                             }

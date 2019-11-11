@@ -114,6 +114,29 @@ impl SquareWave {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.enabled = false;
+        self.length_enabled = false;
+        self.length_value = 0;
+        self.timer_period = 0;
+        self.timer_value = 0;
+        self.duty_mode = 0;
+        self.duty_value = 0;
+        self.sweep_enabled = false;
+        self.sweep_negate = false;
+        self.sweep_reload = false;
+        self.sweep_period = 0;
+        self.sweep_shift = 0;
+        self.sweep_value = 0;
+        self.envelope_enabled = false;
+        self.envelope_start = false;
+        self.envelope_loop = false;
+        self.envelope_volume = 0;
+        self.envelope_period = 0;
+        self.envelope_value = 0;
+        self.constant_volume = 0;
+    }
+
     pub fn step_envelope(&mut self) {
         if self.envelope_start {
             self.envelope_volume = 15;
