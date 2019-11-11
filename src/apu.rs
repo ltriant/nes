@@ -1,7 +1,7 @@
 mod channel;
 mod filter;
 
-use crate::apu::channel::{Noise, SquareWave, TriangleWave, Voice};
+use crate::apu::channel::{DMC, Noise, SquareWave, TriangleWave, Voice};
 use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
 use crate::mem::Memory;
 
@@ -26,6 +26,7 @@ pub struct APU {
     square2:  SquareWave,
     triangle: TriangleWave,
     noise:    Noise,
+    dmc:      DMC,
 
     cycles: u64,
 
@@ -73,7 +74,10 @@ impl Memory for APU {
             0x400f => self.noise.write_length_index(val),
 
             // DMC
-            0x4010 ..= 0x4013 => { },
+            0x4010 => self.dmc.write_control(val),
+            0x4011 => self.dmc.write_dac(val),
+            0x4012 => self.dmc.write_address(val),
+            0x4013 => self.dmc.write_length(val),
 
             // Channel enable, length counter status
             0x4015            => self.write_control(val),
@@ -98,6 +102,7 @@ impl APU {
             square2:  SquareWave::new_square_wave(2),
             triangle: TriangleWave::new_triangle_wave(),
             noise:    Noise::new_noise_channel(),
+            dmc:      DMC::new_dmc_channel(),
 
             cycles: 0,
 
@@ -120,6 +125,7 @@ impl APU {
         }
     }
 
+    //  $4015   if-d nt21   DMC IRQ, frame IRQ, length counter statuses
     fn read_status(&mut self) -> u8 {
         let mut rv = 0;
 
@@ -135,7 +141,17 @@ impl APU {
             rv |= 4;
         }
 
-        debug!("read_status: {:08b}", rv);
+        if self.noise.length_value > 0 {
+            rv |= 8;
+        }
+
+        if self.dmc.buffer != 0 {
+            rv |= 16;
+        }
+
+        // TODO
+        // DMC IRQ
+        // frame IRQ
 
         rv
     }
@@ -171,6 +187,7 @@ impl APU {
         self.square2.enabled  = (val & 0b0000_0010) != 0;
         self.triangle.enabled = (val & 0b0000_0100) != 0;
         self.noise.enabled    = (val & 0b0000_1000) != 0;
+        self.dmc.enabled      = (val & 0b0001_0000) != 0;
 
         if !self.square1.enabled {
             self.square1.length_value = 0;
@@ -187,6 +204,10 @@ impl APU {
         if !self.noise.enabled {
             self.noise.length_value = 0;
         }
+
+        if !self.dmc.enabled {
+            //self.dmc.length_value = 0;
+        }
     }
 
     fn signal(&mut self) -> f32 {
@@ -196,14 +217,13 @@ impl APU {
         let sq2 = self.square2.signal() as usize;
         let tr  = self.triangle.signal() as usize;
         let n   = self.noise.signal() as usize;
+        let dmc = self.dmc.signal() as usize;
 
-        let signal = PULSE_TABLE[sq1 + sq2] + TND_TABLE[3 * tr + 2 * n];
+        let signal = PULSE_TABLE[sq1 + sq2] + TND_TABLE[3 * tr + 2 * n + dmc];
 
         self.filters
             .iter_mut()
-            .fold(signal, |sig, filter| filter.process(sig)  )
-
-        //signal
+            .fold(signal, |sig, filter| filter.process(sig))
     }
 
     fn step_envelopes(&mut self) {
