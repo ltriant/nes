@@ -5,6 +5,7 @@ use std::process;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::apu::APU;
 use crate::controller::Controller;
 use crate::cpu::CPU;
 use crate::mem::{Memory, NESMemory};
@@ -14,6 +15,7 @@ use crate::ines;
 use crate::serde::Storeable;
 
 use sdl2::Sdl;
+use sdl2::audio::AudioSpecDesired;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -40,6 +42,10 @@ lazy_static!{
 
 const NES_FPS: f64 = 60.0;
 const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0) as u64);
+
+// The queue is full of f32s, and we want to maintain roughly 16384 samples in
+// the queue at all times, so 4 * 16384 is the goal size.
+const AUDIO_QUEUE_HIGH_WATER_MARK: u32 = 4 * 16384;
 
 pub struct Console {
     sdl_ctx:   Sdl,
@@ -75,9 +81,10 @@ impl Console {
             canvas.present();
         }
 
+        let apu = APU::new_nes_apu();
         let ppu = PPU::new_nes_ppu();
         let controller = Controller::new_controller();
-        let mem = NESMemory::new_nes_mem(ppu, controller);
+        let mem = NESMemory::new_nes_mem(ppu, apu, controller);
 
         Self {
             sdl_ctx:   sdl_context,
@@ -165,6 +172,19 @@ impl Console {
     pub fn power_up(&mut self) {
         info!("powering up");
 
+        let audio_subsystem = self.sdl_ctx.audio().unwrap();
+        debug!("audio driver: {}", audio_subsystem.current_audio_driver());
+
+        let desired_spec = AudioSpecDesired {
+            freq:     Some(44_100),
+            channels: Some(2),
+            samples:  Some(1024),
+        };
+        let audio_device = audio_subsystem.open_queue(None, &desired_spec).unwrap();
+        audio_device.resume();
+        let mut samples = Vec::new();
+        let mut audio_sampling = true;
+
         self.cpu.reset();
 
         let mut event_pump = self.sdl_ctx.event_pump().unwrap();
@@ -182,8 +202,8 @@ impl Console {
             else {
 
                 let cpu_cycles = self.cpu.step();
-
                 let ppu_cycles = cpu_cycles * 3;
+                let apu_cycles = cpu_cycles;
 
                 let mut frame_finished = false;
                 for _ in 0 .. ppu_cycles {
@@ -207,8 +227,50 @@ impl Console {
                     }
                 }
 
+                for _ in 0 .. apu_cycles {
+                    let res = self.cpu.mem.apu.step();
+
+                    if res.trigger_irq {
+                        self.cpu.trigger_irq();
+                    }
+
+                    if let Some(signal) = res.signal {
+                        if audio_sampling {
+                            samples.push(signal);
+                            samples.push(signal);
+                        }
+                    }
+                }
+
+                // Super basic dynamic sampling implementation.
+                //
+                // If the number of samples is too low, we'll end up with
+                // crackling and popping because the audio backend is consuming
+                // the samples faster than we can produce them, but if we have
+                // too many samples, the audio will get more and more out of
+                // sync with the video.
+                //
+                // We want to keep the audio queue full of samples, and we want
+                // to maintain at roughly AUDIO_QUEUE_HIGH_WATER_MARK samples.
+                // So if we've got more than that many in the queue, we stop
+                // sampling, and if we drop below, we start sampling again.
+                //
+                // This is much better than past attempts, and only
+                // occasionally results in some cracking and popping. I can
+                // live with this for now :)
+                if audio_sampling && audio_device.size() > AUDIO_QUEUE_HIGH_WATER_MARK {
+                    audio_sampling = false;
+                }
+
+                if !audio_sampling && audio_device.size() < AUDIO_QUEUE_HIGH_WATER_MARK {
+                    audio_sampling = true;
+                }
+
                 if frame_finished {
                     self.canvas.present();
+                    audio_device.queue(&samples);
+                    samples.clear();
+                    audio_sampling = true;
 
                     if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
                         debug!("sleeping for {}ms", delay.as_millis());
@@ -249,7 +311,10 @@ impl Console {
                                 Keycode::F2  => { self.save() },
                                 Keycode::F3  => { self.load() },
 
-                                Keycode::F12 => { self.cpu.reset() },
+                                Keycode::F12 => {
+                                    self.cpu.reset();
+                                    self.cpu.mem.apu.reset();
+                                },
 
                                 _ => {},
                             }
