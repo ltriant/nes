@@ -1,7 +1,7 @@
 use crate::mem::Memory;
 use crate::palette::PALETTE;
 use crate::ppu::PPU;
-use crate::ppu::data::{
+use crate::ppu::regs::{
     BACKGROUND_PALETTE_ADDRESSES,
     SPRITE_PALETTE_ADDRESSES,
     PATTERN_TABLE_ADDRESSES,

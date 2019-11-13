@@ -1,9 +1,5 @@
-mod ctrl;
 mod debug;
-mod mask;
-mod status;
-mod oam;
-mod data;
+mod regs;
 
 use std::io;
 use std::fs::File;
@@ -11,11 +7,11 @@ use std::fs::File;
 use crate::console::NES_PPU_DEBUG;
 use crate::palette::PALETTE;
 use crate::mem::Memory;
-use crate::ppu::ctrl::PPUCtrl;
-use crate::ppu::mask::PPUMask;
-use crate::ppu::status::PPUStatus;
-use crate::ppu::oam::OAM;
-use crate::ppu::data::PPUData;
+use crate::ppu::regs::PPUCtrl;
+use crate::ppu::regs::PPUMask;
+use crate::ppu::regs::PPUStatus;
+use crate::ppu::regs::OAM;
+use crate::ppu::regs::PPUData;
 use crate::serde;
 use crate::serde::Storeable;
 
