@@ -38,6 +38,11 @@ lazy_static!{
         Ok(val) => val != "" && val != "0",
         Err(_)  => false,
     };
+
+    pub static ref NES_APU_CHANNELS: u8 = match env::var("NES_APU_CHANNELS") {
+        Ok(val) => val.parse().expect("invalid NES_APU_CHANNELS value"),
+        Err(_)  => std::u8::MAX,
+    };
 }
 
 const NES_FPS: f64 = 60.0;

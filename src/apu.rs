@@ -3,6 +3,7 @@ mod filter;
 
 use crate::apu::channel::{DMC, Noise, SquareWave, TriangleWave, Voice};
 use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
+use crate::console::NES_APU_CHANNELS;
 use crate::mem::Memory;
 
 lazy_static!{
@@ -221,13 +222,60 @@ impl APU {
     fn signal(&mut self) -> f32 {
         // Digital-to-Analog conversion
 
-        let sq1 = self.square1.signal() as usize;
-        let sq2 = self.square2.signal() as usize;
-        let tr  = self.triangle.signal() as usize;
-        let n   = self.noise.signal() as usize;
-        let dmc = self.dmc.signal() as usize;
+        let sq1 = if *NES_APU_CHANNELS & 1 != 0 {
+            Some(self.square1.signal() as usize)
+        }
+        else {
+            None
+        };
 
-        let signal = PULSE_TABLE[sq1 + sq2] + TND_TABLE[3 * tr + 2 * n + dmc];
+        let sq2 = if *NES_APU_CHANNELS & 2 != 0 {
+            Some(self.square2.signal() as usize)
+        }
+        else {
+            None
+        };
+
+        let pulse_val = match (sq1, sq2) {
+            (Some(v1), None)     => PULSE_TABLE[v1],
+            (None, Some(v2))     => PULSE_TABLE[v2],
+            (Some(v1), Some(v2)) => PULSE_TABLE[v1 + v2],
+            (None, None)         => 0.0,
+        };
+
+        let tr = if *NES_APU_CHANNELS & 4 != 0 {
+            Some(self.triangle.signal() as usize)
+        }
+        else {
+            None
+        };
+
+        let n = if *NES_APU_CHANNELS & 8 != 0 {
+            Some(self.noise.signal() as usize)
+        }
+        else {
+            None
+        };
+
+        let dmc = if *NES_APU_CHANNELS & 16 != 0 {
+            Some(self.dmc.signal() as usize)
+        }
+        else {
+            None
+        };
+
+        let tnd_val = match (tr, n, dmc) {
+            (Some(tr), None, None)          => TND_TABLE[3 * tr],
+            (None, Some(n), None)           => TND_TABLE[2 * n],
+            (None, None, Some(dmc))         => TND_TABLE[dmc],
+            (Some(tr), Some(n), None)       => TND_TABLE[3 * tr + 2 * n],
+            (Some(tr), None, Some(dmc))     => TND_TABLE[3 * tr + dmc],
+            (None, Some(n), Some(dmc))      => TND_TABLE[2 * n + dmc],
+            (Some(tr,), Some(n), Some(dmc)) => TND_TABLE[3 * tr + 2 * n + dmc],
+            (None, None, None)              => 0.0,
+        };
+
+        let signal = pulse_val + tnd_val;
 
         self.filters
             .iter_mut()

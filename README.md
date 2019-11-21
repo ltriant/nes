@@ -84,3 +84,21 @@ In order to run the nestest ROM, the CPU debugging output can be combined with t
 ```
 $ NES_CPU_NESTEST=1 NES_CPU_DEBUG=1 cargo run -- roms/nestest.nes
 ``` 
+
+Enabling of individual sound channels can be achieved with the `NES_APU_CHANNELS` environment variable. This value is an 8-bit bitmask with a bit for each channel and combinations of channels may be enabled this way. The bits are:
+
+```
+Square 1 = 1
+Square 2 = 2
+Triangle = 4
+Noise    = 8
+DMC      = 16
+```
+
+As an example:
+
+```
+$ NES_APU_CHANNELS=5 cargo run --release roms/zelda.nes
+```
+
+This will enable the first square wave channel, and the triangle wave.
