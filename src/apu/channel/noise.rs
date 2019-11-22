@@ -160,6 +160,7 @@ impl Noise {
         }
     }
 
+    // $400c
     pub fn write_control(&mut self, val: u8) {
         // --le nnnn   loop env/disable length, env disable, vol/env period
         self.envelope_loop    = (val & 0b0010_0000) != 0;
@@ -170,6 +171,8 @@ impl Noise {
         self.envelope_start   = true;
     }
 
+    // $400e
+    //
     // The noise channel and DMC use lookup tables to set the timer's period.
     pub fn write_mode(&mut self, val: u8) {
         // s--- pppp   short mode, period index
@@ -184,6 +187,7 @@ impl Noise {
         self.timer_period = TIMER_TABLE[period_index as usize];
     }
 
+    // $400f
     pub fn write_length_index(&mut self, val: u8) {
         // llll l---   length index
         let length_index = val >> 3;

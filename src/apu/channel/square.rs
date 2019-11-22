@@ -211,6 +211,8 @@ impl SquareWave {
         }
     }
 
+    // $4000/$4004
+    //
     // A channel's first register controls the envelope:
     //
     //     ddle nnnn   duty, loop env/disable length, env disable, vol/env period
@@ -232,6 +234,8 @@ impl SquareWave {
         self.envelope_start   = true;
     }
 
+    // $4001/$4005
+    //
     // A channel's second register configures the sweep unit:
     //
     //     eppp nsss   enable sweep, period, negative, shift
@@ -246,6 +250,8 @@ impl SquareWave {
         self.sweep_reload = true;
     }
 
+    // $4002/$4006
+    //
     // For the square and triangle channels, the third and fourth registers form
     // an 11-bit value and the divider's period is set to this value *plus one*.
     //
@@ -255,6 +261,7 @@ impl SquareWave {
         self.timer_period = (self.timer_period & 0xff00) | val as u16;
     }
 
+    // $4003/$4007
     pub fn write_timer_high(&mut self, val: u8) {
         // llll lppp   length index, period high
         let length_index = (val & 0b1111_1000) >> 3;

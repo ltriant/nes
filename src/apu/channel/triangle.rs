@@ -1,18 +1,18 @@
 use crate::apu::channel::Voice;
 
 const LENGTH_TABLE: [u8; 32] = [
-    10, 254, 20, 2, 40, 4, 80, 6,
-    160, 8, 60, 10, 14, 12, 26, 14,
-    12, 16, 24, 18, 48, 20, 96, 22,
-    192, 24, 72, 26, 16, 28, 32, 30,
+    10,  254, 20, 2,  40, 4,  80, 6,
+    160, 8,   60, 10, 14, 12, 26, 14,
+    12,  16,  24, 18, 48, 20, 96, 22,
+    192, 24,  72, 26, 16, 28, 32, 30,
 ];
 
 // These volume values form the triangle shape
 const TRIANGLE_WAVEFORM: [u8; 32] = [
-    15, 14, 13, 12, 11, 10, 9, 8,
-    7, 6, 5, 4, 3, 2, 1, 0,
-    0, 1, 2, 3, 4, 5, 6, 7,
-    8, 9, 10, 11, 12, 13, 14, 15,
+    15, 14, 13, 12, 11, 10, 9,  8,
+    7,  6,  5,  4,  3,  2,  1,  0,
+    0,  1,  2,  3,  4,  5,  6,  7,
+    8,  9,  10, 11, 12, 13, 14, 15,
 ];
 
 pub struct TriangleWave {
@@ -110,12 +110,15 @@ impl TriangleWave {
         }
     }
 
+    // $4008
     pub fn write_control(&mut self, val: u8) {
         // clll llll   control, linear counter load
         self.length_enabled = (val & 0b1000_0000) != 0;
         self.counter_period =  val & 0b0111_1111;
     }
 
+    // $400a
+    //
     // For the square and triangle channels, the third and fourth registers form
     // an 11-bit value and the divider's period is set to this value *plus one*.
     //
@@ -125,6 +128,7 @@ impl TriangleWave {
         self.timer_period = (self.timer_period & 0xff00) | val as u16;
     }
 
+    // $400b
     pub fn write_timer_high(&mut self, val: u8) {
         // llll lppp   length index, period high
         let length_index = (val & 0b1111_1000) >> 3;
