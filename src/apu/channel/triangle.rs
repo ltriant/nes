@@ -113,7 +113,7 @@ impl TriangleWave {
     // $4008
     pub fn write_control(&mut self, val: u8) {
         // clll llll   control, linear counter load
-        self.length_enabled = (val & 0b1000_0000) != 0;
+        self.length_enabled = (val & 0b1000_0000) == 0;
         self.counter_period =  val & 0b0111_1111;
     }
 
@@ -121,8 +121,6 @@ impl TriangleWave {
     //
     // For the square and triangle channels, the third and fourth registers form
     // an 11-bit value and the divider's period is set to this value *plus one*.
-    //
-    // We add this *plus one* to the period in the step function.
     pub fn write_timer_low(&mut self, val: u8) {
         // pppp pppp   period low
         self.timer_period = (self.timer_period & 0xff00) | val as u16;
@@ -136,6 +134,7 @@ impl TriangleWave {
 
         self.length_value = LENGTH_TABLE[length_index as usize];
         self.timer_period = (self.timer_period & 0x00ff) | (period_high << 8);
+        self.timer_value = self.timer_period + 1;
         self.counter_reload = true;
     }
 }
