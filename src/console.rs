@@ -162,6 +162,7 @@ impl Console {
         self.cpu.save(&mut fh).expect("unable to save CPU state");
         self.cpu.mem.save(&mut fh).expect("unable to save memory state");
         self.cpu.mem.ppu.save(&mut fh).expect("unable to save PPU state");
+        self.cpu.mem.apu.save(&mut fh).expect("unable to save APU state");
         println!("saved state to {}", self.save_path);
     }
 
@@ -169,7 +170,9 @@ impl Console {
         if let Ok(mut fh) = File::open(&self.save_path) {
             self.cpu.load(&mut fh).expect("unable to load CPU state");
             self.cpu.mem.load(&mut fh).expect("unable to load memory state");
-            self.cpu.mem.ppu.load(&mut fh).expect("unable to save PPU state");
+            self.cpu.mem.ppu.load(&mut fh).expect("unable to load PPU state");
+            //self.cpu.mem.apu.reset();
+            //self.cpu.mem.apu.load(&mut fh).expect("unable to laod APU state");
             println!("loaded state from {}", self.save_path);
         }
     }

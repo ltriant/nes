@@ -1,4 +1,9 @@
+use std::io;
+use std::fs::File;
+
 use crate::apu::channel::Voice;
+use crate::serde;
+use crate::serde::Storeable;
 
 const LENGTH_TABLE: [u8; 32] = [
     10, 254, 20, 2, 40, 4, 80, 6,
@@ -61,6 +66,55 @@ impl Voice for Noise {
         else {
             self.constant_volume
         }
+    }
+}
+
+impl Storeable for Noise {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_u8(output, self.enabled as u8)?;
+
+        match self.mode {
+            ShiftRegisterMode::One => serde::encode_u8(output, 1)?,
+            ShiftRegisterMode::Six => serde::encode_u8(output, 6)?,
+        }
+
+        serde::encode_u8(output, self.length_enabled as u8)?;
+        serde::encode_u8(output, self.length_value)?;
+        serde::encode_u8(output, self.envelope_enabled as u8)?;
+        serde::encode_u8(output, self.envelope_start as u8)?;
+        serde::encode_u8(output, self.envelope_loop as u8)?;
+        serde::encode_u8(output, self.envelope_volume)?;
+        serde::encode_u8(output, self.envelope_period)?;
+        serde::encode_u8(output, self.envelope_value)?;
+        serde::encode_u8(output, self.constant_volume)?;
+        serde::encode_u16(output, self.timer_value)?;
+        serde::encode_u16(output, self.timer_period)?;
+        serde::encode_u16(output, self.shift_register)?;
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.enabled = serde::decode_u8(input)? != 0;
+
+        match serde::decode_u8(input)? {
+            1 => { self.mode = ShiftRegisterMode::One },
+            6 => { self.mode = ShiftRegisterMode::Six },
+            _ => { },
+        };
+
+        self.length_enabled = serde::decode_u8(input)? != 0;
+        self.length_value = serde::decode_u8(input)?;
+        self.envelope_enabled = serde::decode_u8(input)? != 0;
+        self.envelope_start = serde::decode_u8(input)? != 0;
+        self.envelope_loop = serde::decode_u8(input)? != 0;
+        self.envelope_volume = serde::decode_u8(input)?;
+        self.envelope_period = serde::decode_u8(input)?;
+        self.envelope_value = serde::decode_u8(input)?;
+        self.constant_volume = serde::decode_u8(input)?;
+        self.timer_value = serde::decode_u16(input)?;
+        self.timer_period = serde::decode_u16(input)?;
+        self.shift_register = serde::decode_u16(input)?;
+        Ok(())
     }
 }
 

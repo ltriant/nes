@@ -1,4 +1,9 @@
+use std::io;
+use std::fs::File;
+
 use crate::apu::channel::Voice;
+use crate::serde;
+use crate::serde::Storeable;
 
 const LENGTH_TABLE: [u8; 32] = [
     10, 254, 20, 2, 40, 4, 80, 6,
@@ -80,6 +85,68 @@ impl Voice for SquareWave {
         else {
             return self.constant_volume;
         }
+    }
+}
+
+impl Storeable for SquareWave {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_u8(output, self.enabled as u8)?;
+        serde::encode_u8(output, self.channel)?;
+
+        serde::encode_u8(output, self.length_enabled as u8)?;
+        serde::encode_u8(output, self.length_value)?;
+
+        serde::encode_u16(output, self.timer_period)?;
+        serde::encode_u16(output, self.timer_value)?;
+        serde::encode_u8(output, self.duty_mode)?;
+        serde::encode_u8(output, self.duty_value)?;
+
+        serde::encode_u8(output, self.sweep_enabled as u8)?;
+        serde::encode_u8(output, self.sweep_negate as u8)?;
+        serde::encode_u8(output, self.sweep_reload as u8)?;
+        serde::encode_u8(output, self.sweep_period)?;
+        serde::encode_u8(output, self.sweep_shift)?;
+        serde::encode_u8(output, self.sweep_value)?;
+
+        serde::encode_u8(output, self.envelope_enabled as u8)?;
+        serde::encode_u8(output, self.envelope_start as u8)?;
+        serde::encode_u8(output, self.envelope_loop as u8)?;
+        serde::encode_u8(output, self.envelope_volume)?;
+        serde::encode_u8(output, self.envelope_period)?;
+        serde::encode_u8(output, self.envelope_value)?;
+        serde::encode_u8(output, self.constant_volume)?;
+
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.enabled = serde::decode_u8(input)? != 0;
+        self.channel = serde::decode_u8(input)?;
+
+        self.length_enabled = serde::decode_u8(input)? != 0;
+        self.length_value = serde::decode_u8(input)?;
+
+        self.timer_period = serde::decode_u16(input)?;
+        self.timer_value = serde::decode_u16(input)?;
+        self.duty_mode = serde::decode_u8(input)?;
+        self.duty_value = serde::decode_u8(input)?;
+
+        self.sweep_enabled = serde::decode_u8(input)? != 0;
+        self.sweep_negate = serde::decode_u8(input)? != 0;
+        self.sweep_reload = serde::decode_u8(input)? != 0;
+        self.sweep_period = serde::decode_u8(input)?;
+        self.sweep_shift = serde::decode_u8(input)?;
+        self.sweep_value = serde::decode_u8(input)?;
+
+        self.envelope_enabled = serde::decode_u8(input)? != 0;
+        self.envelope_start = serde::decode_u8(input)? != 0;
+        self.envelope_loop = serde::decode_u8(input)? != 0;
+        self.envelope_volume = serde::decode_u8(input)?;
+        self.envelope_period = serde::decode_u8(input)?;
+        self.envelope_value = serde::decode_u8(input)?;
+        self.constant_volume = serde::decode_u8(input)?;
+
+        Ok(())
     }
 }
 

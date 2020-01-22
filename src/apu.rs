@@ -1,10 +1,15 @@
 mod channel;
 mod filter;
 
+use std::io;
+use std::fs::File;
+
 use crate::apu::channel::{DMC, Noise, SquareWave, TriangleWave, Voice};
 use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
 use crate::console::NES_APU_CHANNELS;
 use crate::mem::Memory;
+use crate::serde;
+use crate::serde::Storeable;
 
 lazy_static!{
     static ref PULSE_TABLE: Vec<f32> = (0 .. 31)
@@ -88,6 +93,52 @@ impl Memory for APU {
 
             _                 => panic!("bad APU address: 0x{:04X}", address),
         }
+    }
+}
+
+impl Storeable for APU {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        self.square1.save(output)?;
+        self.square2.save(output)?;
+        self.triangle.save(output)?;
+        self.noise.save(output)?;
+        self.dmc.save(output)?;
+
+        serde::encode_u64(output, self.cycles)?;
+
+        match self.frame_mode {
+            SequencerMode::FourStep => serde::encode_u8(output, 4)?,
+            SequencerMode::FiveStep => serde::encode_u8(output, 5)?,
+        };
+        serde::encode_u8(output, self.frame_value)?;
+        serde::encode_u8(output, self.irq as u8)?;
+
+        // TODO filters
+
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.square1.load(input)?;
+        self.square2.load(input)?;
+        self.triangle.load(input)?;
+        self.noise.load(input)?;
+        self.dmc.load(input)?;
+
+        self.cycles = serde::decode_u64(input)?;
+
+        match serde::decode_u8(input)? {
+            4 => { self.frame_mode = SequencerMode::FourStep },
+            5 => { self.frame_mode = SequencerMode::FiveStep },
+            _ => { },
+        };
+
+        self.frame_value = serde::decode_u8(input)?;
+        self.irq = serde::decode_u8(input)? != 0;
+
+        // TODO filters
+
+        Ok(())
     }
 }
 
@@ -325,12 +376,12 @@ impl APU {
                 //     l - l - -   length counter + sweep
                 //     e e e e -   envelope + linear counter
                 match self.frame_value {
-                    0 | 2 => {
+                    1 | 3 => {
                         self.step_envelopes();
                         self.step_sweeps();
                         self.step_lengths();
                     },
-                    1 | 3 => {
+                    0 | 2 => {
                         self.step_envelopes();
                     },
                     _ => { },

@@ -1,4 +1,9 @@
+use std::io;
+use std::fs::File;
+
 use crate::apu::channel::Voice;
+use crate::serde;
+use crate::serde::Storeable;
 
 const LENGTH_TABLE: [u8; 32] = [
     10,  254, 20, 2,  40, 4,  80, 6,
@@ -45,6 +50,34 @@ impl Voice for TriangleWave {
         }
 
         TRIANGLE_WAVEFORM[self.duty_value as usize]
+    }
+}
+
+impl Storeable for TriangleWave {
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_u8(output, self.enabled as u8)?;
+        serde::encode_u8(output, self.length_enabled as u8)?;
+        serde::encode_u8(output, self.length_value)?;
+        serde::encode_u8(output, self.counter_reload as u8)?;
+        serde::encode_u8(output, self.counter_period)?;
+        serde::encode_u8(output, self.counter_value)?;
+        serde::encode_u16(output, self.timer_value)?;
+        serde::encode_u16(output, self.timer_period)?;
+        serde::encode_u8(output, self.duty_value)?;
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.enabled = serde::decode_u8(input)? != 0;
+        self.length_enabled = serde::decode_u8(input)? != 0;
+        self.length_value = serde::decode_u8(input)?;
+        self.counter_reload = serde::decode_u8(input)? != 0;
+        self.counter_period = serde::decode_u8(input)?;
+        self.counter_value = serde::decode_u8(input)?;
+        self.timer_value = serde::decode_u16(input)?;
+        self.timer_period = serde::decode_u16(input)?;
+        self.duty_value = serde::decode_u8(input)?;
+        Ok(())
     }
 }
 

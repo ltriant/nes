@@ -2,7 +2,12 @@
 // This is incomplete, because I need to figure out how to let this module
 // access VRAM from the mapper.
 
+use std::io;
+use std::fs::File;
+
 use crate::apu::channel::Voice;
+//use crate::serde;
+use crate::serde::Storeable;
 
 const TIMER_TABLE: [u16; 16] = [
     0x01AC, 0x017C, 0x0154, 0x0140,
@@ -27,6 +32,16 @@ impl Voice for DMC {
         }
 
         self.buffer
+    }
+}
+
+impl Storeable for DMC {
+    fn save(&self, _output: &mut File) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn load(&mut self, _input: &mut File) -> io::Result<()> {
+        Ok(())
     }
 }
 
