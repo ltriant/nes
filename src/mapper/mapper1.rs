@@ -63,8 +63,7 @@ impl Mapper1 {
             self.shift_register = 0;
             self.control = 3 << 2;
             self.write_count = 0;
-        }
-        else {
+        } else {
             self.shift_register |= (val & 1) << (self.write_count as usize);
             self.write_count += 1;
 

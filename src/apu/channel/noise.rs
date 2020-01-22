@@ -62,8 +62,7 @@ impl Voice for Noise {
 
         if self.envelope_enabled {
             self.envelope_volume
-        }
-        else {
+        } else {
             self.constant_volume
         }
     }
@@ -166,15 +165,12 @@ impl Noise {
             // The divider's period is set to n + 1.
             self.envelope_value = self.envelope_period + 1;
             self.envelope_start = false;
-        }
-        else if self.envelope_value > 0 {
+        } else if self.envelope_value > 0 {
             self.envelope_value -= 1;
-        }
-        else {
+        } else {
             if self.envelope_volume > 0 {
                 self.envelope_volume -= 1;
-            }
-            else if self.envelope_loop {
+            } else if self.envelope_loop {
                 self.envelope_volume = 15;
             }
 
@@ -208,8 +204,7 @@ impl Noise {
             let feedback = (self.shift_register & 1) ^ ((self.shift_register >> shift) & 1);
             self.shift_register >>= 1;
             self.shift_register |= feedback << 14;
-        }
-        else {
+        } else {
             self.timer_value -= 1;
         }
     }
@@ -232,8 +227,7 @@ impl Noise {
         // s--- pppp   short mode, period index
         self.mode = if (val & 0x80) != 0 {
             ShiftRegisterMode::Six
-        }
-        else {
+        } else {
             ShiftRegisterMode::One
         };
 

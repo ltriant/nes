@@ -222,8 +222,7 @@ impl APU {
         // Mode (0 = 4-step, 1 = 5-step)
         self.frame_mode = if (val & 0b1000_0000) == 0 {
             SequencerMode::FourStep
-        }
-        else {
+        } else {
             SequencerMode::FiveStep
         };
 
@@ -275,15 +274,13 @@ impl APU {
 
         let sq1 = if *NES_APU_CHANNELS & 1 != 0 {
             Some(self.square1.signal() as usize)
-        }
-        else {
+        } else {
             None
         };
 
         let sq2 = if *NES_APU_CHANNELS & 2 != 0 {
             Some(self.square2.signal() as usize)
-        }
-        else {
+        } else {
             None
         };
 
@@ -296,22 +293,19 @@ impl APU {
 
         let tr = if *NES_APU_CHANNELS & 4 != 0 {
             Some(self.triangle.signal() as usize)
-        }
-        else {
+        } else {
             None
         };
 
         let n = if *NES_APU_CHANNELS & 8 != 0 {
             Some(self.noise.signal() as usize)
-        }
-        else {
+        } else {
             None
         };
 
         let dmc = if *NES_APU_CHANNELS & 16 != 0 {
             Some(self.dmc.signal() as usize)
-        }
-        else {
+        } else {
             None
         };
 

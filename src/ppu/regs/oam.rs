@@ -24,8 +24,7 @@ impl Memory for OAM {
         if i % 4 == 2 {
             let v = val & 0xe3;
             self.data[i] = v;
-        }
-        else {
+        } else {
             self.data[i] = val;
         }
     }

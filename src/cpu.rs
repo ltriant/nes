@@ -59,8 +59,7 @@ impl Memory for CPU {
     fn write(&mut self, addr: u16, val: u8) {
         if addr == 0x4014 {
             self.dma(val);
-        }
-        else {
+        } else {
             self.mem.write(addr, val);
         }
     }
@@ -181,8 +180,7 @@ impl CPU {
 
         if self.cycles % 2 == 1 {
             self.stall = Some(514);
-        }
-        else {
+        } else {
             self.stall = Some(513);
         }
     }
@@ -325,8 +323,7 @@ impl CPU {
             if stall > 0 {
                 self.stall = Some(stall - 1);
                 return 1;
-            }
-            else {
+            } else {
                 self.stall = None;
             }
         }

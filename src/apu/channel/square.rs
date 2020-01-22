@@ -81,8 +81,7 @@ impl Voice for SquareWave {
 
         if self.envelope_enabled {
             return self.envelope_volume;
-        }
-        else {
+        } else {
             return self.constant_volume;
         }
     }
@@ -210,15 +209,12 @@ impl SquareWave {
             // The divider's period is set to n + 1.
             self.envelope_value = self.envelope_period + 1;
             self.envelope_start = false;
-        }
-        else if self.envelope_value > 0 {
+        } else if self.envelope_value > 0 {
             self.envelope_value -= 1;
-        }
-        else {
+        } else {
             if self.envelope_volume > 0 {
                 self.envelope_volume -= 1;
-            }
-            else if self.envelope_loop {
+            } else if self.envelope_loop {
                 self.envelope_volume = 15;
             }
 
@@ -235,8 +231,7 @@ impl SquareWave {
             if self.channel == 1 {
                 self.timer_period -= 1;
             }
-        }
-        else {
+        } else {
             self.timer_period += delta;
         }
     }
@@ -249,11 +244,9 @@ impl SquareWave {
 
             self.sweep_value = self.sweep_period + 1;
             self.sweep_reload = false;
-        }
-        else if self.sweep_value > 0 {
+        } else if self.sweep_value > 0 {
             self.sweep_value -= 1;
-        }
-        else {
+        } else {
             if self.sweep_enabled {
                 self.sweep();
             }
@@ -272,8 +265,7 @@ impl SquareWave {
         if self.timer_value == 0 {
             self.timer_value = self.timer_period + 1;
             self.duty_value = (self.duty_value + 1) % 8;
-        }
-        else {
+        } else {
             self.timer_value -= 1;
         }
     }

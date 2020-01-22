@@ -206,9 +206,7 @@ impl Console {
             if paused {
                 poll_keyboard = true;
                 thread::sleep(Duration::from_millis(200));
-            }
-            else {
-
+            } else {
                 let cpu_cycles = self.cpu.step();
                 let ppu_cycles = cpu_cycles * 3;
                 let apu_cycles = cpu_cycles;

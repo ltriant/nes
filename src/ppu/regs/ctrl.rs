@@ -27,8 +27,7 @@ impl PPUCtrl {
 
         if (val & 0x20) == 0 {
             SpriteSize::Small.size()
-        }
-        else {
+        } else {
             SpriteSize::Large.size()
         }
     }
@@ -38,8 +37,7 @@ impl PPUCtrl {
 
         if (val & 0x10) == 0 {
             0x0000
-        }
-        else {
+        } else {
             0x1000
         }
     }
@@ -49,8 +47,7 @@ impl PPUCtrl {
 
         if (val & 0x08) == 0 {
             0x0000
-        }
-        else {
+        } else {
             0x1000
         }
     }
@@ -60,8 +57,7 @@ impl PPUCtrl {
 
         if (val & 0x04) == 0 {
             1
-        }
-        else {
+        } else {
             32
         }
     }

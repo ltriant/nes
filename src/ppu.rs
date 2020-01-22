@@ -115,8 +115,7 @@ impl Memory for PPU {
                 if self.ppu_addr % 0x4000 <= 0x3eff {
                     rv = self.buffered_data;
                     self.buffered_data = self.data.read(self.ppu_addr);
-                }
-                else {
+                } else {
                     // TODO why do we subtract 0x1000 ?
                     self.buffered_data = self.data.read(self.ppu_addr - 0x1000);
                     rv = self.data.read(self.ppu_addr);
@@ -163,8 +162,7 @@ impl Memory for PPU {
                     self.t = (self.t & 0xfc1f)
                            | (((val as u16) & 0xf8) << 2);
                     self.w = false;
-                }
-                else {
+                } else {
                     // t: ....... ...HGFED = d: HGFED...
                     // x:              CBA = d: .....CBA
                     // w:                  = 1
@@ -183,8 +181,7 @@ impl Memory for PPU {
                            | (val as u16);
                     self.ppu_addr = self.t;
                     self.w = false;
-                }
-                else {
+                } else {
                     // t: .FEDCBA ........ = d: ..FEDCBA
                     // t: X...... ........ = 0
                     // w:                  = 1
@@ -370,8 +367,7 @@ impl PPU {
 
             // switch horizontal nametable
             self.ppu_addr ^= 0x0400;
-        }
-        else {
+        } else {
             // increment coarse X
             self.ppu_addr += 1;
         }
@@ -384,8 +380,7 @@ impl PPU {
         if self.ppu_addr & 0x7000 != 0x7000 {
             // increment fine Y
             self.ppu_addr += 0x1000;
-        }
-        else {
+        } else {
             // fine Y = 0
             self.ppu_addr &= !0x7000;
 
@@ -398,12 +393,10 @@ impl PPU {
 
                 // switch vertical nametable
                 self.ppu_addr ^= 0x0800;
-            }
-            else if y == 31 {
+            } else if y == 31 {
                 // coarse Y = 0, nametable not switched
                 y = 0;
-            }
-            else {
+            } else {
                 // increment coarse Y
                 y += 1;
             }
@@ -467,8 +460,7 @@ impl PPU {
             address = self.ctrl.sprite_pattern_table_addr()
                 + (tile * 16)
                 + row as u16;
-        }
-        else {
+        } else {
             if attributes & 0x80 == 0x80 {
                 row = 15 - row;
             }
@@ -514,8 +506,7 @@ impl PPU {
                 p2 = (high_tile_byte & 1) << 1;
                 low_tile_byte >>= 1;
                 high_tile_byte >>= 1;
-            }
-            else {
+            } else {
                 p1 = (low_tile_byte & 0x80) >> 7;
                 p2 = (high_tile_byte & 0x80) >> 6;
                 low_tile_byte <<= 1;
@@ -598,8 +589,7 @@ impl PPU {
 
                 if self.sprite_priorities[i] == 0 {
                     sprite as u16 | 0x10
-                }
-                else {
+                } else {
                     background as u16
                 }
             },
@@ -803,8 +793,7 @@ impl PPU {
         if self.rendering_enabled() && self.dot == 257 {
             if visible_line {
                 self.evaluate_sprites();
-            }
-            else {
+            } else {
                 self.sprite_count = 0;
             }
 

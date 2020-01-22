@@ -106,8 +106,7 @@ impl AddressingMode {
                 let hi =
                     if addr & 0xff == 0xff {
                         cpu.mem.read(addr & 0xff00) as u16
-                    }
-                    else {
+                    } else {
                         cpu.mem.read(addr + 1) as u16
                     };
 
@@ -134,8 +133,7 @@ impl AddressingMode {
                 let hi =
                     if addr & 0xff == 0xff {
                         cpu.mem.read(addr & 0xff00) as u16
-                    }
-                    else {
+                    } else {
                         cpu.mem.read(addr + 1) as u16
                     };
 
@@ -150,8 +148,7 @@ impl AddressingMode {
                 let hi =
                     if addr & 0xff == 0xff {
                         cpu.mem.read(addr & 0xff00) as u16
-                    }
-                    else {
+                    } else {
                         cpu.mem.read(addr + 1) as u16
                     };
 

@@ -124,8 +124,7 @@ impl TriangleWave {
             if self.length_value > 0 && self.counter_value > 0 {
                 self.duty_value = (self.duty_value + 1) % 32;
             }
-        }
-        else {
+        } else {
             self.timer_value -= 1;
         }
     }
@@ -133,8 +132,7 @@ impl TriangleWave {
     pub fn step_counter(&mut self) {
         if self.counter_reload {
             self.counter_value = self.counter_period;
-        }
-        else if self.counter_value > 0 {
+        } else if self.counter_value > 0 {
             self.counter_value -= 1;
         }
 

@@ -99,8 +99,7 @@ impl Mapper for Mapper4 {
             0x8000 ..= 0x9fff => {
                 let bank = if self.prg_mode {
                     self.n_prg_banks - 2
-                }
-                else {
+                } else {
                     self.regs[6]
                 };
 
@@ -117,8 +116,7 @@ impl Mapper for Mapper4 {
             0xc000 ..= 0xdfff => {
                 let bank = if self.prg_mode {
                     self.regs[6]
-                }
-                else {
+                } else {
                     self.n_prg_banks - 2
                 };
 
@@ -154,8 +152,7 @@ impl Mapper for Mapper4 {
                     self.index = val as usize & 0x07;
                     self.prg_mode = val & 0x40 != 0;
                     self.chr_mode = val & 0x80 != 0;
-                }
-                else {
+                } else {
                     // Bank data
                     self.regs[self.index] = val as usize;
                 }
@@ -164,12 +161,10 @@ impl Mapper for Mapper4 {
                 if even {
                     self.mirror_mode = if val & 1 == 0 {
                         MirrorMode::Vertical
-                    }
-                    else {
+                    } else {
                         MirrorMode::Horizontal
                     };
-                }
-                else {
+                } else {
                     // PRG-RAM protect
                     //
                     // Though these bits are functional on the MMC3, their main
@@ -183,8 +178,7 @@ impl Mapper for Mapper4 {
                 if even {
                     // IRQ latch
                     self.irq_period = val;
-                }
-                else {
+                } else {
                     // IRQ reload
                     self.irq_counter = 0;
                 }
@@ -195,8 +189,7 @@ impl Mapper for Mapper4 {
                     // IRQ disable
                     self.irq_enabled = false;
                     self.irq_flag = false;
-                }
-                else {
+                } else {
                     // IRQ enable
                     self.irq_enabled = true;
                 }
@@ -213,8 +206,7 @@ impl Mapper for Mapper4 {
     fn signal_scanline(&mut self) {
         if self.irq_counter == 0 {
             self.irq_counter = self.irq_period;
-        }
-        else {
+        } else {
             self.irq_counter -= 1;
 
             if self.irq_counter == 0 && self.irq_enabled {
