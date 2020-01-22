@@ -827,7 +827,7 @@ impl PPU {
             return res;
         }
 
-        if (pre_line || visible_line) && self.rendering_enabled() && self.dot == 260 {
+        if (pre_line || visible_line) && self.rendering_enabled() && self.dot == 280 {
             debug!("scanline ended");
             res.signal_scanline = true;
         }
