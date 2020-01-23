@@ -12,11 +12,13 @@ const LENGTH_TABLE: [u8; 32] = [
     192, 24, 72, 26, 16, 28, 32, 30,
 ];
 
+// Duty cycle values. There are 4 modes, which silence different percentages of
+// the square wave.
 const DUTY_TABLE: [[u8; 8]; 4] = [
-    [0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 1, 1, 0, 0, 0, 0, 0],
-    [0, 1, 1, 1, 1, 0, 0, 0],
-    [1, 0, 0, 1, 1, 1, 1, 1],
+    [0, 1, 0, 0, 0, 0, 0, 0],  // 12.5%
+    [0, 1, 1, 0, 0, 0, 0, 0],  // 25%
+    [0, 1, 1, 1, 1, 0, 0, 0],  // 50%
+    [1, 0, 0, 1, 1, 1, 1, 1],  // 75%
 ];
 
 pub struct SquareWave {
