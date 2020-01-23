@@ -34,7 +34,7 @@ impl Memory for NESMemory {
             0x4000 ..= 0x4013 => self.apu.read(address),
 
             // OAM DMA
-            0x4014            => 0,  // TODO is this right?
+            0x4014            => 0,
 
             // APU registers
             0x4015            => self.apu.read(address),

@@ -23,17 +23,14 @@ pub struct SquareWave {
     pub enabled: bool,
     channel: u8,
 
-    // TODO move length unit into submodule
     length_enabled: bool,
     pub length_value: u8,
 
-    // TODO move timer and duty into submodule
     timer_period: u16,
     timer_value: u16,
     duty_mode: u8,
     duty_value: u8,
 
-    // TODO move the sweep unit into a submodule
     sweep_enabled: bool,
     sweep_negate: bool,
     sweep_reload: bool,
@@ -41,7 +38,6 @@ pub struct SquareWave {
     sweep_shift: u8,
     sweep_value: u8,
 
-    // TODO move the envelope unit into a submodule
     envelope_enabled: bool,
     envelope_start: bool,
     envelope_loop: bool,

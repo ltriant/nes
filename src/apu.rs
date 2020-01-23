@@ -234,7 +234,6 @@ impl APU {
         // otherwise the 5-step sequence is selected and the sequencer is
         // immediately clocked once.
         if self.frame_mode == SequencerMode::FiveStep {
-            // TODO is this right?
             self.step_envelopes();
             self.step_sweeps();
             self.step_lengths();

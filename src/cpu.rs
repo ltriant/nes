@@ -947,7 +947,6 @@ mod tests {
         assert_eq!(cpu.sp, STACK_INIT + 2);
 
         // The stack pointer should wrap around from 0xff to 0x00
-        // TODO verify this behaviour
         let _ = cpu.stack_pop8();
         assert_eq!(cpu.sp, 0x00);
     }
@@ -966,7 +965,6 @@ mod tests {
         assert_eq!(cpu.sp, 0x00);
 
         // The stack pointer should wrap around from 0x00 to 0xff
-        // TODO verify this behaviour
         cpu.stack_push8(0xee);
         assert_eq!(cpu.sp, 0xff);
     }
