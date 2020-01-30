@@ -279,7 +279,6 @@ impl Console {
                     audio_sampling = true;
 
                     if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
-                        debug!("sleeping for {}ms", delay.as_millis());
                         thread::sleep(delay);
                     }
 

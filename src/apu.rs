@@ -2,6 +2,7 @@ mod channel;
 mod filter;
 
 use std::io;
+use std::fmt;
 use std::fs::File;
 
 use crate::apu::channel::{DMC, Noise, SquareWave, TriangleWave, Voice};
@@ -25,6 +26,17 @@ lazy_static!{
 enum SequencerMode {
     FourStep,
     FiveStep,
+}
+
+impl fmt::Display for SequencerMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let v = match *self {
+            SequencerMode::FourStep => 4,
+            SequencerMode::FiveStep => 5,
+        };
+
+        write!(f, "{} step", v)
+    }
 }
 
 pub struct APU {
@@ -230,6 +242,9 @@ impl APU {
         // Hello, double-negatives.
         self.irq = (val & 0b0100_0000) == 0;
 
+        info!("sequencer mode: {}", self.frame_mode);
+        info!("irq generation: {}", self.irq);
+
         // If the mode flag is clear, the 4-step sequence is selected,
         // otherwise the 5-step sequence is selected and the sequencer is
         // immediately clocked once.
@@ -246,6 +261,13 @@ impl APU {
         self.triangle.enabled = (val & 0b0000_0100) != 0;
         self.noise.enabled    = (val & 0b0000_1000) != 0;
         self.dmc.enabled      = (val & 0b0001_0000) != 0;
+
+        debug!("s1={}, s2={}, t={}, n={}, dmc={}",
+               self.square1.enabled,
+               self.square2.enabled,
+               self.triangle.enabled,
+               self.noise.enabled,
+               self.dmc.enabled);
 
         if !self.square1.enabled {
             self.square1.length_value = 0;

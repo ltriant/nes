@@ -146,6 +146,9 @@ impl TriangleWave {
         // clll llll   control, linear counter load
         self.length_enabled = (val & 0b1000_0000) == 0;
         self.counter_period =  val & 0b0111_1111;
+
+        debug!("length_unit={}, counter_period={}",
+               self.length_enabled, self.counter_period);
     }
 
     // $400a
@@ -167,5 +170,8 @@ impl TriangleWave {
         self.timer_period = (self.timer_period & 0x00ff) | (period_high << 8);
         self.timer_value = self.timer_period + 1;
         self.counter_reload = true;
+
+        debug!("length_value={}, timer_period={}",
+               self.length_value, self.timer_period);
     }
 }

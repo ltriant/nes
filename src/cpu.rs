@@ -152,17 +152,11 @@ impl CPU {
         debug!("PC: 0x{:04X}", self.pc);
 
         self.set_flags(0x24);
-        debug!("flags: 0x{:02X}", self.flags());
 
         self.sp = STACK_INIT;
-        debug!("SP: 0x{:02X}", self.sp);
-
         self.a = 0;
-        debug!("A: 0x{:02X}", self.a);
         self.x = 0;
-        debug!("X: 0x{:02X}", self.x);
         self.y = 0;
-        debug!("Y: 0x{:02X}", self.y);
 
         self.interrupt = None;
         self.stall = None;
@@ -252,7 +246,7 @@ impl CPU {
         self.i = true;
         self.cycles += 7;
 
-        debug!("NMI: {:04X}", addr);
+        debug!("NMI: 0x{:04X}", addr);
         self.pc = addr;
     }
 
@@ -267,7 +261,7 @@ impl CPU {
         self.i = true;
         self.cycles += 7;
 
-        debug!("IRQ: {:04X}", addr);
+        debug!("IRQ: 0x{:04X}", addr);
         self.pc = addr;
     }
 
