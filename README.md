@@ -4,7 +4,9 @@ A NES emulator, so that I can waste a lot of time playing old games, but also fe
 
 I've tried to keep the code as simple as possible, in order to facilitate others in learning how the NES works.
 
-![Steve Wiebe ftw](donkey-kong.png)
+An accompanying blog post can be read here: https://ltriant.github.io/2019/11/22/nes-emulator.html
+
+![It's dangerous to go alone. Take this!](zelda.gif)
 
 ## Limitations
 
