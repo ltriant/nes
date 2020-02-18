@@ -48,8 +48,8 @@ pub struct APU {
 
     cycles: u64,
 
-    frame_mode:  SequencerMode,
-    frame_value: u8,
+    sequencer_mode:  SequencerMode,
+    sequencer_value: u8,
 
     irq: bool, // true = generates IRQ on the last tick of a 4-step sequence
 
@@ -118,11 +118,11 @@ impl Storeable for APU {
 
         serde::encode_u64(output, self.cycles)?;
 
-        match self.frame_mode {
+        match self.sequencer_mode {
             SequencerMode::FourStep => serde::encode_u8(output, 4)?,
             SequencerMode::FiveStep => serde::encode_u8(output, 5)?,
         };
-        serde::encode_u8(output, self.frame_value)?;
+        serde::encode_u8(output, self.sequencer_value)?;
         serde::encode_u8(output, self.irq as u8)?;
 
         // TODO filters
@@ -140,12 +140,12 @@ impl Storeable for APU {
         self.cycles = serde::decode_u64(input)?;
 
         match serde::decode_u8(input)? {
-            4 => { self.frame_mode = SequencerMode::FourStep },
-            5 => { self.frame_mode = SequencerMode::FiveStep },
+            4 => { self.sequencer_mode = SequencerMode::FourStep },
+            5 => { self.sequencer_mode = SequencerMode::FiveStep },
             _ => { },
         };
 
-        self.frame_value = serde::decode_u8(input)?;
+        self.sequencer_value = serde::decode_u8(input)?;
         self.irq = serde::decode_u8(input)? != 0;
 
         // TODO filters
@@ -170,8 +170,8 @@ impl APU {
 
             cycles: 0,
 
-            frame_mode:  SequencerMode::FourStep,
-            frame_value: 0,
+            sequencer_mode:  SequencerMode::FourStep,
+            sequencer_value: 0,
 
             irq: false,
 
@@ -232,7 +232,7 @@ impl APU {
         // MI-- ----       mode, IRQ disable
 
         // Mode (0 = 4-step, 1 = 5-step)
-        self.frame_mode = if (val & 0b1000_0000) == 0 {
+        self.sequencer_mode = if (val & 0b1000_0000) == 0 {
             SequencerMode::FourStep
         } else {
             SequencerMode::FiveStep
@@ -242,13 +242,13 @@ impl APU {
         // Hello, double-negatives.
         self.irq = (val & 0b0100_0000) == 0;
 
-        info!("sequencer mode: {}", self.frame_mode);
+        info!("sequencer mode: {}", self.sequencer_mode);
         info!("irq generation: {}", self.irq);
 
         // If the mode flag is clear, the 4-step sequence is selected,
         // otherwise the 5-step sequence is selected and the sequencer is
         // immediately clocked once.
-        if self.frame_mode == SequencerMode::FiveStep {
+        if self.sequencer_mode == SequencerMode::FiveStep {
             self.step_envelopes();
             self.step_sweeps();
             self.step_lengths();
@@ -380,17 +380,17 @@ impl APU {
         }
     }
 
-    fn step_frame_counter(&mut self, res: &mut StepResult) {
-        match self.frame_mode {
+    fn step_sequencer(&mut self, res: &mut StepResult) {
+        match self.sequencer_mode {
             SequencerMode::FiveStep => {
-                self.frame_value = (self.frame_value + 1) % 5;
+                self.sequencer_value = (self.sequencer_value + 1) % 5;
 
                 // mode 1: 5-step
                 // ---------------------------------------
                 //     - - - - -   IRQ flag (never set)
                 //     l - l - -   length counter + sweep
                 //     e e e e -   envelope + linear counter
-                match self.frame_value {
+                match self.sequencer_value {
                     1 | 3 => {
                         self.step_envelopes();
                         self.step_sweeps();
@@ -403,14 +403,14 @@ impl APU {
                 }
             },
             SequencerMode::FourStep => {
-                self.frame_value = (self.frame_value + 1) % 4;
+                self.sequencer_value = (self.sequencer_value + 1) % 4;
 
                 // mode 0: 4-step
                 // ---------------------------------------
                 //     - - - f     IRQ flag
                 //     - l - l     length counter + sweep
                 //     e e e e     envelope + linear counter
-                match self.frame_value {
+                match self.sequencer_value {
                     0 | 2 => {
                         self.step_envelopes();
                     },
@@ -440,23 +440,30 @@ impl APU {
             signal:      None,
         };
 
-        // XXX XXX XXX XXX
-        // All of this is a bit of black magic that I don't understand yet. It
-        // would be great if I actually understood what was going on here.
-        // XXX XXX XXX XXX
-
         let cycle1 = self.cycles as f32;
         self.cycles += 1;
         let cycle2 = self.cycles as f32;
+
         self.step_timers();
-        
-        let frame_counter_rate = 1789773.0 / 240.0;
-        let f1 = (cycle1 / frame_counter_rate) as u32;
-        let f2 = (cycle2 / frame_counter_rate) as u32;
+
+        // https://wiki.nesdev.com/w/index.php/APU_Frame_Counter
+        //
+        // The sequencer is stepped at a rate of 240Hz or 192Hz, depending on
+        // the mode. The way this happens is that we check if the previous
+        // cycle and the current cycle crosses a multiple of 240. And if it
+        // does, the sequencer is clocked.
+        //
+        // The five-step sequence is clocked at 192Hz, but this is achieved by
+        // doing nothing on one of the steps, as 192 is 4/5 of 240.
+        let sequencer_rate = 1789773.0 / 240.0;
+        let f1 = (cycle1 / sequencer_rate) as u32;
+        let f2 = (cycle2 / sequencer_rate) as u32;
         if f1 != f2 {
-            self.step_frame_counter(&mut res);
+            self.step_sequencer(&mut res);
         }
 
+        // The sampling rate is 44.1kHz. The way we do this is the same as the
+        // sequencer (see explanation above).
         let sample_rate = 1789773.0 / 44100.0;
         let s1 = (cycle1 / sample_rate) as u32;
         let s2 = (cycle2 / sample_rate) as u32;
