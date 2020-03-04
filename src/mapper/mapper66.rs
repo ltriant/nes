@@ -81,6 +81,9 @@ impl Mapper for Mapper66 {
 
     fn write(&mut self, address: u16, val: u8) {
         match address {
+            // CHR-ROM
+            0x0000 ..= 0x1fff => { self.chr_rom[address as usize & 0x1fff] = val },
+
             // SRAM
             0x6000 ..= 0x7fff => { self.sram[address as usize - 0x6000] = val },
 
