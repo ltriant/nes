@@ -13,8 +13,8 @@ An accompanying blog post can be read here: https://ltriant.github.io/2019/11/22
 Currently, only a subset of the full system has been emulated. The following limitations apply, in order of most likely to be fixed:
 
 1. Almost complete sound support (no DMC channel)
-2. No second controller support
-3. No PAL cartridge support
+2. No PAL cartridge support
+3. No second controller support
 
 The following cartridge mappers are supported:
 
