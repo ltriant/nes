@@ -23,7 +23,8 @@ The following cartridge mappers are supported:
 3. UxROM (mapper 2)
 4. CNROM (mapper 3)
 5. MMC3/TxROM (mapper 4)
-6. GxROM (mapper 66)
+6. AxROM (mapper 7)
+7. GxROM (mapper 66)
 
 ## Building and Running
 
