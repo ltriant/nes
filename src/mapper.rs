@@ -5,6 +5,7 @@ mod mapper3;
 mod mapper4;
 mod mapper7;
 mod mapper66;
+mod mapper69;
 
 use std::convert::From;
 use std::io;
@@ -17,6 +18,7 @@ pub use mapper3::Mapper3;
 pub use mapper4::Mapper4;
 pub use mapper7::Mapper7;
 pub use mapper66::Mapper66;
+pub use mapper69::Mapper69;
 
 #[derive(Clone, Copy)]
 pub enum MirrorMode {
@@ -53,14 +55,24 @@ impl From<u8> for MirrorMode {
 }
 
 pub trait Mapper {
+    // The mirroring mode to use
     fn mirror_mode(&self) -> &MirrorMode { &MirrorMode::Vertical }
 
+    // Memory read/write
     fn read(&mut self, address: u16) -> u8;
     fn write(&mut self, address: u16, val: u8);
 
+    // Called at the start of vblank to determine if an IRQ needs to be generated
     fn irq_flag(&self) -> bool { false }
-    fn signal_scanline(&mut self) {}
 
+    // Called on the 280th dot (hblank) of every visible scanline
+    fn signal_scanline(&mut self) { }
+
+    // Called after every CPU instruction execution, with the number of cycles
+    // that were just executed
+    fn cpu_tick(&mut self, cycles: u64) -> bool { false }
+
+    // Serialisation and deserialisation to save states
     fn save(&self, output: &mut File) -> io::Result<()>;
     fn load(&mut self, input: &mut File) -> io::Result<()>;
 }

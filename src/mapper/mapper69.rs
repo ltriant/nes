@@ -1,0 +1,376 @@
+use std::convert::From;
+use std::io::{Read, Write};
+use std::io;
+use std::fs::File;
+
+use crate::mapper::Mapper;
+use crate::mapper::MirrorMode;
+use crate::serde;
+
+const PRG_BANK_SIZE: usize = 8192;
+const CHR_BANK_SIZE: usize = 1024;
+
+#[derive(Debug)]
+enum Command {
+    CHRBank(u8),
+    PRGBank(u8),
+    Mirror,
+    IRQ,
+    IRQLo,
+    IRQHi,
+}
+
+impl From<u8> for Command {
+    fn from(val: u8) -> Self {
+        match val {
+            0x00 ..= 0x07 => Command::CHRBank(val),
+            0x08 ..= 0x0b => Command::PRGBank(val),
+            0x0c          => Command::Mirror,
+            0x0d          => Command::IRQ,
+            0x0e          => Command::IRQLo,
+            0x0f          => Command::IRQHi,
+            _ => unreachable!("bad command"),
+        }
+    }
+}
+
+//
+// Sunsoft FME-7/5A (mapper 69)
+//
+pub struct Mapper69 {
+    chr_rom: Vec<u8>,
+    prg_rom: Vec<u8>,
+    sram: [u8; 0x2000],
+    mirror_mode: MirrorMode,
+
+    // A command to run
+    cmd: Option<Command>,
+
+    // Registers (set by the command above)
+    chr_banks: [usize; 8],
+    sram_bank: usize,
+    prg_banks: [usize; 4],
+    ram_select: bool,
+    ram_enabled: bool,
+
+    irq_enabled: bool,
+    irq_counter_enabled: bool,
+    irq_counter_value: u16,
+}
+
+
+impl Mapper69 {
+    pub fn new_mapper(rom: Vec<u8>,
+                      vrom: Vec<u8>,
+                      mirror_mode: u8)
+        -> Self
+    {
+        let n_banks = rom.len() / PRG_BANK_SIZE;
+
+        Self {
+            chr_rom: vrom,
+            prg_rom: rom,
+            sram: [0; 0x2000],
+            mirror_mode: MirrorMode::from(mirror_mode),
+
+            cmd: None,
+
+            chr_banks: [0; 8],
+            sram_bank: 0,
+            prg_banks: [0, 0, 0, n_banks - 1],
+            ram_select: false,
+            ram_enabled: false,
+
+            irq_enabled: false,
+            irq_counter_enabled: false,
+            irq_counter_value: 0,
+        }
+    }
+
+    fn run_cmd(&mut self, parameter: u8) {
+        if let Some(cmd) = &self.cmd {
+            match cmd {
+                Command::CHRBank(n) => {
+                    self.chr_banks[*n as usize] = parameter as usize;
+                },
+                Command::PRGBank(n) => {
+                    if *n == 0x08 {
+                        // 7  bit  0
+                        // ---- ----
+                        // ERbB BBBB
+                        // |||| ||||
+                        // ||++-++++- The bank number to select at CPU $6000 - $7FFF
+                        // |+------- RAM / ROM Select Bit
+                        // |         0 = PRG ROM
+                        // |         1 = PRG RAM
+                        // +-------- RAM Enable Bit (6264 +CE line)
+                        //           0 = PRG RAM Disabled
+                        //           1 = PRG RAM Enabled
+                        let bank         =  parameter & 0b0001_1111;
+                        self.ram_select  = (parameter & 0b0100_0000) != 0;
+                        self.ram_enabled = (parameter & 0b1000_0000) != 0;
+
+                        self.sram_bank = bank as usize;
+                    } else {
+                        // 7  bit  0
+                        // ---- ----
+                        // ..bB BBBB
+                        //   || ||||
+                        //   ++-++++- The bank number to select for the specified bank.
+                        let bank = parameter & 0b0001_1111;
+
+                        // n will be one of 0x09, 0x0a, 0x0b, and I want to map
+                        // that to a number 0, 1, or 2, so we subtract 9
+                        self.prg_banks[*n as usize - 0x09] = bank as usize;
+                    }
+                },
+                Command::Mirror => {
+                    // 7  bit  0
+                    // ---- ----
+                    // .... ..MM
+                    //        ||
+                    //        ++- Mirroring Mode
+                    //             0 = Vertical
+                    //             1 = Horizontal
+                    //             2 = One Screen Mirroring from $2000 ("1ScA")
+                    //             3 = One Screen Mirroring from $2400 ("1ScB")
+                    self.mirror_mode = match parameter & 0b0000_0011 {
+                        0 => MirrorMode::Vertical,
+                        1 => MirrorMode::Horizontal,
+                        2 => MirrorMode::Single0,
+                        3 => MirrorMode::Single1,
+                        _ => unreachable!("bad mirror mode"),
+                    };
+                },
+                Command::IRQ => {
+                    // 7  bit  0
+                    // ---- ----
+                    // C... ...T
+                    // |       |
+                    // |       +- IRQ Enable
+                    // |           0 = Do not generate IRQs
+                    // |           1 = Do generate IRQs
+                    // +-------- IRQ Counter Enable
+                    //             0 = Disable Counter Decrement
+                    //             1 = Enable Counter Decrement
+                    self.irq_enabled         = (parameter & 0b0000_0001) != 0;
+                    self.irq_counter_enabled = (parameter & 0b1000_0000) != 0;
+                },
+                Command::IRQLo => {
+                    // 7  bit  0
+                    // ---- ----
+                    // LLLL LLLL
+                    // |||| ||||
+                    // ++++-++++- The low eight bits of the IRQ counter
+                    self.irq_counter_value = (self.irq_counter_value & 0xff00)
+                        | parameter as u16;
+                },
+                Command::IRQHi => {
+                    // 7  bit  0
+                    // ---- ----
+                    // HHHH HHHH
+                    // |||| ||||
+                    // ++++-++++- The high eight bits of the IRQ counter
+                    self.irq_counter_value = (self.irq_counter_value & 0x00ff)
+                        | ((parameter as u16) << 8);
+                },
+            }
+        }
+    }
+}
+
+impl Mapper for Mapper69 {
+    fn mirror_mode(&self) -> &MirrorMode {
+        &self.mirror_mode
+    }
+
+    fn cpu_tick(&mut self, cycles: u64) -> bool {
+        // The IRQ counter is clocked for every CPU cycle, rather than every
+        // PPU scanline, as per other mappers.
+
+        let mut trigger = false;
+
+        // If the IRQ counter is enabled, it always ticks the counter
+        if self.irq_counter_enabled {
+            let mut cycles = cycles;
+            while cycles > 0 {
+                // When the IRQ counter wraps around from 0x0000 to 0xFFFF, an
+                // IRQ is generated.
+                if self.irq_counter_value == 0 {
+                    trigger = true;
+                }
+
+                self.irq_counter_value = self.irq_counter_value.wrapping_sub(1);
+                cycles -= 1;
+            }
+        }
+
+        // IRQ's will only trigger if IRQ is enabled, regardless of whether the
+        // IRQ counter is enabled, or what the IRQ counter's value is.
+        self.irq_enabled && trigger
+    }
+
+    fn read(&mut self, address: u16) -> u8 {
+        match address {
+            // CHR-ROM
+            0x0000 ..= 0x1fff => {
+                let reg = address as usize / CHR_BANK_SIZE;
+                let bank = self.chr_banks[reg];
+                let index = (bank * CHR_BANK_SIZE) | (address as usize & 0x03ff);
+                self.chr_rom[index]
+            },
+
+            // SRAM
+            0x6000 ..= 0x7fff => {
+                match (self.ram_select, self.ram_enabled) {
+                    (true, false) => 0,  // open bus
+                    (true, true)  => self.sram[address as usize - 0x6000],
+                    (false, _)    => {
+                        let index = (self.sram_bank * PRG_BANK_SIZE)
+                            | (address as usize & 0x1fff);
+                        self.prg_rom[index & (self.prg_rom.len() - 1)]
+                    },
+                }
+            },
+
+            // PRG-ROM
+            0x8000 ..= 0xffff => {
+                let reg = (address as usize - 0x8000) / PRG_BANK_SIZE;
+                let index = (self.prg_banks[reg] * PRG_BANK_SIZE)
+                    | (address as usize & 0x1fff);
+                self.prg_rom[index & (self.prg_rom.len() - 1)]
+            },
+
+            _ => 0,
+        }
+    }
+
+    fn write(&mut self, address: u16, val: u8) {
+        match address {
+            // CHR-ROM
+            0x0000 ..= 0x1fff => { },
+
+            // SRAM
+            0x6000 ..= 0x7fff => {
+                if self.ram_select && self.ram_enabled {
+                    self.sram[address as usize - 0x6000] = val;
+                }
+            },
+
+            // PRG-ROM
+            0x8000 ..= 0x9fff => {
+                // 7  bit  0
+                // ---- ----
+                // .... CCCC
+                //      ||||
+                //      ++++- The command number to invoke when writing to the
+                //            Parameter Register
+                self.cmd = Some(Command::from(val & 0b0000_1111));
+            },
+
+            0xa000 ..= 0xbfff => {
+                // 7  bit  0
+                // ---- ----
+                // PPPP PPPP
+                // |||| ||||
+                // ++++-++++- The parameter to use for this command. Writing to
+                //            this register invokes the command in the Command
+                //            Register.
+                debug!("running cmd: {:?}, val: {:08b}", self.cmd, val);
+                self.run_cmd(val);
+            },
+
+            _ => { },
+        }
+    }
+
+    fn save(&self, output: &mut File) -> io::Result<()> {
+        serde::encode_vec(output, &self.chr_rom)?;
+        serde::encode_vec(output, &self.prg_rom)?;
+        output.write(&self.sram)?;
+        serde::encode_u8(output, self.mirror_mode as u8)?;
+
+        match &self.cmd {
+            Some(cmd) => {
+                match cmd {
+                    Command::CHRBank(n) => {
+                        serde::encode_u8(output, 1)?;
+                        serde::encode_u8(output, *n)?;
+                    },
+                    Command::PRGBank(n) => {
+                        serde::encode_u8(output, 2)?;
+                        serde::encode_u8(output, *n)?;
+                    },
+                    Command::Mirror => { serde::encode_u8(output, 3)? },
+                    Command::IRQ    => { serde::encode_u8(output, 4)? },
+                    Command::IRQLo  => { serde::encode_u8(output, 5)? },
+                    Command::IRQHi  => { serde::encode_u8(output, 6)? },
+                }
+            },
+            None => { serde::encode_u8(output, 0)? },
+        };
+
+        for i in 0 .. 8 {
+            serde::encode_usize(output, self.chr_banks[i])?;
+        }
+
+        serde::encode_usize(output, self.sram_bank)?;
+
+        for i in 0 .. 4 {
+            serde::encode_usize(output, self.prg_banks[i])?;
+        }
+
+        serde::encode_u8(output, self.ram_select as u8)?;
+        serde::encode_u8(output, self.ram_enabled as u8)?;
+
+        serde::encode_u8(output, self.irq_enabled as u8)?;
+        serde::encode_u8(output, self.irq_counter_enabled as u8)?;
+        serde::encode_u16(output, self.irq_counter_value)?;
+
+        Ok(())
+    }
+
+    fn load(&mut self, input: &mut File) -> io::Result<()> {
+        self.chr_rom = serde::decode_vec(input)?;
+        self.prg_rom = serde::decode_vec(input)?;
+        input.read(&mut self.sram)?;
+        self.mirror_mode = MirrorMode::from(serde::decode_u8(input)?);
+
+        let cmd = serde::decode_u8(input)?;
+        self.cmd = match cmd {
+            0 => None,
+            1 => {
+                let n = serde::decode_u8(input)?;
+                Some(Command::CHRBank(n))
+            },
+            2 => {
+                let n = serde::decode_u8(input)?;
+                Some(Command::PRGBank(n))
+            },
+            3 => Some(Command::Mirror),
+            4 => Some(Command::IRQ),
+            5 => Some(Command::IRQLo),
+            6 => Some(Command::IRQHi),
+            _ => unreachable!("bad cmd"),
+        };
+
+        for i in 0 .. 8 {
+            self.chr_banks[i] = serde::decode_usize(input)?;
+        }
+
+        self.sram_bank = serde::decode_usize(input)?;
+
+        for i in 0 .. 4 {
+            self.prg_banks[i] = serde::decode_usize(input)?;
+        }
+
+        self.ram_select = serde::decode_u8(input)? != 0;
+        self.ram_enabled = serde::decode_u8(input)? != 0;
+
+        self.irq_enabled = serde::decode_u8(input)? != 0;
+        self.irq_counter_enabled = serde::decode_u8(input)? != 0;
+        self.irq_counter_value = serde::decode_u16(input)?;
+
+        Ok(())
+    }
+}

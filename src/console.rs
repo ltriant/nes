@@ -211,6 +211,12 @@ impl Console {
                 let ppu_cycles = cpu_cycles * 3;
                 let apu_cycles = cpu_cycles;
 
+                // TODO This feels ugly, and needs to be better integrated into
+                // the design
+                if self.cpu.mem.ppu.data.mapper.cpu_tick(cpu_cycles) {
+                    self.cpu.trigger_irq();
+                }
+
                 let mut frame_finished = false;
                 for _ in 0 .. ppu_cycles {
                     let res = self.cpu.mem.ppu.step(&mut self.canvas);

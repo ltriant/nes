@@ -5,6 +5,7 @@ use crate::mapper::Mapper3;
 use crate::mapper::Mapper4;
 use crate::mapper::Mapper7;
 use crate::mapper::Mapper66;
+use crate::mapper::Mapper69;
 use crate::mem::NESMemory;
 
 use std::fs::File;
@@ -44,6 +45,9 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
 
     let mirror_mode = header[6] & 0x01;
     debug!("mirroring: {}", if mirror_mode == 0 { "horizontal" } else { "vertical" });
+
+    let battery_backed = (header[7] & 0x02) != 0;
+    debug!("battery backed RAM: {}", if battery_backed { "yes" } else { "no" });
 
     // Get the mapper
     let mapper_low =  (header[6] & 0xf0) >> 4;
@@ -123,6 +127,10 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
         },
         66 => {
             let mapper = Mapper66::new_mapper(rom, vrom, mirror_mode);
+            mem.ppu.data.mapper = Box::new(mapper);
+        },
+        69 => {
+            let mapper = Mapper69::new_mapper(rom, vrom, mirror_mode);
             mem.ppu.data.mapper = Box::new(mapper);
         },
         _ => {
