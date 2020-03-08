@@ -106,6 +106,10 @@ impl Mapper69 {
                         // +-------- RAM Enable Bit (6264 +CE line)
                         //           0 = PRG RAM Disabled
                         //           1 = PRG RAM Enabled
+
+                        // Despite there being 6 bits of data available for the
+                        // bank number in the FME-7 board, only 5 bits were used
+                        // by the 5A and 5B variants.
                         let bank         =  parameter & 0b0001_1111;
                         self.ram_select  = (parameter & 0b0100_0000) != 0;
                         self.ram_enabled = (parameter & 0b1000_0000) != 0;
@@ -117,6 +121,10 @@ impl Mapper69 {
                         // ..bB BBBB
                         //   || ||||
                         //   ++-++++- The bank number to select for the specified bank.
+                        //
+                        // Despite there being 6 bits of data available in the
+                        // FME-7 board, only 5 bits were used by the 5A and 5B
+                        // variants.
                         let bank = parameter & 0b0001_1111;
 
                         // n will be one of 0x09, 0x0a, 0x0b, and I want to map
