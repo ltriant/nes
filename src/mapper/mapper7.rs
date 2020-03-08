@@ -30,7 +30,7 @@ impl Mapper7 {
             chr_rom: vrom,
             prg_rom: rom,
             sram: [0; 0x2000],
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
 
             prg_bank: 0,
         }
@@ -104,7 +104,7 @@ impl Mapper for Mapper7 {
         self.prg_rom = serde::decode_vec(input)?;
         input.read(&mut self.sram)?;
         self.prg_bank = serde::decode_u8(input)?;
-        self.mirror_mode = MirrorMode::from(serde::decode_u8(input)?);
+        self.mirror_mode = MirrorMode::from_hv01(serde::decode_u8(input)?);
         Ok(())
     }
 }

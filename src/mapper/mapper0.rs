@@ -68,7 +68,7 @@ impl Mapper0 {
             chr_rom: vrom,
             prg_rom: rom,
             sram: [0; 0x2000],
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
         }
     }
 }

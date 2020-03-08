@@ -30,7 +30,7 @@ impl Mapper3 {
 
             chr_bank: 0,
 
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
         }
     }
 }

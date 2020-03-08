@@ -34,7 +34,7 @@ impl Mapper2 {
             prg_bank1: 1,
             prg_bank2: n_banks as u8 - 1,
 
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
         }
     }
 }

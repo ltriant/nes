@@ -7,7 +7,6 @@ mod mapper7;
 mod mapper66;
 mod mapper69;
 
-use std::convert::From;
 use std::io;
 use std::fs::File;
 
@@ -39,13 +38,22 @@ impl MirrorMode {
             MirrorMode::Four       => vec![0, 1, 2, 3],
         }
     }
-}
 
-impl From<u8> for MirrorMode {
-    fn from(mode: u8) -> Self {
+    pub fn from_hv01(mode: u8) -> Self {
         match mode {
             0 => MirrorMode::Horizontal,
             1 => MirrorMode::Vertical,
+            2 => MirrorMode::Single0,
+            3 => MirrorMode::Single1,
+            4 => MirrorMode::Four,
+            _ => panic!("bad mirror mode: {}", mode)
+        }
+    }
+
+    pub fn from_vh01(mode: u8) -> Self {
+        match mode {
+            0 => MirrorMode::Vertical,
+            1 => MirrorMode::Horizontal,
             2 => MirrorMode::Single0,
             3 => MirrorMode::Single1,
             4 => MirrorMode::Four,
@@ -70,7 +78,7 @@ pub trait Mapper {
 
     // Called after every CPU instruction execution, with the number of cycles
     // that were just executed
-    fn cpu_tick(&mut self, cycles: u64) -> bool { false }
+    fn cpu_tick(&mut self, _cycles: u64) -> bool { false }
 
     // Serialisation and deserialisation to save states
     fn save(&self, output: &mut File) -> io::Result<()>;

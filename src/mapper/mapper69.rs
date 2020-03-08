@@ -71,7 +71,7 @@ impl Mapper69 {
             chr_rom: vrom,
             prg_rom: rom,
             sram: [0; 0x2000],
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
 
             cmd: None,
 
@@ -142,13 +142,8 @@ impl Mapper69 {
                     //             1 = Horizontal
                     //             2 = One Screen Mirroring from $2000 ("1ScA")
                     //             3 = One Screen Mirroring from $2400 ("1ScB")
-                    self.mirror_mode = match parameter & 0b0000_0011 {
-                        0 => MirrorMode::Vertical,
-                        1 => MirrorMode::Horizontal,
-                        2 => MirrorMode::Single0,
-                        3 => MirrorMode::Single1,
-                        _ => unreachable!("bad mirror mode"),
-                    };
+                    let mode = parameter & 0b0000_0011;
+                    self.mirror_mode = MirrorMode::from_vh01(mode);
                 },
                 Command::IRQ => {
                     // 7  bit  0
@@ -342,7 +337,7 @@ impl Mapper for Mapper69 {
         self.chr_rom = serde::decode_vec(input)?;
         self.prg_rom = serde::decode_vec(input)?;
         input.read(&mut self.sram)?;
-        self.mirror_mode = MirrorMode::from(serde::decode_u8(input)?);
+        self.mirror_mode = MirrorMode::from_vh01(serde::decode_u8(input)?);
 
         let cmd = serde::decode_u8(input)?;
         self.cmd = match cmd {

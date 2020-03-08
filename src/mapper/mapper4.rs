@@ -41,7 +41,7 @@ impl Mapper4 {
             prg_rom: rom,
             sram: [0; 0x2000],
 
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
             
             n_prg_banks: n_banks,
 
@@ -241,7 +241,7 @@ impl Mapper for Mapper4 {
         self.chr_rom = serde::decode_vec(input)?;
         self.prg_rom = serde::decode_vec(input)?;
         input.read(&mut self.sram)?;
-        self.mirror_mode = MirrorMode::from(serde::decode_u8(input)?);
+        self.mirror_mode = MirrorMode::from_hv01(serde::decode_u8(input)?);
         self.n_prg_banks = serde::decode_usize(input)?;
 
         for i in 0 .. 8 {

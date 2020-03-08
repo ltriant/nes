@@ -45,7 +45,7 @@ impl Mapper66 {
 
             n_banks: n_banks,
 
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
         }
     }
 }
@@ -120,7 +120,7 @@ impl Mapper for Mapper66 {
         self.chr_bank = serde::decode_u8(input)?;
         self.prg_bank = serde::decode_u8(input)?;
         self.n_banks = serde::decode_usize(input)?;
-        self.mirror_mode = MirrorMode::from(serde::decode_u8(input)?);
+        self.mirror_mode = MirrorMode::from_hv01(serde::decode_u8(input)?);
         Ok(())
     }
 }

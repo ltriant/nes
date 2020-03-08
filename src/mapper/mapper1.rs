@@ -54,7 +54,7 @@ impl Mapper1 {
             write_count: 0,
             n_banks: n_banks,
 
-            mirror_mode: MirrorMode::from(mirror_mode),
+            mirror_mode: MirrorMode::from_hv01(mirror_mode),
         }
     }
 
@@ -231,7 +231,7 @@ impl Mapper for Mapper1 {
         self.shift_register = serde::decode_u8(input)?;
         self.write_count = serde::decode_u8(input)?;
         self.n_banks = serde::decode_usize(input)?;
-        self.mirror_mode = MirrorMode::from(serde::decode_u8(input)?);
+        self.mirror_mode = MirrorMode::from_hv01(serde::decode_u8(input)?);
         Ok(())
     }
 }
