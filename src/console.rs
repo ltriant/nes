@@ -17,14 +17,11 @@ use crate::ines::CartridgeError;
 use crate::ines;
 use crate::serde::Storeable;
 
-use sdl2::Sdl;
 use sdl2::audio::AudioSpecDesired;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
 
 lazy_static!{
     pub static ref NES_CPU_DEBUG: bool = match env::var("NES_CPU_DEBUG") {
@@ -56,10 +53,6 @@ const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0
 const AUDIO_QUEUE_HIGH_WATER_MARK: u32 = 4 * 16384;
 
 pub struct Console {
-    // SDL-related components
-    sdl_ctx:    Sdl,
-    canvas:     Canvas<Window>,
-
     // NES components
     cpu:        CPU,
     ppu:        Rc<RefCell<PPU>>,
@@ -73,31 +66,6 @@ pub struct Console {
 
 impl Console {
     pub fn new_nes_console(rom_path: &String) -> Result<Self, CartridgeError> {
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-
-        let mut width = 256 * 3;
-        let height = 240 * 3;
-
-        if *NES_PPU_DEBUG {
-            // Make room for the two pattern tables, side by side
-            width += 2 * 144 + 20;
-        }
-
-        let window = video_subsystem.window("nes", width, height)
-            .position_centered()
-            .build()
-            .unwrap();
-
-        let mut canvas = window.into_canvas().build().unwrap();
-
-        for _ in 0 .. 2 {
-            canvas.clear();
-            canvas.set_draw_color(Color::RGB(0, 0, 0));
-            canvas.fill_rect(Rect::new(0, 0, width, height)).unwrap();
-            canvas.present();
-        }
-
         let full_path = fs::canonicalize(rom_path).map_err(CartridgeError::IO)?;
         info!("loading cartridge: {}", full_path.display());
         let basename_path = full_path.file_name().unwrap().to_str().unwrap();
@@ -116,8 +84,6 @@ impl Console {
         );
 
         Ok(Self {
-            sdl_ctx:    sdl_context,
-            canvas:     canvas,
             cpu:        CPU::new_nes_cpu(mem),
             ppu:        ppu,
             apu:        apu,
@@ -189,7 +155,32 @@ impl Console {
     pub fn power_up(&mut self) {
         info!("powering up");
 
-        let audio_subsystem = self.sdl_ctx.audio().unwrap();
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+
+        let mut width = 256 * 3;
+        let height = 240 * 3;
+
+        if *NES_PPU_DEBUG {
+            // Make room for the two pattern tables, side by side
+            width += 2 * 144 + 20;
+        }
+
+        let window = video_subsystem.window("nes", width, height)
+            .position_centered()
+            .build()
+            .unwrap();
+
+        let mut canvas = window.into_canvas().build().unwrap();
+
+        for _ in 0 .. 2 {
+            canvas.clear();
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
+            canvas.fill_rect(Rect::new(0, 0, width, height)).unwrap();
+            canvas.present();
+        }
+
+        let audio_subsystem = sdl_context.audio().unwrap();
         debug!("audio driver: {}", audio_subsystem.current_audio_driver());
 
         let desired_spec = AudioSpecDesired {
@@ -204,7 +195,7 @@ impl Console {
 
         self.cpu.reset();
 
-        let mut event_pump = self.sdl_ctx.event_pump().unwrap();
+        let mut event_pump = sdl_context.event_pump().unwrap();
         let mut fps_start = Instant::now();
         let mut paused = false;
 
@@ -226,7 +217,7 @@ impl Console {
 
                 let mut frame_finished = false;
                 for _ in 0 .. ppu_cycles {
-                    let res = self.ppu.borrow_mut().step(&mut self.canvas);
+                    let res = self.ppu.borrow_mut().step(&mut canvas);
 
                     if res.trigger_irq {
                         self.cpu.trigger_irq();
@@ -285,7 +276,7 @@ impl Console {
                 }
 
                 if frame_finished {
-                    self.canvas.present();
+                    canvas.present();
                     audio_device.queue(&samples);
                     samples.clear();
                     audio_sampling = true;
