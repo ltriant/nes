@@ -1,11 +1,14 @@
 mod debug;
 mod regs;
 
-use std::io;
+use std::cell::RefCell;
 use std::fs::File;
+use std::io;
+use std::rc::Rc;
 
 use crate::console::NES_PPU_DEBUG;
 use crate::palette::PALETTE;
+use crate::mapper::Mapper;
 use crate::mem::Memory;
 use crate::ppu::regs::PPUCtrl;
 use crate::ppu::regs::PPUMask;
@@ -303,7 +306,7 @@ pub struct StepResult {
 }
 
 impl PPU {
-    pub fn new_nes_ppu() -> Self {
+    pub fn new_nes_ppu(cartridge: Rc<RefCell<Box<dyn Mapper>>>) -> Self {
         Self {
             ctrl: PPUCtrl(0),
             mask: PPUMask(0),
@@ -311,7 +314,7 @@ impl PPU {
             oam: OAM::new_nes_oam(),
             oam_addr: 0,
             ppu_addr: 0,
-            data: PPUData::new_ppu_data(),
+            data: PPUData::new_ppu_data(cartridge),
 
             dot: 0,
             scanline: 0,
@@ -812,7 +815,7 @@ impl PPU {
             }
 
             res.frame_finished = true;
-            res.trigger_irq = self.data.mapper.irq_flag();
+            res.trigger_irq = self.data.mapper.borrow().irq_flag();
             return res;
         }
 
@@ -829,7 +832,7 @@ impl PPU {
             self.nmi_change();
         }
 
-        res.trigger_irq = self.data.mapper.irq_flag();
+        res.trigger_irq = self.data.mapper.borrow().irq_flag();
         return res;
     }
 }

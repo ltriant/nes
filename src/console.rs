@@ -1,13 +1,16 @@
+use std::cell::RefCell;
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::process;
+use std::rc::Rc;
 use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::apu::APU;
 use crate::controller::Controller;
 use crate::cpu::CPU;
+use crate::mapper::Mapper;
 use crate::mem::{Memory, NESMemory};
 use crate::ppu::PPU;
 use crate::ines::CartridgeError;
@@ -53,14 +56,23 @@ const FRAME_DURATION: Duration = Duration::from_millis(((1.0 / NES_FPS) * 1000.0
 const AUDIO_QUEUE_HIGH_WATER_MARK: u32 = 4 * 16384;
 
 pub struct Console {
-    sdl_ctx:   Sdl,
-    canvas:    Canvas<Window>,
-    cpu:       CPU,
-    save_path: String,
+    // SDL-related components
+    sdl_ctx:    Sdl,
+    canvas:     Canvas<Window>,
+
+    // NES components
+    cpu:        CPU,
+    ppu:        Rc<RefCell<PPU>>,
+    apu:        Rc<RefCell<APU>>,
+    cartridge:  Rc<RefCell<Box<dyn Mapper>>>,
+    controller: Rc<RefCell<Controller>>,
+
+    // The absolute path on disk to save state to
+    save_path:  String,
 }
 
 impl Console {
-    pub fn new_nes_console() -> Self {
+    pub fn new_nes_console(rom_path: &String) -> Result<Self, CartridgeError> {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
@@ -86,34 +98,33 @@ impl Console {
             canvas.present();
         }
 
-        let apu = APU::new_nes_apu();
-        let ppu = PPU::new_nes_ppu();
-        let controller = Controller::new_controller();
-        let mem = NESMemory::new_nes_mem(ppu, apu, controller);
-
-        Self {
-            sdl_ctx:   sdl_context,
-            canvas:    canvas,
-            cpu:       CPU::new_nes_cpu(mem),
-            save_path: String::new(),
-        }
-    }
-
-    pub fn insert_cartridge(&mut self, filename: &String)
-        -> Result<(), CartridgeError>
-    {
-        let full_path = fs::canonicalize(filename).map_err(CartridgeError::IO)?;
-
+        let full_path = fs::canonicalize(rom_path).map_err(CartridgeError::IO)?;
         info!("loading cartridge: {}", full_path.display());
-
-        let path = full_path.file_name().unwrap()
-            .to_str().unwrap();
-        self.save_path = format!("{:x}.data", md5::compute(path)).into();
+        let basename_path = full_path.file_name().unwrap().to_str().unwrap();
+        let save_path = format!("{:x}.data", md5::compute(basename_path)).into();
 
         let mut fh = File::open(full_path).map_err(CartridgeError::IO)?;
-        ines::load_file_into_memory(&mut fh, &mut self.cpu.mem)?;
+        let cartridge = ines::load_file_into_memory(&mut fh)?;
 
-        Ok(())
+        let ppu = Rc::new(RefCell::new(PPU::new_nes_ppu(cartridge.clone())));
+        let apu = Rc::new(RefCell::new(APU::new_nes_apu()));
+        let controller = Rc::new(RefCell::new(Controller::new_controller()));
+        let mem = NESMemory::new_nes_mem(
+            ppu.clone(),
+            apu.clone(),
+            controller.clone()
+        );
+
+        Ok(Self {
+            sdl_ctx:    sdl_context,
+            canvas:     canvas,
+            cpu:        CPU::new_nes_cpu(mem),
+            ppu:        ppu,
+            apu:        apu,
+            cartridge:  cartridge,
+            controller: controller,
+            save_path:  save_path,
+        })
     }
 
     // Reads a null-terminated string starting at `addr'
@@ -123,7 +134,7 @@ impl Console {
         let mut rv = String::new();
 
         loop {
-            let b = self.cpu.mem.read(addr);
+            let b = self.cpu.read(addr);
 
             if b == 0 {
                 break;
@@ -140,12 +151,12 @@ impl Console {
     // Detects if we're running a instr_test-v5 rom, and if so, it will output
     // the test results.
     fn debug_tests(&mut self) {
-        let a = self.cpu.mem.read(0x6001);
-        let b = self.cpu.mem.read(0x6002);
-        let c = self.cpu.mem.read(0x6003);
+        let a = self.cpu.read(0x6001);
+        let b = self.cpu.read(0x6002);
+        let c = self.cpu.read(0x6003);
 
         if a == 0xDE && b == 0xB0 && c == 0x61 {
-            let result = self.cpu.mem.read(0x6000);
+            let result = self.cpu.read(0x6000);
 
             if result <= 0x7F {
                 let result_string = self.read_string(0x6004);
@@ -160,19 +171,17 @@ impl Console {
     fn save(&mut self) {
         let mut fh = File::create(&self.save_path).unwrap();
         self.cpu.save(&mut fh).expect("unable to save CPU state");
-        self.cpu.mem.save(&mut fh).expect("unable to save memory state");
-        self.cpu.mem.ppu.save(&mut fh).expect("unable to save PPU state");
-        self.cpu.mem.apu.save(&mut fh).expect("unable to save APU state");
+        self.ppu.borrow().save(&mut fh).expect("unable to save PPU state");
+        self.apu.borrow().save(&mut fh).expect("unable to save APU state");
         println!("saved state to {}", self.save_path);
     }
 
     fn load(&mut self) {
         if let Ok(mut fh) = File::open(&self.save_path) {
             self.cpu.load(&mut fh).expect("unable to load CPU state");
-            self.cpu.mem.load(&mut fh).expect("unable to load memory state");
-            self.cpu.mem.ppu.load(&mut fh).expect("unable to load PPU state");
-            //self.cpu.mem.apu.reset();
-            //self.cpu.mem.apu.load(&mut fh).expect("unable to laod APU state");
+            self.ppu.borrow_mut().load(&mut fh).expect("unable to load PPU state");
+            //self.apu.borrow_mut().reset();
+            //self.apu.borrow_mut().load(&mut fh).expect("unable to laod APU state");
             println!("loaded state from {}", self.save_path);
         }
     }
@@ -211,23 +220,20 @@ impl Console {
                 let ppu_cycles = cpu_cycles * 3;
                 let apu_cycles = cpu_cycles;
 
-                // TODO This feels ugly, and needs to be better integrated into
-                // the design
-                if self.cpu.mem.ppu.data.mapper.cpu_tick(cpu_cycles) {
+                if self.cartridge.borrow_mut().cpu_tick(cpu_cycles) {
                     self.cpu.trigger_irq();
                 }
 
                 let mut frame_finished = false;
                 for _ in 0 .. ppu_cycles {
-                    let res = self.cpu.mem.ppu.step(&mut self.canvas);
+                    let res = self.ppu.borrow_mut().step(&mut self.canvas);
 
                     if res.trigger_irq {
                         self.cpu.trigger_irq();
                     }
 
                     if res.signal_scanline {
-                        // TODO uuuuuuugly
-                        self.cpu.mem.ppu.data.mapper.signal_scanline();
+                        self.cartridge.borrow_mut().signal_scanline();
                     }
 
                     if res.trigger_nmi {
@@ -240,7 +246,7 @@ impl Console {
                 }
 
                 for _ in 0 .. apu_cycles {
-                    let res = self.cpu.mem.apu.step();
+                    let res = self.apu.borrow_mut().step();
 
                     if res.trigger_irq {
                         self.cpu.trigger_irq();
@@ -306,16 +312,16 @@ impl Console {
 
                         Event::KeyDown { keycode: Some(key), .. } => {
                             match key {
-                                Keycode::W => { self.cpu.mem.controller.up(true) },
-                                Keycode::A => { self.cpu.mem.controller.left(true) },
-                                Keycode::S => { self.cpu.mem.controller.down(true) },
-                                Keycode::D => { self.cpu.mem.controller.right(true) },
+                                Keycode::W => { self.controller.borrow_mut().up(true) },
+                                Keycode::A => { self.controller.borrow_mut().left(true) },
+                                Keycode::S => { self.controller.borrow_mut().down(true) },
+                                Keycode::D => { self.controller.borrow_mut().right(true) },
 
-                                Keycode::Return => { self.cpu.mem.controller.start(true) },
-                                Keycode::Space  => { self.cpu.mem.controller.select(true) },
+                                Keycode::Return => { self.controller.borrow_mut().start(true) },
+                                Keycode::Space  => { self.controller.borrow_mut().select(true) },
 
-                                Keycode::N => { self.cpu.mem.controller.a(true) },
-                                Keycode::M => { self.cpu.mem.controller.b(true) },
+                                Keycode::N => { self.controller.borrow_mut().a(true) },
+                                Keycode::M => { self.controller.borrow_mut().b(true) },
 
                                 Keycode::P => { paused = ! paused },
 
@@ -324,7 +330,7 @@ impl Console {
 
                                 Keycode::F12 => {
                                     self.cpu.reset();
-                                    self.cpu.mem.apu.reset();
+                                    self.apu.borrow_mut().reset();
                                 },
 
                                 _ => {},
@@ -333,16 +339,16 @@ impl Console {
 
                         Event::KeyUp { keycode: Some(key), .. } => {
                             match key {
-                                Keycode::W => { self.cpu.mem.controller.up(false) },
-                                Keycode::A => { self.cpu.mem.controller.left(false) },
-                                Keycode::S => { self.cpu.mem.controller.down(false) },
-                                Keycode::D => { self.cpu.mem.controller.right(false) },
+                                Keycode::W => { self.controller.borrow_mut().up(false) },
+                                Keycode::A => { self.controller.borrow_mut().left(false) },
+                                Keycode::S => { self.controller.borrow_mut().down(false) },
+                                Keycode::D => { self.controller.borrow_mut().right(false) },
 
-                                Keycode::Return => { self.cpu.mem.controller.start(false) },
-                                Keycode::Space  => { self.cpu.mem.controller.select(false) },
+                                Keycode::Return => { self.controller.borrow_mut().start(false) },
+                                Keycode::Space  => { self.controller.borrow_mut().select(false) },
 
-                                Keycode::N => { self.cpu.mem.controller.a(false) },
-                                Keycode::M => { self.cpu.mem.controller.b(false) },
+                                Keycode::N => { self.controller.borrow_mut().a(false) },
+                                Keycode::M => { self.controller.borrow_mut().b(false) },
 
                                 _ => {},
                             }

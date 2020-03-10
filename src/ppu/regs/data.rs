@@ -1,15 +1,17 @@
+use std::cell::RefCell;
+use std::fs::File;
 use std::io::{Read, Write};
 use std::io;
-use std::fs::File;
+use std::rc::Rc;
 
-use crate::mapper::{Mapper, MapperEmpty};
+use crate::mapper::Mapper;
 use crate::mem::Memory;
 use crate::serde::Storeable;
 
 pub struct PPUData {
-    pub mapper: Box<dyn Mapper>,
+    pub mapper: Rc<RefCell<Box<dyn Mapper>>>,
     nametables: [u8; 4096],
-    palette: [u8; 0x20],
+    palette:    [u8; 0x20],
 }
 
 pub const BACKGROUND_PALETTE_ADDRESSES: [u16; 4] =
@@ -25,7 +27,7 @@ impl Memory for PPUData {
     fn read(&mut self, address: u16) -> u8 {
         let address = address % 0x4000;
         match address {
-            0x0000 ..= 0x1fff => self.mapper.read(address),
+            0x0000 ..= 0x1fff => self.mapper.borrow_mut().read(address),
             0x2000 ..= 0x3eff => {
                 let mirrored_address = self.nametable_mirror_address(address);
                 self.nametables[mirrored_address]
@@ -49,7 +51,7 @@ impl Memory for PPUData {
     fn write(&mut self, address: u16, val: u8) {
         let address = address % 0x4000;
         match address {
-            0x0000 ..= 0x1fff => self.mapper.write(address, val),
+            0x0000 ..= 0x1fff => self.mapper.borrow_mut().write(address, val),
             0x2000 ..= 0x3eff => {
                 debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
                 let mirrored_address = self.nametable_mirror_address(address);
@@ -75,7 +77,7 @@ impl Memory for PPUData {
 
 impl Storeable for PPUData {
     fn save(&self, output: &mut File) -> io::Result<()> {
-        self.mapper.save(output)?;
+        self.mapper.borrow_mut().save(output)?;
         output.write(&self.nametables)?;
         output.write(&self.palette)?;
 
@@ -83,7 +85,7 @@ impl Storeable for PPUData {
     }
 
     fn load(&mut self, input: &mut File) -> io::Result<()> {
-        self.mapper.load(input)?;
+        self.mapper.borrow_mut().load(input)?;
         input.read(&mut self.nametables)?;
         input.read(&mut self.palette)?;
 
@@ -92,9 +94,9 @@ impl Storeable for PPUData {
 }
 
 impl PPUData {
-    pub fn new_ppu_data() -> Self {
+    pub fn new_ppu_data(cartridge: Rc<RefCell<Box<dyn Mapper>>>) -> Self {
         Self {
-            mapper: Box::new(MapperEmpty{}),
+            mapper: cartridge,
             nametables: [0; 4096],
             palette: [
                 // These are the start-up palette values to pass blarrg's PPU tests
@@ -119,7 +121,7 @@ impl PPUData {
         let table = address / 0x400;
         let offset = address % 0x400;
         let index = 0x2000
-            + self.mapper.mirror_mode().coefficients()[table as usize] * 0x400
+            + self.mapper.borrow().mirror_mode().coefficients()[table as usize] * 0x400
             + offset as usize;
 
         index % 2048

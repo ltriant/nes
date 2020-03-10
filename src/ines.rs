@@ -1,3 +1,4 @@
+use crate::mapper::Mapper;
 use crate::mapper::Mapper0;
 use crate::mapper::Mapper1;
 use crate::mapper::Mapper2;
@@ -6,11 +7,12 @@ use crate::mapper::Mapper4;
 use crate::mapper::Mapper7;
 use crate::mapper::Mapper66;
 use crate::mapper::Mapper69;
-use crate::mem::NESMemory;
 
+use std::cell::RefCell;
 use std::fs::File;
 use std::io::Read;
 use std::io;
+use std::rc::Rc;
 
 const INES_MAGIC: [u8; 4] = [0x4e, 0x45, 0x53, 0x1a];
 
@@ -23,8 +25,8 @@ pub enum CartridgeError {
     UnsupportedMapper(u8),
 }
 
-pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
-    -> Result<(), CartridgeError>
+pub fn load_file_into_memory(fh: &mut File)
+    -> Result<Rc<RefCell<Box<dyn Mapper>>>, CartridgeError>
 {
     let mut header = [0; 16];
     let _ = fh.read(&mut header).map_err(CartridgeError::IO)?;
@@ -101,42 +103,14 @@ pub fn load_file_into_memory(fh: &mut File, mem: &mut NESMemory)
     }
 
     match mapper {
-        0 => {
-            let mapper = Mapper0::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        1 => {
-            let mapper = Mapper1::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        2 => {
-            let mapper = Mapper2::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        3 => {
-            let mapper = Mapper3::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        4 => {
-            let mapper = Mapper4::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        7 => {
-            let mapper = Mapper7::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        66 => {
-            let mapper = Mapper66::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        69 => {
-            let mapper = Mapper69::new_mapper(rom, vrom, mirror_mode);
-            mem.ppu.data.mapper = Box::new(mapper);
-        },
-        _ => {
-            return Err(CartridgeError::UnsupportedMapper(mapper));
-        },
+        0 => Ok(Rc::new(RefCell::new(Box::new(Mapper0::new_mapper(rom, vrom, mirror_mode))))),
+        1 => Ok(Rc::new(RefCell::new(Box::new(Mapper1::new_mapper(rom, vrom, mirror_mode))))),
+        2 => Ok(Rc::new(RefCell::new(Box::new(Mapper2::new_mapper(rom, vrom, mirror_mode))))),
+        3 => Ok(Rc::new(RefCell::new(Box::new(Mapper3::new_mapper(rom, vrom, mirror_mode))))),
+        4 => Ok(Rc::new(RefCell::new(Box::new(Mapper4::new_mapper(rom, vrom, mirror_mode))))),
+        7 => Ok(Rc::new(RefCell::new(Box::new(Mapper7::new_mapper(rom, vrom, mirror_mode))))),
+        66 => Ok(Rc::new(RefCell::new(Box::new(Mapper66::new_mapper(rom, vrom, mirror_mode))))),
+        69 => Ok(Rc::new(RefCell::new(Box::new(Mapper69::new_mapper(rom, vrom, mirror_mode))))),
+        _ => Err(CartridgeError::UnsupportedMapper(mapper)),
     }
-
-    Ok(())
 }

@@ -84,18 +84,3 @@ pub trait Mapper {
     fn save(&self, output: &mut File) -> io::Result<()>;
     fn load(&mut self, input: &mut File) -> io::Result<()>;
 }
-
-
-//
-// This is an empty mapper that implements the Mapper trait, because I need to
-// initialise the mapper to _something_ when I create the Console object.
-//
-
-pub struct MapperEmpty;
-impl Mapper for MapperEmpty {
-    fn read(&mut self, _address: u16) -> u8 { 0 }
-    fn write(&mut self, _address: u16, _val: u8) { }
-    fn save(&self, _output: &mut File) -> io::Result<()> { Ok(()) }
-    fn load(&mut self, _input: &mut File) -> io::Result<()> { Ok(()) }
-}
-

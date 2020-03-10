@@ -18,7 +18,7 @@ enum Interrupt {
 }
 
 pub struct CPU {
-    pub mem: NESMemory,
+    mem: NESMemory,
 
     // Main registers
     pub a: u8,  // Accumulator
@@ -89,7 +89,7 @@ impl Storeable for CPU {
             None        => { serde::encode_u64(output, 0)? }
         };
 
-        Ok(())
+        self.mem.save(output)
     }
 
     fn load(&mut self, input: &mut File) -> io::Result<()> {
@@ -111,7 +111,7 @@ impl Storeable for CPU {
             i => Some(i),
         };
 
-        Ok(())
+        self.mem.load(input)
     }
 }
 
@@ -169,7 +169,7 @@ impl CPU {
         for lo_nyb in 0x00 ..= 0xff {
             let addr = addr_base | lo_nyb;
             let val = self.read(addr);
-            self.mem.ppu.write(0x2004, val);
+            self.mem.write(0x2004, val);
         }
 
         if self.cycles % 2 == 1 {
