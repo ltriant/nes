@@ -18,7 +18,7 @@ lazy_static!{
         .collect::<Vec<_>>();
 
     static ref TND_TABLE: Vec<f32> = (0 .. 203)
-        .map(|i| 163.37 / (24329.0 / i as f32 + 100.0))
+        .map(|i| 163.67 / (24329.0 / i as f32 + 100.0))
         .collect::<Vec<_>>();
 }
 
@@ -337,7 +337,7 @@ impl APU {
             (Some(tr), Some(n), None)       => TND_TABLE[3 * tr + 2 * n],
             (Some(tr), None, Some(dmc))     => TND_TABLE[3 * tr + dmc],
             (None, Some(n), Some(dmc))      => TND_TABLE[2 * n + dmc],
-            (Some(tr,), Some(n), Some(dmc)) => TND_TABLE[3 * tr + 2 * n + dmc],
+            (Some(tr), Some(n), Some(dmc))  => TND_TABLE[3 * tr + 2 * n + dmc],
             (None, None, None)              => 0.0,
         };
 
