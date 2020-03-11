@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use crate::console::NES_PPU_DEBUG;
 use crate::palette::PALETTE;
-use crate::mapper::Mapper;
+use crate::mapper::{Mapper, MapperEvent};
 use crate::mem::Memory;
 use crate::ppu::regs::PPUCtrl;
 use crate::ppu::regs::PPUMask;
@@ -127,6 +127,9 @@ impl Memory for PPU {
                 self.ppu_addr = self.ppu_addr.wrapping_add(
                     self.ctrl.vram_addr_increment());
 
+                self.data.mapper.borrow_mut()
+                    .notify(MapperEvent::VRAMAddressChange(self.ppu_addr));
+
                 rv
             },
 
@@ -184,6 +187,9 @@ impl Memory for PPU {
                            | (val as u16);
                     self.ppu_addr = self.t;
                     self.w = false;
+
+                    self.data.mapper.borrow_mut()
+                        .notify(MapperEvent::VRAMAddressChange(self.ppu_addr));
                 } else {
                     // t: .FEDCBA ........ = d: ..FEDCBA
                     // t: X...... ........ = 0
@@ -197,6 +203,9 @@ impl Memory for PPU {
                 self.data.write(self.ppu_addr, val);
                 self.ppu_addr = self.ppu_addr.wrapping_add(
                     self.ctrl.vram_addr_increment());
+
+                self.data.mapper.borrow_mut()
+                    .notify(MapperEvent::VRAMAddressChange(self.ppu_addr));
             },
 
             _ => panic!("bad PPU address 0x{:04X}", address)
@@ -299,9 +308,7 @@ impl Storeable for PPU {
 
 pub struct StepResult {
     pub trigger_nmi: bool,
-    pub trigger_irq: bool,
     pub frame_finished: bool,
-    pub signal_scanline: bool,
 }
 
 impl PPU {
@@ -719,9 +726,7 @@ impl PPU {
 
         let mut res = StepResult{
             trigger_nmi: false,
-            trigger_irq: false,
             frame_finished: false,
-            signal_scanline: false,
         };
 
         self.tick(&mut res);
@@ -814,12 +819,16 @@ impl PPU {
             }
 
             res.frame_finished = true;
-            res.trigger_irq = self.data.mapper.borrow().irq_flag();
             return res;
         }
 
+        // TODO
+        // This isn't entirely correct. It should be at dot 260 as far as NesDev
+        // tells me, but changing this to 260 messes up the HUD in Kirby.
+        // I have a feeling that the IRQ counting for MMC3 games still has
+        // problems and needs to be looked at in its entirety again.
         if (pre_line || visible_line) && self.rendering_enabled() && self.dot == 280 {
-            res.signal_scanline = true;
+            self.data.mapper.borrow_mut().notify(MapperEvent::HBlank);
         }
 
         if pre_line && self.dot == 1 {
@@ -831,7 +840,6 @@ impl PPU {
             self.nmi_change();
         }
 
-        res.trigger_irq = self.data.mapper.borrow().irq_flag();
         return res;
     }
 }

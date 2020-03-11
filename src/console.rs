@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use crate::apu::APU;
 use crate::controller::Controller;
 use crate::cpu::CPU;
-use crate::mapper::Mapper;
+use crate::mapper::{Mapper, MapperEvent};
 use crate::mem::{Memory, NESMemory};
 use crate::ppu::PPU;
 use crate::ines::CartridgeError;
@@ -211,20 +211,15 @@ impl Console {
                 let ppu_cycles = cpu_cycles * 3;
                 let apu_cycles = cpu_cycles;
 
-                if self.cartridge.borrow_mut().cpu_tick(cpu_cycles) {
-                    self.cpu.trigger_irq();
-                }
+                self.cartridge.borrow_mut()
+                    .notify(MapperEvent::CPUTick(cpu_cycles));
 
                 let mut frame_finished = false;
                 for _ in 0 .. ppu_cycles {
                     let res = self.ppu.borrow_mut().step(&mut canvas);
 
-                    if res.trigger_irq {
+                    if self.cartridge.borrow().irq_flag() {
                         self.cpu.trigger_irq();
-                    }
-
-                    if res.signal_scanline {
-                        self.cartridge.borrow_mut().signal_scanline();
                     }
 
                     if res.trigger_nmi {

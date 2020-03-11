@@ -62,6 +62,12 @@ impl MirrorMode {
     }
 }
 
+pub enum MapperEvent {
+    CPUTick(u64),
+    HBlank,
+    VRAMAddressChange(u16),
+}
+
 pub trait Mapper {
     // The mirroring mode to use
     fn mirror_mode(&self) -> &MirrorMode { &MirrorMode::Vertical }
@@ -70,15 +76,12 @@ pub trait Mapper {
     fn read(&mut self, address: u16) -> u8;
     fn write(&mut self, address: u16, val: u8);
 
-    // Called at the start of vblank to determine if an IRQ needs to be generated
+    // Called after every PPU execution, to determine whether or not an
+    // interrupt should be raised.
     fn irq_flag(&self) -> bool { false }
 
-    // Called on the 280th dot (hblank) of every visible scanline
-    fn signal_scanline(&mut self) { }
-
-    // Called after every CPU instruction execution, with the number of cycles
-    // that were just executed
-    fn cpu_tick(&mut self, _cycles: u64) -> bool { false }
+    // Called on particular events, resulting in an observer-like pattern.
+    fn notify(&mut self, _event: MapperEvent) { }
 
     // Serialisation and deserialisation to save states
     fn save(&self, output: &mut File) -> io::Result<()>;

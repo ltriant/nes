@@ -2,7 +2,7 @@ use std::io;
 use std::io::{Read, Write};
 use std::fs::File;
 
-use crate::mapper::Mapper;
+use crate::mapper::{Mapper, MapperEvent};
 use crate::mapper::MirrorMode;
 use crate::serde;
 
@@ -27,9 +27,11 @@ pub struct Mapper4 {
     prg_mode: bool,
 
     irq_counter: u8,
+    irq_reload: bool,
     irq_period: u8,
     irq_enabled: bool,
     irq_flag: bool,
+    last_vram_addr: u16,
 }
 
 impl Mapper4 {
@@ -51,10 +53,28 @@ impl Mapper4 {
             prg_mode: false,
 
             irq_counter: 0,
+            irq_reload: false,
             irq_period: 0,
             irq_enabled: false,
             irq_flag: false,
+            last_vram_addr: 0,
         }
+    }
+
+    fn step_irq_counter(&mut self) {
+        if self.irq_counter == 0 || self.irq_reload {
+            debug!("step: reloading counter to {}", self.irq_period);
+            self.irq_counter = self.irq_period;
+        } else {
+            self.irq_counter -= 1;
+            debug!("step: decremented counter {}", self.irq_counter);
+        }
+
+        if self.irq_counter == 0 && self.irq_enabled {
+            self.irq_flag = true;
+        }
+
+        self.irq_reload = false;
     }
 }
 
@@ -177,20 +197,25 @@ impl Mapper for Mapper4 {
             0xc000 ..= 0xdfff => {
                 if even {
                     // IRQ latch
+                    debug!("IRQ latch = {:02X}", val);
                     self.irq_period = val;
                 } else {
                     // IRQ reload
+                    debug!("IRQ reload");
                     self.irq_counter = 0;
+                    self.irq_reload = true;
                 }
             },
 
             0xe000 ..= 0xffff => {
                 if even {
                     // IRQ disable
+                    debug!("IRQ disable");
                     self.irq_enabled = false;
                     self.irq_flag = false;
                 } else {
                     // IRQ enable
+                    debug!("IRQ enable");
                     self.irq_enabled = true;
                 }
             },
@@ -203,15 +228,20 @@ impl Mapper for Mapper4 {
         self.irq_flag
     }
 
-    fn signal_scanline(&mut self) {
-        if self.irq_counter == 0 {
-            self.irq_counter = self.irq_period;
-        } else {
-            self.irq_counter -= 1;
+    fn notify(&mut self, event: MapperEvent) {
+        match event {
+            MapperEvent::HBlank => { self.step_irq_counter() },
+            MapperEvent::VRAMAddressChange(addr) => {
+                let prev_a12 = (self.last_vram_addr >> 12) & 1;
+                let cur_a12  = (addr >> 12) & 1;
 
-            if self.irq_counter == 0 && self.irq_enabled {
-                self.irq_flag = true;
-            }
+                if prev_a12 == 0 && cur_a12 == 1 {
+                    self.step_irq_counter();
+                }
+
+                self.last_vram_addr = addr;
+            },
+            _ => { },
         }
     }
 

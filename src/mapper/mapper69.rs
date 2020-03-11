@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::io;
 use std::fs::File;
 
-use crate::mapper::Mapper;
+use crate::mapper::{Mapper, MapperEvent};
 use crate::mapper::MirrorMode;
 use crate::serde;
 
@@ -56,6 +56,7 @@ pub struct Mapper69 {
     irq_enabled: bool,
     irq_counter_enabled: bool,
     irq_counter_value: u16,
+    irq_flag: bool,
 }
 
 
@@ -84,6 +85,7 @@ impl Mapper69 {
             irq_enabled: false,
             irq_counter_enabled: false,
             irq_counter_value: 0,
+            irq_flag: false,
         }
     }
 
@@ -180,14 +182,8 @@ impl Mapper69 {
             }
         }
     }
-}
 
-impl Mapper for Mapper69 {
-    fn mirror_mode(&self) -> &MirrorMode {
-        &self.mirror_mode
-    }
-
-    fn cpu_tick(&mut self, cycles: u64) -> bool {
+    fn step_irq_counter(&mut self, cycles: u64) {
         // The IRQ counter is clocked for every CPU cycle, rather than every
         // PPU scanline, as per other mappers.
 
@@ -210,7 +206,24 @@ impl Mapper for Mapper69 {
 
         // IRQ's will only trigger if IRQ is enabled, regardless of whether the
         // IRQ counter is enabled, or what the IRQ counter's value is.
-        self.irq_enabled && trigger
+        self.irq_flag = self.irq_enabled && trigger;
+    }
+}
+
+impl Mapper for Mapper69 {
+    fn mirror_mode(&self) -> &MirrorMode {
+        &self.mirror_mode
+    }
+
+    fn notify(&mut self, event: MapperEvent) {
+        match event {
+            MapperEvent::CPUTick(cycles) => { self.step_irq_counter(cycles) },
+            _ => { },
+        }
+    }
+
+    fn irq_flag(&self) -> bool {
+        self.irq_flag
     }
 
     fn read(&mut self, address: u16) -> u8 {
