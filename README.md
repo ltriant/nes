@@ -14,7 +14,8 @@ Currently, only a subset of the full system has been emulated. The following lim
 
 1. Almost complete sound support (no DMC channel)
 2. No PAL cartridge support
-3. No second controller support
+3. Sunsoft 5B sound support isn't added, but the only game that uses the extra sound channels, Gimmick!, plays fine (and is awesome)
+4. No second controller support
 
 The following cartridge mappers are supported:
 
@@ -25,7 +26,7 @@ The following cartridge mappers are supported:
 5. MMC3/TxROM (mapper 4)
 6. AxROM (mapper 7)
 7. GxROM (mapper 66)
-8. Sunsoft FME-7/5a (mapper 69)
+8. Sunsoft FME-7/5a/5b (mapper 69)
 
 ## Building and Running
 
