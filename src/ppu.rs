@@ -194,10 +194,9 @@ impl Memory for PPU {
                 }
             },
             0x2007 => {
-                let rv = self.data.write(self.ppu_addr, val);
+                self.data.write(self.ppu_addr, val);
                 self.ppu_addr = self.ppu_addr.wrapping_add(
                     self.ctrl.vram_addr_increment());
-                rv
             },
 
             _ => panic!("bad PPU address 0x{:04X}", address)
