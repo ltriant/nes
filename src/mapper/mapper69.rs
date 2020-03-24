@@ -191,17 +191,14 @@ impl Mapper69 {
 
         // If the IRQ counter is enabled, it always ticks the counter
         if self.irq_counter_enabled {
-            let mut cycles = cycles;
-            while cycles > 0 {
-                // When the IRQ counter wraps around from 0x0000 to 0xFFFF, an
-                // IRQ is generated.
-                if self.irq_counter_value == 0 {
-                    trigger = true;
-                }
+            let (irq_count, underflowed) = self.irq_counter_value
+                .overflowing_sub(cycles as u16); // TODO casting u64 down to u16
 
-                self.irq_counter_value = self.irq_counter_value.wrapping_sub(1);
-                cycles -= 1;
-            }
+            self.irq_counter_value = irq_count;
+
+            // When the IRQ counter wraps around from 0x0000 to 0xFFFF, an IRQ
+            // is generated.
+            trigger = underflowed;
         }
 
         // IRQ's will only trigger if IRQ is enabled, regardless of whether the
