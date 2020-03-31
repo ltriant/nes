@@ -12,16 +12,6 @@ use crate::mem::Memory;
 use crate::serde;
 use crate::serde::Storeable;
 
-lazy_static!{
-    static ref PULSE_TABLE: Vec<f32> = (0 .. 31)
-        .map(|i| 95.52 / (8128.0 / i as f32 + 100.0))
-        .collect::<Vec<_>>();
-
-    static ref TND_TABLE: Vec<f32> = (0 .. 203)
-        .map(|i| 163.67 / (24329.0 / i as f32 + 100.0))
-        .collect::<Vec<_>>();
-}
-
 #[derive(PartialEq)]
 enum SequencerMode {
     FourStep,
@@ -294,52 +284,43 @@ impl APU {
         // Digital-to-Analog conversion
 
         let sq1 = if *NES_APU_CHANNELS & 1 != 0 {
-            Some(self.square1.signal() as usize)
+            self.square1.signal() as usize
         } else {
-            None
+            0
         };
 
         let sq2 = if *NES_APU_CHANNELS & 2 != 0 {
-            Some(self.square2.signal() as usize)
+            self.square2.signal() as usize
         } else {
-            None
+            0
         };
 
-        let pulse_val = match (sq1, sq2) {
-            (Some(v1), None)     => PULSE_TABLE[v1],
-            (None, Some(v2))     => PULSE_TABLE[v2],
-            (Some(v1), Some(v2)) => PULSE_TABLE[v1 + v2],
-            (None, None)         => 0.0,
-        };
+        let pulse_val = 95.88 / (100.0
+                                 + (8128.0 / (  sq1 as f32
+                                              + sq2 as f32)));
 
         let tr = if *NES_APU_CHANNELS & 4 != 0 {
-            Some(self.triangle.signal() as usize)
+            self.triangle.signal() as usize
         } else {
-            None
+            0
         };
 
         let n = if *NES_APU_CHANNELS & 8 != 0 {
-            Some(self.noise.signal() as usize)
+            self.noise.signal() as usize
         } else {
-            None
+            0
         };
 
         let dmc = if *NES_APU_CHANNELS & 16 != 0 {
-            Some(self.dmc.signal() as usize)
+            self.dmc.signal() as usize
         } else {
-            None
+            0
         };
 
-        let tnd_val = match (tr, n, dmc) {
-            (Some(tr), None, None)          => TND_TABLE[3 * tr],
-            (None, Some(n), None)           => TND_TABLE[2 * n],
-            (None, None, Some(dmc))         => TND_TABLE[dmc],
-            (Some(tr), Some(n), None)       => TND_TABLE[3 * tr + 2 * n],
-            (Some(tr), None, Some(dmc))     => TND_TABLE[3 * tr + dmc],
-            (None, Some(n), Some(dmc))      => TND_TABLE[2 * n + dmc],
-            (Some(tr), Some(n), Some(dmc))  => TND_TABLE[3 * tr + 2 * n + dmc],
-            (None, None, None)              => 0.0,
-        };
+        let tnd_val = 159.79 / (100.0
+                                + (1.0 / (  (tr as f32 / 8227.0)
+                                          + (n as f32 / 12241.0)
+                                          + (dmc as f32 / 22638.0))));
 
         let signal = pulse_val + tnd_val;
 
