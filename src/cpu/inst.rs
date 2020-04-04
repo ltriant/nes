@@ -1,4 +1,4 @@
-use crate::addr::AddressingMode;
+use crate::cpu::addr::AddressingMode;
 use crate::cpu::CPU;
 
 #[derive(Debug)]

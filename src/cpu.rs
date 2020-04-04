@@ -1,11 +1,15 @@
+mod addr;
+mod inst;
+mod opcode;
+
 use std::process;
 use std::io;
 use std::fs::File;
 
-use crate::addr::AddressingMode;
 use crate::console::{NES_CPU_DEBUG, NES_CPU_NESTEST};
+use crate::cpu::addr::AddressingMode;
+use crate::cpu::opcode::{Opcode, OPCODES};
 use crate::mem::{Memory, NESMemory};
-use crate::opcode::{Opcode, OPCODES};
 use crate::serde;
 use crate::serde::Storeable;
 
