@@ -144,7 +144,7 @@ impl CPU {
         }
     }
 
-    pub fn reset (&mut self) {
+    pub fn reset(&mut self) {
         let lo = self.read(0xFFFC) as u16;
         let hi = self.read(0xFFFD) as u16;
         let addr = (hi << 8) | lo;
@@ -267,7 +267,7 @@ impl CPU {
 
     fn stack_push8(&mut self, val: u8) {
         // The stack page exists from 0x0100 to 0x01FF
-        let addr = (0x01 << 8) | self.sp as u16;
+        let addr = 0x0100 | (self.sp as u16);
         self.write(addr, val);
 
         let n = self.sp.wrapping_sub(1);
@@ -279,7 +279,7 @@ impl CPU {
         self.sp = n;
 
         // The stack page exists from 0x0100 to 0x01FF
-        let addr = (0x01 << 8) | self.sp as u16;
+        let addr = 0x0100 | (self.sp as u16);
         let val = self.read(addr);
 
         val
@@ -307,12 +307,15 @@ impl CPU {
     fn add_branch_cycles(&mut self, pc: u16, addr: u16) {
         self.cycles += 1;
 
+        // It costs an extra cycle to branch to a different page.
         if (pc & 0xff00) != (addr & 0xff00) {
             self.cycles += 1;
         }
     }
 
     pub fn step(&mut self) -> u64 {
+        // If a DMA was executed before this step, we need to stall a bunch of
+        // cycles before we can do anything else, because DMA costs cycles.
         if let Some(stall) = self.stall {
             if stall > 0 {
                 self.stall = Some(stall - 1);
@@ -324,6 +327,7 @@ impl CPU {
 
         let start_cycles = self.cycles;
 
+        // Process pending interrupts.
         if let Some(interrupt) = &self.interrupt {
             match interrupt {
                 Interrupt::NMI => { self.nmi() }
@@ -658,9 +662,8 @@ impl CPU {
             _ => self.read(addr),
         };
 
-        let c = self.c;
+        let n = (val << 1) | (self.c as u8);
         self.c = val & 0x80 != 0;
-        let n = (val << 1) | (c as u8);
         self.update_sz(n);
 
         match *addr_mode {
@@ -675,9 +678,8 @@ impl CPU {
             _ => self.read(addr),
         };
 
-        let c = self.c;
+        let n = (val >> 1) | ((self.c as u8) << 7);
         self.c = val & 0x01 == 1;
-        let n = (val >> 1) | ((c as u8) << 7);
         self.update_sz(n);
 
         match *addr_mode {
