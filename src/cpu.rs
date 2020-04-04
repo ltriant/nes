@@ -2,11 +2,11 @@ mod addr;
 mod inst;
 mod opcode;
 
+use std::env;
 use std::process;
 use std::io;
 use std::fs::File;
 
-use crate::console::{NES_CPU_DEBUG, NES_CPU_NESTEST};
 use crate::cpu::addr::AddressingMode;
 use crate::cpu::opcode::{Opcode, OPCODES};
 use crate::mem::{Memory, NESMemory};
@@ -15,6 +15,18 @@ use crate::serde::Storeable;
 
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: u64 = 341;
+
+lazy_static!{
+    static ref NES_CPU_DEBUG: bool = match env::var("NES_CPU_DEBUG") {
+        Ok(val) => val != "" && val != "0",
+        Err(_)  => false,
+    };
+
+    static ref NES_CPU_NESTEST: bool = match env::var("NES_CPU_NESTEST") {
+        Ok(val) => val != "" && val != "0",
+        Err(_)  => false,
+    };
+}
 
 enum Interrupt {
     NMI,
