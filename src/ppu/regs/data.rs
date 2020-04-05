@@ -6,7 +6,6 @@ use std::rc::Rc;
 
 use crate::mapper::Mapper;
 use crate::mem::Memory;
-use crate::serde::Storeable;
 
 pub struct PPUData {
     pub mapper: Rc<RefCell<Box<dyn Mapper>>>,
@@ -73,9 +72,7 @@ impl Memory for PPUData {
             _ => panic!("PPUData out of bounds 0x{:04X}", address)
         }
     }
-}
 
-impl Storeable for PPUData {
     fn save(&self, output: &mut File) -> io::Result<()> {
         self.mapper.borrow_mut().save(output)?;
         output.write(&self.nametables)?;

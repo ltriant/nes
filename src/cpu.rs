@@ -11,7 +11,6 @@ use crate::cpu::addr::AddressingMode;
 use crate::cpu::opcode::{Opcode, OPCODES};
 use crate::mem::{Memory, NESMemory};
 use crate::serde;
-use crate::serde::Storeable;
 
 const STACK_INIT: u8 = 0xfd;
 const PPU_DOTS_PER_SCANLINE: u64 = 341;
@@ -79,9 +78,7 @@ impl Memory for CPU {
             self.mem.write(addr, val);
         }
     }
-}
 
-impl Storeable for CPU {
     fn save(&self, output: &mut File) -> io::Result<()> {
         serde::encode_u8(output, self.a)?;
         serde::encode_u8(output, self.x)?;

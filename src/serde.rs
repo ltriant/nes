@@ -2,11 +2,6 @@ use std::io::{Read, Write};
 use std::io;
 use std::fs::File;
 
-pub trait Storeable {
-    fn save(&self, output: &mut File) -> io::Result<()>;
-    fn load(&mut self, input: &mut File) -> io::Result<()>;
-}
-
 // u8
 pub fn encode_u8(output: &mut File, d: u8) -> io::Result<()> {
     output.write(&[d])?;

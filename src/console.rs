@@ -15,7 +15,6 @@ use crate::mem::{Memory, NESMemory};
 use crate::ppu::PPU;
 use crate::ines::CartridgeError;
 use crate::ines;
-use crate::serde::Storeable;
 
 use sdl2::audio::AudioSpecDesired;
 use sdl2::pixels::Color;

@@ -16,7 +16,6 @@ use crate::ppu::regs::PPUStatus;
 use crate::ppu::regs::OAM;
 use crate::ppu::regs::PPUData;
 use crate::serde;
-use crate::serde::Storeable;
 
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
@@ -211,9 +210,7 @@ impl Memory for PPU {
             _ => panic!("bad PPU address 0x{:04X}", address)
         }
     }
-}
 
-impl Storeable for PPU {
     fn save(&self, output: &mut File) -> io::Result<()> {
         let PPUCtrl(v) = self.ctrl;
         serde::encode_u8(output, v)?;

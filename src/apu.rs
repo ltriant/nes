@@ -10,7 +10,6 @@ use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
 use crate::console::NES_APU_CHANNELS;
 use crate::mem::Memory;
 use crate::serde;
-use crate::serde::Storeable;
 
 #[derive(PartialEq)]
 enum SequencerMode {
@@ -96,9 +95,7 @@ impl Memory for APU {
             _                 => panic!("bad APU address: 0x{:04X}", address),
         }
     }
-}
 
-impl Storeable for APU {
     fn save(&self, output: &mut File) -> io::Result<()> {
         self.square1.save(output)?;
         self.square2.save(output)?;

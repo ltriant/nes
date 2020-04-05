@@ -2,8 +2,8 @@ use std::io;
 use std::fs::File;
 
 use crate::apu::channel::Voice;
+use crate::mem::Memory;
 use crate::serde;
-use crate::serde::Storeable;
 
 const LENGTH_TABLE: [u8; 32] = [
     10, 254, 20, 2, 40, 4, 80, 6,
@@ -68,7 +68,7 @@ impl Voice for Noise {
     }
 }
 
-impl Storeable for Noise {
+impl Memory for Noise {
     fn save(&self, output: &mut File) -> io::Result<()> {
         serde::encode_u8(output, self.enabled as u8)?;
 
@@ -240,5 +240,6 @@ impl Noise {
         // llll l---   length index
         let length_index = val >> 3;
         self.length_value = LENGTH_TABLE[length_index as usize];
+        debug!("length_index={}, length_value={}", length_index, self.length_value);
     }
 }

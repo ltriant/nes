@@ -2,8 +2,8 @@ use std::io;
 use std::fs::File;
 
 use crate::apu::channel::Voice;
+use crate::mem::Memory;
 use crate::serde;
-use crate::serde::Storeable;
 
 const LENGTH_TABLE: [u8; 32] = [
     10,  254, 20, 2,  40, 4,  80, 6,
@@ -53,7 +53,7 @@ impl Voice for TriangleWave {
     }
 }
 
-impl Storeable for TriangleWave {
+impl Memory for TriangleWave {
     fn save(&self, output: &mut File) -> io::Result<()> {
         serde::encode_u8(output, self.enabled as u8)?;
         serde::encode_u8(output, self.length_enabled as u8)?;

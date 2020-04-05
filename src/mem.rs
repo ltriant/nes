@@ -7,11 +7,12 @@ use std::rc::Rc;
 use crate::apu::APU;
 use crate::controller::Controller;
 use crate::ppu::PPU;
-use crate::serde::Storeable;
 
 pub trait Memory {
-    fn read(&mut self, address: u16) -> u8;
-    fn write(&mut self, address: u16, val: u8);
+    fn read(&mut self, _address: u16) -> u8 { 0 }
+    fn write(&mut self, _address: u16, _val: u8) { }
+    fn save(&self, _output: &mut File) -> io::Result<()> { Ok(()) }
+    fn load(&mut self, _input: &mut File) -> io::Result<()> { Ok(()) }
 }
 
 pub struct NESMemory {
@@ -95,9 +96,7 @@ impl Memory for NESMemory {
             _ => unreachable!("write out of bounds 0x{:04X}", address),
         }
     }
-}
 
-impl Storeable for NESMemory {
     fn save(&self, output: &mut File) -> io::Result<()> {
         output.write(&self.ram)?;
         Ok(())

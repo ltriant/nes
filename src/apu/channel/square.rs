@@ -2,8 +2,8 @@ use std::io;
 use std::fs::File;
 
 use crate::apu::channel::Voice;
+use crate::mem::Memory;
 use crate::serde;
-use crate::serde::Storeable;
 
 const LENGTH_TABLE: [u8; 32] = [
     10, 254, 20, 2, 40, 4, 80, 6,
@@ -85,7 +85,7 @@ impl Voice for SquareWave {
     }
 }
 
-impl Storeable for SquareWave {
+impl Memory for SquareWave {
     fn save(&self, output: &mut File) -> io::Result<()> {
         serde::encode_u8(output, self.enabled as u8)?;
         serde::encode_u8(output, self.channel)?;
