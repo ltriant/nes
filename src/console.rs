@@ -73,7 +73,7 @@ impl Console {
         );
 
         Ok(Self {
-            cpu:        CPU::new_nes_cpu(mem),
+            cpu:        CPU::new_nes_cpu(Box::new(mem)),
             ppu:        ppu,
             apu:        apu,
             cartridge:  cartridge,

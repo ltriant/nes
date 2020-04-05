@@ -9,7 +9,7 @@ use std::fs::File;
 
 use crate::cpu::addr::AddressingMode;
 use crate::cpu::opcode::{Opcode, OPCODES};
-use crate::mem::{Memory, NESMemory};
+use crate::mem::Memory;
 use crate::serde;
 
 const STACK_INIT: u8 = 0xfd;
@@ -33,7 +33,7 @@ enum Interrupt {
 }
 
 pub struct CPU {
-    mem: NESMemory,
+    mem: Box<dyn Memory>,
 
     // Main registers
     pub a: u8,  // Accumulator
@@ -129,7 +129,7 @@ impl Memory for CPU {
 }
 
 impl CPU {
-    pub fn new_nes_cpu(mem: NESMemory) -> Self {
+    pub fn new_nes_cpu(mem: Box<dyn Memory>) -> Self {
         Self {
             mem: mem,
 
