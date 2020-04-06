@@ -129,7 +129,7 @@ impl Memory for CPU {
 }
 
 impl CPU {
-    pub fn new_nes_cpu(mem: Box<dyn Memory>) -> Self {
+    pub fn new_cpu(mem: Box<dyn Memory>) -> Self {
         Self {
             mem: mem,
 
@@ -948,7 +948,7 @@ mod tests {
         let ppu = PPU::new_nes_ppu();
         let ctrl = Controller::new_controller();
         let mem = NESMemory::new_nes_mem(ppu, ctrl);
-        let mut cpu = CPU::new_nes_cpu(mem);
+        let mut cpu = CPU::new_cpu(mem);
         let _ = cpu.stack_pop8();
         assert_eq!(cpu.sp, STACK_INIT + 1);
 
@@ -965,7 +965,7 @@ mod tests {
         let ppu = PPU::new_nes_ppu();
         let ctrl = Controller::new_controller();
         let mem = NESMemory::new_nes_mem(ppu, ctrl);
-        let mut cpu = CPU::new_nes_cpu(mem);
+        let mut cpu = CPU::new_cpu(mem);
 
         for _ in 0 .. STACK_INIT {
             cpu.stack_push8(0xff);
@@ -983,7 +983,7 @@ mod tests {
         let ppu = PPU::new_nes_ppu();
         let ctrl = Controller::new_controller();
         let mem = NESMemory::new_nes_mem(ppu, ctrl);
-        let mut cpu = CPU::new_nes_cpu(mem);
+        let mut cpu = CPU::new_cpu(mem);
 
         cpu.stack_push8(0xff);
         assert_eq!(cpu.sp, 0xfc);
@@ -1008,7 +1008,7 @@ mod tests {
         let ppu = PPU::new_nes_ppu();
         let ctrl = Controller::new_controller();
         let mem = NESMemory::new_nes_mem(ppu, ctrl);
-        let mut cpu = CPU::new_nes_cpu(mem);
+        let mut cpu = CPU::new_cpu(mem);
 
         assert_eq!(cpu.flags(), 0x00);
 
@@ -1027,7 +1027,7 @@ mod tests {
         let ppu = PPU::new_nes_ppu();
         let ctrl = Controller::new_controller();
         let mem = NESMemory::new_nes_mem(ppu, ctrl);
-        let mut cpu = CPU::new_nes_cpu(mem);
+        let mut cpu = CPU::new_cpu(mem);
 
         let mut rom = vec![0; 0xffff];
         rom[0xfffa] = 0xad;
