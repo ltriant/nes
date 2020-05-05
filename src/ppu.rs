@@ -17,11 +17,7 @@ use crate::ppu::regs::OAM;
 use crate::ppu::regs::PPUData;
 use crate::serde;
 
-use sdl2::rect::Rect;
 use sdl2::pixels::Color;
-use sdl2::render::Canvas;
-use sdl2::render::Texture;
-use sdl2::video::Window;
 
 pub struct PPU {
     // PPU registers

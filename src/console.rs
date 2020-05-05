@@ -148,8 +148,8 @@ impl Console {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
-        let mut width = 256 * 1;
-        let height = 240 * 1;
+        let mut width = 256 * 3;
+        let height = 240 * 3;
 
         if *NES_PPU_DEBUG {
             // Make room for the two pattern tables, side by side
@@ -278,12 +278,20 @@ impl Console {
                     texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
                         for y in 0 .. 240 {
                             for x in 0 .. 256 {
-                                let offset = y*pitch + x*3;
                                 let color  = pixels[y][x];
+                                let offset = 3*(y*pitch) + 3*(x*3);
 
-                                buffer[offset]   = color.r;
-                                buffer[offset+1] = color.g;
-                                buffer[offset+2] = color.b;
+                                for y2 in 0 .. 3 {
+                                    let offset = offset + (y2 * pitch);
+
+                                    for x2 in 0 .. 3 {
+                                        let offset = offset + (x2 * 3);
+
+                                        buffer[offset]   = color.r;
+                                        buffer[offset+1] = color.g;
+                                        buffer[offset+2] = color.b;
+                                    }
+                                }
                             }
                         }
                     }).unwrap();
