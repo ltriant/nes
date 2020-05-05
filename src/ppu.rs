@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io;
 use std::rc::Rc;
 
-use crate::console::NES_PPU_DEBUG;
 use crate::palette::PALETTE;
 use crate::mapper::{Mapper, MapperEvent};
 use crate::mem::Memory;
@@ -816,11 +815,6 @@ impl PPU {
 
             self.nmi_occurred = true;
             self.nmi_change();
-
-            if *NES_PPU_DEBUG {
-                //self.render_tile_data(canvas);
-                //self.render_tile_borders(canvas);
-            }
 
             res.frame_finished = true;
             return res;

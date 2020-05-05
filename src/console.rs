@@ -272,8 +272,8 @@ impl Console {
                     samples.clear();
                     audio_sampling = true;
 
-                    let ppu    = self.ppu.borrow();
-                    let pixels = ppu.get_pixels();
+                    let mut ppu = self.ppu.borrow_mut();
+                    let pixels  = ppu.get_pixels();
 
                     texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
                         for y in 0 .. 240 {
@@ -298,6 +298,12 @@ impl Console {
 
                     canvas.clear();
                     canvas.copy(&texture, None, None).unwrap();
+
+                    if *NES_PPU_DEBUG {
+                        ppu.render_tile_data(&mut canvas);
+                        ppu.render_tile_borders(&mut canvas);
+                    }
+
                     canvas.present();
                     if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
                         thread::sleep(delay);
