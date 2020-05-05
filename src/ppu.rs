@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io;
 use std::rc::Rc;
 
-use crate::console::NES_PPU_DEBUG;
 use crate::palette::PALETTE;
 use crate::mapper::{Mapper, MapperEvent};
 use crate::mem::Memory;
@@ -17,9 +16,7 @@ use crate::ppu::regs::OAM;
 use crate::ppu::regs::PPUData;
 use crate::serde;
 
-use sdl2::rect::Rect;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
+use sdl2::pixels::Color;
 
 pub struct PPU {
     // PPU registers
@@ -69,6 +66,8 @@ pub struct PPU {
     // The last written value to any PPU register
     // For use when reading the PPUSTATUS
     last_value: u8,
+
+    pixels: Vec<Vec<Color>>,
 }
 
 impl Memory for PPU {
@@ -348,7 +347,13 @@ impl PPU {
             buffered_data: 0,
 
             last_value: 0,
+
+            pixels: vec![vec![Color::RGB(0, 0, 0); 256]; 240],
         }
+    }
+
+    pub fn get_pixels(&self) -> &Vec<Vec<Color>> {
+        &self.pixels
     }
 
     fn rendering_enabled(&self) -> bool {
@@ -558,7 +563,7 @@ impl PPU {
         self.sprite_count = count;
     }
 
-    fn render_pixel(&mut self, canvas: &mut Canvas<Window>) {
+    fn render_pixel(&mut self) {
         let x = self.dot - 1;
         let y = self.scanline;
 
@@ -606,10 +611,11 @@ impl PPU {
 
         let palette_index = self.data.read(address) % 64;
         let color = PALETTE[palette_index as usize];
-        let rect = Rect::new((x as i32) * 3, (y as i32) * 3, 3, 3);
+        //let rect = Rect::new((x as i32) * 3, (y as i32) * 3, 3, 3);
 
-        canvas.set_draw_color(color);
-        canvas.fill_rect(rect).unwrap();
+        let x = x as usize;
+        let y = y as usize;
+        self.pixels[y][x] = color;
     }
 
     fn fetch_nametable_byte(&mut self) -> u8 {
@@ -709,7 +715,7 @@ impl PPU {
         }
     }
 
-    pub fn step(&mut self, canvas: &mut Canvas<Window>) -> StepResult {
+    pub fn step(&mut self) -> StepResult {
         // http://wiki.nesdev.com/w/index.php/PPU_rendering#Line-by-line_timing
         //
         // There are a total of 262 scanlines per frame
@@ -742,7 +748,7 @@ impl PPU {
         // background logic
         if self.rendering_enabled() {
             if visible_line && visible_cycle {
-                self.render_pixel(canvas);
+                self.render_pixel();
             }
 
             if render_line && fetch_cycle {
@@ -809,11 +815,6 @@ impl PPU {
 
             self.nmi_occurred = true;
             self.nmi_change();
-
-            if *NES_PPU_DEBUG {
-                self.render_tile_data(canvas);
-                self.render_tile_borders(canvas);
-            }
 
             res.frame_finished = true;
             return res;

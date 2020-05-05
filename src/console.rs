@@ -18,6 +18,7 @@ use crate::ines;
 
 use sdl2::audio::AudioSpecDesired;
 use sdl2::pixels::Color;
+use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
@@ -160,7 +161,14 @@ impl Console {
             .build()
             .unwrap();
 
-        let mut canvas = window.into_canvas().build().unwrap();
+        let mut canvas = window.into_canvas()
+            .target_texture()
+            .build()
+            .unwrap();
+        debug!("canvas: {}", canvas.info().name);
+        let texture_creator = canvas.texture_creator();
+        let mut texture = texture_creator.create_texture_streaming(PixelFormatEnum::RGB24, width, height)
+            .unwrap();
 
         for _ in 0 .. 2 {
             canvas.clear();
@@ -205,7 +213,7 @@ impl Console {
 
                 let mut frame_finished = false;
                 for _ in 0 .. ppu_cycles {
-                    let res = self.ppu.borrow_mut().step(&mut canvas);
+                    let res = self.ppu.borrow_mut().step();
 
                     if self.cartridge.borrow().irq_flag() {
                         self.cpu.trigger_irq();
@@ -260,11 +268,43 @@ impl Console {
                 }
 
                 if frame_finished {
-                    canvas.present();
                     audio_device.queue(&samples);
                     samples.clear();
                     audio_sampling = true;
 
+                    let mut ppu = self.ppu.borrow_mut();
+                    let pixels  = ppu.get_pixels();
+
+                    texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
+                        for y in 0 .. 240 {
+                            for x in 0 .. 256 {
+                                let color  = pixels[y][x];
+                                let offset = 3*(y*pitch) + 3*(x*3);
+
+                                for y2 in 0 .. 3 {
+                                    let offset = offset + (y2 * pitch);
+
+                                    for x2 in 0 .. 3 {
+                                        let offset = offset + (x2 * 3);
+
+                                        buffer[offset]   = color.r;
+                                        buffer[offset+1] = color.g;
+                                        buffer[offset+2] = color.b;
+                                    }
+                                }
+                            }
+                        }
+                    }).unwrap();
+
+                    canvas.clear();
+                    canvas.copy(&texture, None, None).unwrap();
+
+                    if *NES_PPU_DEBUG {
+                        ppu.render_tile_data(&mut canvas);
+                        ppu.render_tile_borders(&mut canvas);
+                    }
+
+                    canvas.present();
                     if let Some(delay) = FRAME_DURATION.checked_sub(fps_start.elapsed()) {
                         thread::sleep(delay);
                     }
