@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::env;
 use std::fs;
 use std::fs::File;
+use std::io::Write;
 use std::process;
 use std::rc::Rc;
 use std::thread;
@@ -81,6 +82,30 @@ impl Console {
             controller: controller,
             save_path:  save_path,
         })
+    }
+
+    // Dump the current CHR contents to disk, in a file named tileset.chr, but
+    // be warned, because if this file already exists, it will be overwritten.
+    //
+    // Only runnable if NES_PPU_DEBUG is non-zero.
+    fn dump_chr(&mut self) {
+        if !*NES_PPU_DEBUG {
+            println!("Sorry! This can only be done in PPU debug mode.");
+            return;
+        }
+
+        if let Ok(mut fh) = File::create("tileset.chr") {
+            let mut chr = [0; 0x2000];
+
+            for x in 0 ..= 0x1fff {
+                let b = self.cartridge.borrow_mut().read(x);
+                chr[x as usize] = b;
+            }
+
+            fh.write(&chr).unwrap();
+
+            println!("CHR saved to tileset.chr");
+        }
     }
 
     // Reads a null-terminated string starting at `addr'
@@ -320,7 +345,6 @@ impl Console {
             }
 
             if poll_keyboard {
-                // I feel like this shouldn't be so damned slow...
                 for event in event_pump.poll_iter() {
                     match event {
                         Event::Quit { .. } => { break 'running },
@@ -340,8 +364,10 @@ impl Console {
 
                                 Keycode::P => { paused = ! paused },
 
-                                Keycode::F2  => { self.save() },
-                                Keycode::F3  => { self.load() },
+                                Keycode::F2 => { self.save() },
+                                Keycode::F3 => { self.load() },
+
+                                Keycode::F9 => { self.dump_chr() },
 
                                 Keycode::F12 => {
                                     self.cpu.reset();
