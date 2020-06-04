@@ -341,14 +341,12 @@ impl CPU {
         let start_cycles = self.cycles;
 
         // Process pending interrupts.
-        if let Some(interrupt) = &self.interrupt {
-            match interrupt {
-                Interrupt::NMI => { self.nmi() }
-                Interrupt::IRQ => { self.irq() }
-            }
-
-            self.interrupt = None;
+        match self.interrupt {
+            Some(Interrupt::NMI) => { self.nmi() },
+            Some(Interrupt::IRQ) => { self.irq() },
+            None => { }
         }
+        self.interrupt = None;
 
         let opcode = self.read(self.pc);
 

@@ -103,25 +103,22 @@ impl AddressingMode {
 
                 let lo = cpu.read(addr) as u16;
 
-                let hi =
-                    if addr & 0xff == 0xff {
-                        cpu.read(addr & 0xff00) as u16
-                    } else {
-                        cpu.read(addr + 1) as u16
-                    };
+                let hi = if addr & 0xff == 0xff {
+                    cpu.read(addr & 0xff00) as u16
+                } else {
+                    cpu.read(addr + 1) as u16
+                };
 
                 let addr = (hi << 8) | lo;
 
                 (addr, false)
             }
             AddressingMode::ZeroPageX => {
-                let addr = cpu.read(pc + 1)
-                    .wrapping_add(cpu.x) as u16;
+                let addr = cpu.read(pc + 1).wrapping_add(cpu.x) as u16;
                 (addr, false)
             },
             AddressingMode::ZeroPageY => {
-                let addr = cpu.read(pc + 1)
-                    .wrapping_add(cpu.y) as u16;
+                let addr = cpu.read(pc + 1).wrapping_add(cpu.y) as u16;
                 (addr, false)
             },
             AddressingMode::IndexedIndirect => {
@@ -130,12 +127,11 @@ impl AddressingMode {
 
                 let lo = cpu.read(addr) as u16;
 
-                let hi =
-                    if addr & 0xff == 0xff {
-                        cpu.read(addr & 0xff00) as u16
-                    } else {
-                        cpu.read(addr + 1) as u16
-                    };
+                let hi = if addr & 0xff == 0xff {
+                    cpu.read(addr & 0xff00) as u16
+                } else {
+                    cpu.read(addr + 1) as u16
+                };
 
                 let addr = (hi << 8) | lo;
                 (addr, false)
@@ -145,12 +141,11 @@ impl AddressingMode {
 
                 let lo = cpu.read(addr) as u16;
 
-                let hi =
-                    if addr & 0xff == 0xff {
-                        cpu.read(addr & 0xff00) as u16
-                    } else {
-                        cpu.read(addr + 1) as u16
-                    };
+                let hi = if addr & 0xff == 0xff {
+                    cpu.read(addr & 0xff00) as u16
+                } else {
+                    cpu.read(addr + 1) as u16
+                };
 
                 let addr = (hi << 8) | lo;
                 let n_addr = addr.wrapping_add(cpu.y as u16);

@@ -27,13 +27,11 @@ fn main() {
                 console.power_up();
             },
             Err(CartridgeError::IO(io_e)) => {
-                println!("There was an error reading ROM data from {}: {}",
-                         rom, io_e);
+                println!("There was an error reading ROM data from {}: {}", rom, io_e);
                 process::exit(1);
             },
             Err(CartridgeError::InvalidMagic) => {
-                println!("File {} is invalid. Expected iNES formatted ROM.",
-                         rom);
+                println!("File {} is invalid. Expected iNES formatted ROM.", rom);
                 process::exit(1);
             },
             Err(CartridgeError::UnsupportedCartridge) => {

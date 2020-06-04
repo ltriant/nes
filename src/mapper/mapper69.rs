@@ -90,96 +90,96 @@ impl Mapper69 {
     }
 
     fn run_cmd(&mut self, parameter: u8) {
-        if let Some(cmd) = &self.cmd {
-            match cmd {
-                Command::CHRBank(n) => {
-                    self.chr_banks[*n as usize] = parameter as usize;
-                },
-                Command::PRGBank(n) => {
-                    if *n == 0x08 {
-                        // 7  bit  0
-                        // ---- ----
-                        // ERbB BBBB
-                        // |||| ||||
-                        // ||++-++++- The bank number to select at CPU $6000 - $7FFF
-                        // |+------- RAM / ROM Select Bit
-                        // |         0 = PRG ROM
-                        // |         1 = PRG RAM
-                        // +-------- RAM Enable Bit (6264 +CE line)
-                        //           0 = PRG RAM Disabled
-                        //           1 = PRG RAM Enabled
-
-                        // Despite there being 6 bits of data available for the
-                        // bank number in the FME-7 board, only 5 bits were used
-                        // by the 5A and 5B variants.
-                        let bank         =  parameter & 0b0001_1111;
-                        self.ram_select  = (parameter & 0b0100_0000) != 0;
-                        self.ram_enabled = (parameter & 0b1000_0000) != 0;
-
-                        self.sram_bank = bank as usize;
-                    } else {
-                        // 7  bit  0
-                        // ---- ----
-                        // ..bB BBBB
-                        //   || ||||
-                        //   ++-++++- The bank number to select for the specified bank.
-                        //
-                        // Despite there being 6 bits of data available in the
-                        // FME-7 board, only 5 bits were used by the 5A and 5B
-                        // variants.
-                        let bank = parameter & 0b0001_1111;
-
-                        // n will be one of 0x09, 0x0a, 0x0b, and I want to map
-                        // that to a number 0, 1, or 2, so we subtract 9
-                        self.prg_banks[*n as usize - 0x09] = bank as usize;
-                    }
-                },
-                Command::Mirror => {
+        match self.cmd {
+            Some(Command::CHRBank(n)) => {
+                self.chr_banks[n as usize] = parameter as usize;
+            },
+            Some(Command::PRGBank(n)) => {
+                if n == 0x08 {
                     // 7  bit  0
                     // ---- ----
-                    // .... ..MM
-                    //        ||
-                    //        ++- Mirroring Mode
-                    //             0 = Vertical
-                    //             1 = Horizontal
-                    //             2 = One Screen Mirroring from $2000 ("1ScA")
-                    //             3 = One Screen Mirroring from $2400 ("1ScB")
-                    let mode = parameter & 0b0000_0011;
-                    self.mirror_mode = MirrorMode::from_vh01(mode);
-                },
-                Command::IRQ => {
-                    // 7  bit  0
-                    // ---- ----
-                    // C... ...T
-                    // |       |
-                    // |       +- IRQ Enable
-                    // |           0 = Do not generate IRQs
-                    // |           1 = Do generate IRQs
-                    // +-------- IRQ Counter Enable
-                    //             0 = Disable Counter Decrement
-                    //             1 = Enable Counter Decrement
-                    self.irq_enabled         = (parameter & 0b0000_0001) != 0;
-                    self.irq_counter_enabled = (parameter & 0b1000_0000) != 0;
-                },
-                Command::IRQLo => {
-                    // 7  bit  0
-                    // ---- ----
-                    // LLLL LLLL
+                    // ERbB BBBB
                     // |||| ||||
-                    // ++++-++++- The low eight bits of the IRQ counter
-                    self.irq_counter_value = (self.irq_counter_value & 0xff00)
-                        | parameter as u16;
-                },
-                Command::IRQHi => {
+                    // ||++-++++- The bank number to select at CPU $6000 - $7FFF
+                    // |+------- RAM / ROM Select Bit
+                    // |         0 = PRG ROM
+                    // |         1 = PRG RAM
+                    // +-------- RAM Enable Bit (6264 +CE line)
+                    //           0 = PRG RAM Disabled
+                    //           1 = PRG RAM Enabled
+
+                    // Despite there being 6 bits of data available for the
+                    // bank number in the FME-7 board, only 5 bits were used
+                    // by the 5A and 5B variants.
+                    let bank         =  parameter & 0b0001_1111;
+                    self.ram_select  = (parameter & 0b0100_0000) != 0;
+                    self.ram_enabled = (parameter & 0b1000_0000) != 0;
+
+                    self.sram_bank = bank as usize;
+                } else {
                     // 7  bit  0
                     // ---- ----
-                    // HHHH HHHH
-                    // |||| ||||
-                    // ++++-++++- The high eight bits of the IRQ counter
-                    self.irq_counter_value = (self.irq_counter_value & 0x00ff)
-                        | ((parameter as u16) << 8);
-                },
-            }
+                    // ..bB BBBB
+                    //   || ||||
+                    //   ++-++++- The bank number to select for the specified bank.
+                    //
+                    // Despite there being 6 bits of data available in the
+                    // FME-7 board, only 5 bits were used by the 5A and 5B
+                    // variants.
+                    let bank = parameter & 0b0001_1111;
+
+                    // n will be one of 0x09, 0x0a, 0x0b, and I want to map
+                    // that to a number 0, 1, or 2, so we subtract 9
+                    self.prg_banks[n as usize - 0x09] = bank as usize;
+                }
+            },
+            Some(Command::Mirror) => {
+                // 7  bit  0
+                // ---- ----
+                // .... ..MM
+                //        ||
+                //        ++- Mirroring Mode
+                //             0 = Vertical
+                //             1 = Horizontal
+                //             2 = One Screen Mirroring from $2000 ("1ScA")
+                //             3 = One Screen Mirroring from $2400 ("1ScB")
+                let mode = parameter & 0b0000_0011;
+                self.mirror_mode = MirrorMode::from_vh01(mode);
+            },
+            Some(Command::IRQ) => {
+                // 7  bit  0
+                // ---- ----
+                // C... ...T
+                // |       |
+                // |       +- IRQ Enable
+                // |           0 = Do not generate IRQs
+                // |           1 = Do generate IRQs
+                // +-------- IRQ Counter Enable
+                //             0 = Disable Counter Decrement
+                //             1 = Enable Counter Decrement
+                self.irq_enabled         = (parameter & 0b0000_0001) != 0;
+                self.irq_counter_enabled = (parameter & 0b1000_0000) != 0;
+            },
+            Some(Command::IRQLo) => {
+                // 7  bit  0
+                // ---- ----
+                // LLLL LLLL
+                // |||| ||||
+                // ++++-++++- The low eight bits of the IRQ counter
+                self.irq_counter_value = (self.irq_counter_value & 0xff00)
+                    | parameter as u16;
+            },
+            Some(Command::IRQHi) => {
+                // 7  bit  0
+                // ---- ----
+                // HHHH HHHH
+                // |||| ||||
+                // ++++-++++- The high eight bits of the IRQ counter
+                self.irq_counter_value = (self.irq_counter_value & 0x00ff)
+                    | ((parameter as u16) << 8);
+            },
+
+            None => { },
         }
     }
 
@@ -303,25 +303,22 @@ impl Mapper for Mapper69 {
         output.write(&self.sram)?;
         serde::encode_u8(output, self.mirror_mode as u8)?;
 
-        match &self.cmd {
-            Some(cmd) => {
-                match cmd {
-                    Command::CHRBank(n) => {
-                        serde::encode_u8(output, 1)?;
-                        serde::encode_u8(output, *n)?;
-                    },
-                    Command::PRGBank(n) => {
-                        serde::encode_u8(output, 2)?;
-                        serde::encode_u8(output, *n)?;
-                    },
-                    Command::Mirror => { serde::encode_u8(output, 3)? },
-                    Command::IRQ    => { serde::encode_u8(output, 4)? },
-                    Command::IRQLo  => { serde::encode_u8(output, 5)? },
-                    Command::IRQHi  => { serde::encode_u8(output, 6)? },
-                }
-            },
+        match self.cmd {
             None => { serde::encode_u8(output, 0)? },
-        };
+
+            Some(Command::CHRBank(n)) => {
+                serde::encode_u8(output, 1)?;
+                serde::encode_u8(output, n)?;
+            },
+            Some(Command::PRGBank(n)) => {
+                serde::encode_u8(output, 2)?;
+                serde::encode_u8(output, n)?;
+            },
+            Some(Command::Mirror) => { serde::encode_u8(output, 3)? },
+            Some(Command::IRQ)    => { serde::encode_u8(output, 4)? },
+            Some(Command::IRQLo)  => { serde::encode_u8(output, 5)? },
+            Some(Command::IRQHi)  => { serde::encode_u8(output, 6)? },
+        }
 
         for i in 0 .. 8 {
             serde::encode_usize(output, self.chr_banks[i])?;
