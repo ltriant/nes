@@ -1,10 +1,13 @@
 mod channel;
 mod filter;
 
+use std::cell::RefCell;
 use std::io;
 use std::fmt;
 use std::fs::File;
+use std::rc::Rc;
 
+use crate::cpu::CPU;
 use crate::apu::channel::{DMC, Noise, SquareWave, TriangleWave, Voice};
 use crate::apu::filter::{Filter, HighPassFilter, LowPassFilter};
 use crate::console::NES_APU_CHANNELS;
@@ -41,6 +44,7 @@ pub struct APU {
     sequencer_value: u8,
 
     irq: bool, // true = generates IRQ on the last tick of a 4-step sequence
+    frame_irq: bool,
 
     filters: [Box<dyn Filter>; 3],
 }
@@ -161,6 +165,7 @@ impl APU {
             sequencer_value: 0,
 
             irq: false,
+            frame_irq: false,
 
             // The NES hardware follows the DACs with a surprisingly involved
             // circuit that adds several low-pass and high-pass filters:
@@ -182,6 +187,10 @@ impl APU {
         self.triangle.reset();
         self.noise.reset();
         self.dmc.reset();
+    }
+
+    pub fn attach_cpu(&mut self, cpu: Rc<RefCell<CPU>>) {
+        self.dmc.cpu = Some(cpu);
     }
 
     //  $4015   if-d nt21   DMC IRQ, frame IRQ, length counter statuses
@@ -208,9 +217,8 @@ impl APU {
             rv |= 16;
         }
 
-        // TODO
-        // DMC IRQ
-        // frame IRQ
+        // When $4015 is read from, the frame IRQ flag is cleared, but not the DMC IRQ flag.
+        self.frame_irq = false;
 
         rv
     }
@@ -272,9 +280,16 @@ impl APU {
             self.noise.length_value = 0;
         }
 
-        if !self.dmc.enabled {
-            //self.dmc.length_value = 0;
+        if self.dmc.enabled {
+            if self.dmc.current_length == 0 {
+                self.dmc.reset();
+            }
+        } else {
+            self.dmc.current_length = 0;
         }
+
+        // When $4015 is written to, the DMC's IRQ occurred flag is cleared.
+        self.dmc.clear_irq_flag();
     }
 
     fn signal(&mut self) -> f32 {
@@ -355,10 +370,11 @@ impl APU {
             self.square1.step_timer();
             self.square2.step_timer();
             self.noise.step_timer();
+            self.dmc.step_timer();
         }
     }
 
-    fn step_sequencer(&mut self, res: &mut StepResult) {
+    fn step_sequencer(&mut self) {
         match self.sequencer_mode {
             SequencerMode::FiveStep => {
                 self.sequencer_value = (self.sequencer_value + 1) % 5;
@@ -403,7 +419,7 @@ impl APU {
                         self.step_lengths();
 
                         if self.irq {
-                            res.trigger_irq = true;
+                            self.frame_irq = true;
                         }
                     },
                     _ => { },
@@ -437,7 +453,7 @@ impl APU {
         let f1 = (cycle1 / sequencer_rate) as u32;
         let f2 = (cycle2 / sequencer_rate) as u32;
         if f1 != f2 {
-            self.step_sequencer(&mut res);
+            self.step_sequencer();
         }
 
         // The sampling rate is 44.1kHz. The way we do this is the same as the
@@ -448,6 +464,8 @@ impl APU {
         if s1 != s2 {
             res.signal = Some(self.signal());
         }
+
+        res.trigger_irq = self.frame_irq || self.dmc.irq_flag();
 
         return res;
     }

@@ -74,6 +74,7 @@ impl Console {
             controller.clone()
         );
         let cpu = Rc::new(RefCell::new(CPU::new_cpu(Box::new(mem))));
+        apu.borrow_mut().attach_cpu(cpu.clone());
 
         Ok(Self {
             cpu:        cpu,

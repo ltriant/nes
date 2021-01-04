@@ -2,7 +2,7 @@
 
 A NES emulator, so that I can waste a lot of time playing old games, but also feel like I did something constructive.
 
-I've tried to keep the code as simple as possible, in order to facilitate others in learning how the NES works.
+I've tried to keep the code as simple as possible, have included relevant links to [the NesDev Wiki](https://wiki.nesdev.com/w/index.php/Nesdev_Wiki) in the comments, and have added extra comments from other documentation sources in order to facilitate others in learning how the NES works.
 
 An accompanying blog post can be read here: https://ltriant.github.io/2019/11/22/nes-emulator.html
 
@@ -10,12 +10,11 @@ An accompanying blog post can be read here: https://ltriant.github.io/2019/11/22
 
 ## Limitations
 
-Currently, only a subset of the full system has been emulated. The following limitations apply, in order of most likely to be fixed:
+Only a subset of the full system has been emulated. The following limitations apply, in order of most likely to be fixed:
 
-1. Almost complete sound support (no DMC channel)
+1. Sunsoft 5B sound support isn't added, but the only game that uses the extra sound channels, Gimmick!, plays fine (and is awesome)
 2. No PAL cartridge support
-3. Sunsoft 5B sound support isn't added, but the only game that uses the extra sound channels, Gimmick!, plays fine (and is awesome)
-4. No second controller support
+3. No second controller support
 
 The following cartridge mappers are supported:
 
