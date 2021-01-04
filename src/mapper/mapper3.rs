@@ -44,7 +44,8 @@ impl Mapper for Mapper3 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => {
-                let index = CHR_BANK_SIZE * self.chr_bank as usize + address as usize;
+                let bank = self.chr_bank as usize;
+                let index = (CHR_BANK_SIZE * bank) | address as usize & 0x1fff;
                 self.chr_rom[index]
             },
 
@@ -62,7 +63,8 @@ impl Mapper for Mapper3 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => {
-                let index = CHR_BANK_SIZE * self.chr_bank as usize + address as usize;
+                let bank = self.chr_bank as usize;
+                let index = (CHR_BANK_SIZE * bank) | address as usize & 0x1fff;
                 self.chr_rom[index] = val;
             },
 
@@ -73,7 +75,7 @@ impl Mapper for Mapper3 {
             0x8000 ..= 0xffff => {
                 // CNROM only uses the first 2 bits, but other boards may use
                 // the rest, apparently.
-                self.chr_bank = val;
+                self.chr_bank = val & 0b0000_0011;
             },
             _ =>  { },
         }
