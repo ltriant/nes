@@ -186,9 +186,9 @@ impl CPU {
         }
 
         if self.cycles % 2 == 1 {
-            self.stall = Some(514);
+            self.stall(514);
         } else {
-            self.stall = Some(513);
+            self.stall(513);
         }
     }
 
@@ -323,6 +323,14 @@ impl CPU {
         // It costs an extra cycle to branch to a different page.
         if (pc & 0xff00) != (addr & 0xff00) {
             self.cycles += 1;
+        }
+    }
+
+    pub fn stall(&mut self, extra_steps: u64) {
+        if let Some(stall_cycles) = self.stall {
+            self.stall = Some(stall_cycles + extra_steps);
+        } else {
+            self.stall = Some(extra_steps);
         }
     }
 
