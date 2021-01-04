@@ -45,7 +45,7 @@ const AUDIO_QUEUE_HIGH_WATER_MARK: u32 = 4 * 16384;
 
 pub struct Console {
     // NES components
-    cpu:        CPU,
+    cpu:        Rc<RefCell<CPU>>,
     ppu:        Rc<RefCell<PPU>>,
     apu:        Rc<RefCell<APU>>,
     cartridge:  Rc<RefCell<Box<dyn Mapper>>>,
@@ -73,9 +73,10 @@ impl Console {
             apu.clone(),
             controller.clone()
         );
+        let cpu = Rc::new(RefCell::new(CPU::new_cpu(Box::new(mem))));
 
         Ok(Self {
-            cpu:        CPU::new_cpu(Box::new(mem)),
+            cpu:        cpu,
             ppu:        ppu,
             apu:        apu,
             cartridge:  cartridge,
@@ -115,7 +116,7 @@ impl Console {
         let mut rv = String::new();
 
         loop {
-            let b = self.cpu.read(addr);
+            let b = self.cpu.borrow_mut().read(addr);
 
             if b == 0 {
                 break;
@@ -132,12 +133,12 @@ impl Console {
     // Detects if we're running a instr_test-v5 rom, and if so, it will output
     // the test results.
     fn debug_tests(&mut self) {
-        let a = self.cpu.read(0x6001);
-        let b = self.cpu.read(0x6002);
-        let c = self.cpu.read(0x6003);
+        let a = self.cpu.borrow_mut().read(0x6001);
+        let b = self.cpu.borrow_mut().read(0x6002);
+        let c = self.cpu.borrow_mut().read(0x6003);
 
         if a == 0xDE && b == 0xB0 && c == 0x61 {
-            let result = self.cpu.read(0x6000);
+            let result = self.cpu.borrow_mut().read(0x6000);
 
             if result <= 0x7F {
                 let result_string = self.read_string(0x6004);
@@ -151,7 +152,7 @@ impl Console {
 
     fn save(&mut self) {
         let mut fh = File::create(&self.save_path).unwrap();
-        self.cpu.save(&mut fh).expect("unable to save CPU state");
+        self.cpu.borrow().save(&mut fh).expect("unable to save CPU state");
         self.ppu.borrow().save(&mut fh).expect("unable to save PPU state");
         self.apu.borrow().save(&mut fh).expect("unable to save APU state");
         println!("saved state to {}", self.save_path);
@@ -159,7 +160,7 @@ impl Console {
 
     fn load(&mut self) {
         if let Ok(mut fh) = File::open(&self.save_path) {
-            self.cpu.load(&mut fh).expect("unable to load CPU state");
+            self.cpu.borrow_mut().load(&mut fh).expect("unable to load CPU state");
             self.ppu.borrow_mut().load(&mut fh).expect("unable to load PPU state");
             //self.apu.borrow_mut().reset();
             //self.apu.borrow_mut().load(&mut fh).expect("unable to laod APU state");
@@ -215,7 +216,7 @@ impl Console {
         let mut samples = Vec::new();
         let mut audio_sampling = true;
 
-        self.cpu.reset();
+        self.cpu.borrow_mut().reset();
 
         let mut event_pump = sdl_context.event_pump().unwrap();
         let mut fps_start = Instant::now();
@@ -229,7 +230,7 @@ impl Console {
                 poll_keyboard = true;
                 thread::sleep(Duration::from_millis(200));
             } else {
-                let cpu_cycles = self.cpu.step();
+                let cpu_cycles = self.cpu.borrow_mut().step();
                 let ppu_cycles = cpu_cycles * 3;
                 let apu_cycles = cpu_cycles;
 
@@ -241,11 +242,11 @@ impl Console {
                     let res = self.ppu.borrow_mut().step();
 
                     if self.cartridge.borrow().irq_flag() {
-                        self.cpu.trigger_irq();
+                        self.cpu.borrow_mut().trigger_irq();
                     }
 
                     if res.trigger_nmi {
-                        self.cpu.trigger_nmi();
+                        self.cpu.borrow_mut().trigger_nmi();
                     }
 
                     if res.frame_finished {
@@ -257,7 +258,7 @@ impl Console {
                     let res = self.apu.borrow_mut().step();
 
                     if res.trigger_irq {
-                        self.cpu.trigger_irq();
+                        self.cpu.borrow_mut().trigger_irq();
                     }
 
                     if let Some(signal) = res.signal {
@@ -370,7 +371,7 @@ impl Console {
                                 Keycode::F9 => { self.dump_chr() },
 
                                 Keycode::F12 => {
-                                    self.cpu.reset();
+                                    self.cpu.borrow_mut().reset();
                                     self.apu.borrow_mut().reset();
                                 },
 
