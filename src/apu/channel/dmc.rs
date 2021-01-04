@@ -1,7 +1,3 @@
-// TODO
-// This is incomplete, because I need to figure out how to let this module
-// access VRAM from the mapper.
-
 use std::cell::RefCell;
 use std::io;
 use std::fs::File;
