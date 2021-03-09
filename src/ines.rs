@@ -5,6 +5,7 @@ use crate::mapper::Mapper2;
 use crate::mapper::Mapper3;
 use crate::mapper::Mapper4;
 use crate::mapper::Mapper7;
+use crate::mapper::Mapper34;
 use crate::mapper::Mapper66;
 use crate::mapper::Mapper69;
 
@@ -116,6 +117,7 @@ pub fn load_file_into_memory(fh: &mut File)
         3 => Ok(Rc::new(RefCell::new(Box::new(Mapper3::new_mapper(rom, vrom, mirror_mode))))),
         4 => Ok(Rc::new(RefCell::new(Box::new(Mapper4::new_mapper(rom, vrom, mirror_mode))))),
         7 => Ok(Rc::new(RefCell::new(Box::new(Mapper7::new_mapper(rom, vrom, mirror_mode))))),
+        34 => Ok(Rc::new(RefCell::new(Box::new(Mapper34::new_mapper(rom, vrom, mirror_mode))))),
         66 => Ok(Rc::new(RefCell::new(Box::new(Mapper66::new_mapper(rom, vrom, mirror_mode))))),
         69 => Ok(Rc::new(RefCell::new(Box::new(Mapper69::new_mapper(rom, vrom, mirror_mode))))),
         _ => Err(CartridgeError::UnsupportedMapper(mapper)),

@@ -4,6 +4,7 @@ mod mapper2;
 mod mapper3;
 mod mapper4;
 mod mapper7;
+mod mapper34;
 mod mapper66;
 mod mapper69;
 
@@ -16,10 +17,11 @@ pub use mapper2::Mapper2;
 pub use mapper3::Mapper3;
 pub use mapper4::Mapper4;
 pub use mapper7::Mapper7;
+pub use mapper34::Mapper34;
 pub use mapper66::Mapper66;
 pub use mapper69::Mapper69;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum MirrorMode {
     Horizontal = 0,
     Vertical   = 1,
