@@ -8,6 +8,8 @@ use crate::mapper::Mapper7;
 use crate::mapper::Mapper66;
 use crate::mapper::Mapper69;
 
+use crate::mapper::MirrorMode;
+
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::Read;
@@ -45,11 +47,16 @@ pub fn load_file_into_memory(fh: &mut File)
     let n_vrom_banks = header[5] as usize;
     debug!("8KB VROM banks: {}", n_vrom_banks);
 
-    let mirror_mode = header[6] & 0x01;
+    let mut mirror_mode = header[6] & 0x01;
     debug!("mirroring: {}", if mirror_mode == 0 { "horizontal" } else { "vertical" });
 
+    if header[6] & 0x08 != 0 {
+        debug!("ignoring mirroring, using four-screen instead");
+        mirror_mode = MirrorMode::Four as u8;
+    }
+
     let battery_backed = (header[7] & 0x02) != 0;
-    debug!("battery backed RAM: {}", if battery_backed { "yes" } else { "no" });
+    debug!("battery backed PRG-RAM: {}", if battery_backed { "yes" } else { "no" });
 
     // Get the mapper
     let mapper_low =  (header[6] & 0xf0) >> 4;
