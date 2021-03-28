@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::convert::From;
 use std::io::{Read, Write};
 use std::io;
@@ -42,6 +43,7 @@ pub struct Mapper69 {
     prg_rom: Vec<u8>,
     sram: [u8; 0x2000],
     mirror_mode: MirrorMode,
+    address_maps: HashSet<std::ops::RangeInclusive<u16>>,
 
     // A command to run
     cmd: Option<Command>,
@@ -73,6 +75,11 @@ impl Mapper69 {
             prg_rom: rom,
             sram: [0; 0x2000],
             mirror_mode: MirrorMode::from_hv01(mirror_mode),
+            address_maps: vec![
+                (0x0000 ..= 0x1fff), // CHR-ROM
+                (0x6000 ..= 0x7fff), // PRG-ROM/PRG-RAM
+                (0x8000 ..= 0xffff), // PRG-ROM
+            ].into_iter().collect(),
 
             cmd: None,
 
@@ -210,6 +217,10 @@ impl Mapper69 {
 impl Mapper for Mapper69 {
     fn mirror_mode(&self) -> &MirrorMode {
         &self.mirror_mode
+    }
+
+    fn address_maps(&self) -> &HashSet<std::ops::RangeInclusive<u16>> {
+        &self.address_maps
     }
 
     fn notify(&mut self, event: MapperEvent) {

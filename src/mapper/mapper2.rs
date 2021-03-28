@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::collections::HashSet;
 use std::io;
 use std::fs::File;
 
@@ -14,13 +14,13 @@ const PRG_BANK_SIZE: usize = 16384;
 pub struct Mapper2 {
     chr_rom: Vec<u8>,
     prg_rom: Vec<u8>,
-    sram: [u8; 0x2000],
 
     n_banks: usize,
     prg_bank1: u8,
     prg_bank2: u8,
 
     mirror_mode: MirrorMode,
+    address_maps: HashSet<std::ops::RangeInclusive<u16>>,
 }
 
 impl Mapper2 {
@@ -30,13 +30,16 @@ impl Mapper2 {
         Self {
             chr_rom: vrom,
             prg_rom: rom,
-            sram: [0; 0x2000],
 
             n_banks: n_banks,
             prg_bank1: 1,
             prg_bank2: n_banks as u8 - 1,
 
             mirror_mode: MirrorMode::from_hv01(mirror_mode),
+            address_maps: vec![
+                (0x0000 ..= 0x1fff), // CHR-ROM
+                (0x8000 ..= 0xffff), // PRG-ROM
+            ].into_iter().collect(),
         }
     }
 }
@@ -46,13 +49,14 @@ impl Mapper for Mapper2 {
         &self.mirror_mode
     }
 
+    fn address_maps(&self) -> &HashSet<std::ops::RangeInclusive<u16>> {
+        &self.address_maps
+    }
+
     fn read(&mut self, address: u16) -> u8 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => self.chr_rom[address as usize],
-
-            // SRAM
-            0x6000 ..= 0x7fff => self.sram[address as usize - 0x6000],
 
             // PRG-ROM
             0x8000 ..= 0xbfff => {
@@ -75,9 +79,6 @@ impl Mapper for Mapper2 {
             // CHR-ROM
             0x0000 ..= 0x1fff => { self.chr_rom[address as usize] = val },
 
-            // SRAM
-            0x6000 ..= 0x7fff => { self.sram[address as usize - 0x6000] = val },
-
             // PRG-ROM
             0x8000 ..= 0xffff => { self.prg_bank1 = (val & 0x0f) & (self.n_banks as u8 - 1) },
 
@@ -88,7 +89,6 @@ impl Mapper for Mapper2 {
     fn save(&self, output: &mut File) -> io::Result<()> {
         serde::encode_vec(output, &self.chr_rom)?;
         serde::encode_vec(output, &self.prg_rom)?;
-        output.write(&self.sram)?;
         serde::encode_u8(output, self.prg_bank1)?;
         serde::encode_u8(output, self.prg_bank2)?;
         serde::encode_usize(output, self.n_banks)?;
@@ -98,7 +98,6 @@ impl Mapper for Mapper2 {
     fn load(&mut self, input: &mut File) -> io::Result<()> {
         self.chr_rom = serde::decode_vec(input)?;
         self.prg_rom = serde::decode_vec(input)?;
-        input.read(&mut self.sram)?;
         self.prg_bank1 = serde::decode_u8(input)?;
         self.prg_bank2 = serde::decode_u8(input)?;
         self.n_banks   = serde::decode_usize(input)?;

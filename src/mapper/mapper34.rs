@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io;
 use std::fs::File;
 
@@ -30,6 +31,7 @@ pub struct Mapper34 {
     chr_bank1: u8,
 
     mirror_mode: MirrorMode,
+    address_maps: HashSet<std::ops::RangeInclusive<u16>>,
 }
 
 impl Mapper34 {
@@ -63,6 +65,11 @@ impl Mapper34 {
             chr_bank1: 0,
 
             mirror_mode: mirror_mode,
+            address_maps: vec![
+                (0x0000 ..= 0x1fff), // CHR-ROM
+                (0x6000 ..= 0x7fff), // PRG-RAM
+                (0x8000 ..= 0xffff), // PRG-ROM
+            ].into_iter().collect(),
         }
     }
 }
@@ -70,6 +77,10 @@ impl Mapper34 {
 impl Mapper for Mapper34 {
     fn mirror_mode(&self) -> &MirrorMode {
         &self.mirror_mode
+    }
+
+    fn address_maps(&self) -> &HashSet<std::ops::RangeInclusive<u16>> {
+        &self.address_maps
     }
 
     fn read(&mut self, address: u16) -> u8 {

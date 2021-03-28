@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::collections::HashSet;
 use std::io;
 use std::fs::File;
 
@@ -14,8 +14,8 @@ const PRG_BANK_SIZE: usize = 32768;
 pub struct Mapper7 {
     chr_rom: Vec<u8>,
     prg_rom: Vec<u8>,
-    sram: [u8; 0x2000],
     mirror_mode: MirrorMode,
+    address_maps: HashSet<std::ops::RangeInclusive<u16>>,
 
     prg_bank: u8,
 }
@@ -29,8 +29,12 @@ impl Mapper7 {
         Self {
             chr_rom: vrom,
             prg_rom: rom,
-            sram: [0; 0x2000],
             mirror_mode: MirrorMode::from_hv01(mirror_mode),
+            address_maps: vec![
+                (0x0000 ..= 0x1fff), // CHR-ROM
+                (0x6000 ..= 0x7fff), // PRG-RAM
+                (0x8000 ..= 0xffff), // PRG-ROM
+            ].into_iter().collect(),
 
             prg_bank: 0,
         }
@@ -42,13 +46,14 @@ impl Mapper for Mapper7 {
         &self.mirror_mode
     }
 
+    fn address_maps(&self) -> &HashSet<std::ops::RangeInclusive<u16>> {
+        &self.address_maps
+    }
+
     fn read(&mut self, address: u16) -> u8 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => self.chr_rom[address as usize & 0x1fff],
-
-            // SRAM
-            0x6000 ..= 0x7fff => self.sram[address as usize - 0x6000],
 
             // PRG-ROM
             0x8000 ..= 0xffff => {
@@ -65,9 +70,6 @@ impl Mapper for Mapper7 {
         match address {
             // CHR-ROM
             0x0000 ..= 0x1fff => { self.chr_rom[address as usize & 0x1fff] = val },
-
-            // SRAM
-            0x6000 ..= 0x7fff => { self.sram[address as usize - 0x6000] = val },
 
             // PRG-ROM
             0x8000 ..= 0xffff => {
@@ -93,7 +95,6 @@ impl Mapper for Mapper7 {
     fn save(&self, output: &mut File) -> io::Result<()> {
         serde::encode_vec(output, &self.chr_rom)?;
         serde::encode_vec(output, &self.prg_rom)?;
-        output.write(&self.sram)?;
         serde::encode_u8(output, self.prg_bank)?;
         serde::encode_u8(output, self.mirror_mode as u8)?;
         Ok(())
@@ -102,7 +103,6 @@ impl Mapper for Mapper7 {
     fn load(&mut self, input: &mut File) -> io::Result<()> {
         self.chr_rom = serde::decode_vec(input)?;
         self.prg_rom = serde::decode_vec(input)?;
-        input.read(&mut self.sram)?;
         self.prg_bank = serde::decode_u8(input)?;
         self.mirror_mode = MirrorMode::from_hv01(serde::decode_u8(input)?);
         Ok(())

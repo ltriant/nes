@@ -8,9 +8,9 @@ use crate::mapper::Mapper;
 use crate::mem::Memory;
 
 pub struct PPUData {
-    pub mapper: Rc<RefCell<Box<dyn Mapper>>>,
-    nametables: [u8; 4096],
-    palette:    [u8; 0x20],
+    pub mapper:   Rc<RefCell<Box<dyn Mapper>>>,
+    nametables:   [u8; 4096],
+    palette:      [u8; 0x20],
 }
 
 pub const BACKGROUND_PALETTE_ADDRESSES: [u16; 4] =
@@ -24,13 +24,22 @@ pub const PATTERN_TABLE_ADDRESSES: [u16; 2] =
 
 impl Memory for PPUData {
     fn read(&mut self, address: u16) -> u8 {
+        // Check if the cartridge has mapped this address
+        {
+            let mut mapper = self.mapper.borrow_mut();
+            for range in mapper.address_maps() {
+                if range.contains(&address) {
+                    return mapper.read(address);
+                }
+            }
+        }
+
         let address = address % 0x4000;
         match address {
-            0x0000 ..= 0x1fff => self.mapper.borrow_mut().read(address),
             0x2000 ..= 0x3eff => {
                 let mirrored_address = self.nametable_mirror_address(address);
                 self.nametables[mirrored_address]
-            }
+            },
             0x3f00 ..= 0x3fff => {
                 let mut i = address as usize % 0x20;
 
@@ -48,9 +57,19 @@ impl Memory for PPUData {
     }
 
     fn write(&mut self, address: u16, val: u8) {
+        // Check if the cartridge has mapped this address
+        {
+            let mut mapper = self.mapper.borrow_mut();
+            for range in mapper.address_maps() {
+                if range.contains(&address) {
+                    mapper.write(address, val);
+                    return;
+                }
+            }
+        }
+
         let address = address % 0x4000;
         match address {
-            0x0000 ..= 0x1fff => self.mapper.borrow_mut().write(address, val),
             0x2000 ..= 0x3eff => {
                 debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
                 let mirrored_address = self.nametable_mirror_address(address);

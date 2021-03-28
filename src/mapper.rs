@@ -8,6 +8,7 @@ mod mapper34;
 mod mapper66;
 mod mapper69;
 
+use std::collections::HashSet;
 use std::io;
 use std::fs::File;
 
@@ -73,6 +74,9 @@ pub enum MapperEvent {
 pub trait Mapper {
     // The mirroring mode to use
     fn mirror_mode(&self) -> &MirrorMode { &MirrorMode::Vertical }
+
+    // The CPU and PPU address ranges that this cartridge maps
+    fn address_maps(&self) -> &HashSet<std::ops::RangeInclusive<u16>>;
 
     // Memory read/write
     fn read(&mut self, address: u16) -> u8;
