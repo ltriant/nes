@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::io;
+use std::io::{Read, Write};
 use std::fs::File;
 
 use crate::mapper::Mapper;
@@ -14,6 +15,7 @@ const PRG_BANK_SIZE: usize = 16384;
 pub struct Mapper2 {
     chr_rom: Vec<u8>,
     prg_rom: Vec<u8>,
+    prg_ram: [u8; 0x2000],
 
     n_banks: usize,
     prg_bank1: u8,
@@ -30,6 +32,7 @@ impl Mapper2 {
         Self {
             chr_rom: vrom,
             prg_rom: rom,
+            prg_ram: [0; 0x2000],
 
             n_banks: n_banks,
             prg_bank1: 1,
@@ -58,6 +61,9 @@ impl Mapper for Mapper2 {
             // CHR-ROM
             0x0000 ..= 0x1fff => self.chr_rom[address as usize],
 
+            // PRG-RAM
+            0x6000 ..= 0x7fff => self.prg_ram[address as usize & 0x1fff],
+
             // PRG-ROM
             0x8000 ..= 0xbfff => {
                 let bank = (self.prg_bank1 as usize) * PRG_BANK_SIZE;
@@ -79,8 +85,11 @@ impl Mapper for Mapper2 {
             // CHR-ROM
             0x0000 ..= 0x1fff => { self.chr_rom[address as usize] = val },
 
+            // PRG-RAM
+            0x6000 ..=  0x7fff => { self.prg_ram[address as usize & 0x1fff] = val },
+
             // PRG-ROM
-            0x8000 ..= 0xffff => { self.prg_bank1 = (val & 0x0f) & (self.n_banks as u8 - 1) },
+            0x8000 ..= 0xffff => { self.prg_bank1 = val & (self.n_banks as u8 - 1) },
 
             _ => { },
         }
@@ -89,6 +98,7 @@ impl Mapper for Mapper2 {
     fn save(&self, output: &mut File) -> io::Result<()> {
         serde::encode_vec(output, &self.chr_rom)?;
         serde::encode_vec(output, &self.prg_rom)?;
+        output.write(&self.prg_ram)?;
         serde::encode_u8(output, self.prg_bank1)?;
         serde::encode_u8(output, self.prg_bank2)?;
         serde::encode_usize(output, self.n_banks)?;
@@ -98,6 +108,7 @@ impl Mapper for Mapper2 {
     fn load(&mut self, input: &mut File) -> io::Result<()> {
         self.chr_rom = serde::decode_vec(input)?;
         self.prg_rom = serde::decode_vec(input)?;
+        input.read(&mut self.prg_ram)?;
         self.prg_bank1 = serde::decode_u8(input)?;
         self.prg_bank2 = serde::decode_u8(input)?;
         self.n_banks   = serde::decode_usize(input)?;
