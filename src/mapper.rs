@@ -6,6 +6,7 @@ mod mapper4;
 mod mapper7;
 mod mapper34;
 mod mapper66;
+mod mapper68;
 mod mapper69;
 
 use std::collections::HashSet;
@@ -20,6 +21,7 @@ pub use mapper4::Mapper4;
 pub use mapper7::Mapper7;
 pub use mapper34::Mapper34;
 pub use mapper66::Mapper66;
+pub use mapper68::Mapper68;
 pub use mapper69::Mapper69;
 
 #[derive(Clone, Copy, Debug)]

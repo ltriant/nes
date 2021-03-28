@@ -26,7 +26,8 @@ The following cartridge mappers are supported:
 6. AxROM (mapper 7)
 7. BxROM/NINA-001 (mapper 34)
 8. GxROM (mapper 66)
-9. Sunsoft FME-7/5a/5b (mapper 69)
+9. Sunsoft-4 (mapper 68)
+10. Sunsoft FME-7/5a/5b (mapper 69)
 
 ## Building and Running
 
