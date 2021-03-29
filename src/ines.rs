@@ -72,14 +72,25 @@ pub fn load_file_into_memory(fh: &mut File)
 
     // Get the cartridge type, 1 for PAL, anything else means NTSC
     let cartridge_type = header[9] >> 7;
-    debug!("cartridge type: {}", cartridge_type);
+    debug!("cartridge type (byte 9): {}", cartridge_type);
     if cartridge_type == 1 {
         return Err(CartridgeError::UnsupportedCartridge);
     }
 
+    // PAL/NTSC compatibility may also be stored in this byte...
+    let cartridge_type_flags10 = header[10] & 0b0000_0011;
+    debug!("cartridge type (byte 10): {}", cartridge_type_flags10);
+    if cartridge_type_flags10 == 2 {
+        // TODO I don't think the docs on this flag are very consistent... ignore for now.
+        //return Err(CartridgeError::UnsupportedCartridge);
+    }
+
+    let has_prg_ram = (header[10] & 0b0001_0000) != 0;
+    debug!("PRG-RAM at 0x6000: {}", has_prg_ram);
+
     // Reserved bytes, must all be zeroes
-    let zeroes = &header[10 .. 16];
-    if zeroes != [0, 0, 0, 0, 0, 0] {
+    let zeroes = &header[11 ..= 15];
+    if zeroes != [0, 0, 0, 0, 0] {
         warn!("Header section should be full of zeroes, but contains {:?}",
               zeroes);
 

@@ -65,11 +65,7 @@ impl Mapper34 {
             chr_bank1: 0,
 
             mirror_mode: mirror_mode,
-            address_maps: vec![
-                (0x0000 ..= 0x1fff), // CHR-ROM
-                (0x6000 ..= 0x7fff), // PRG-RAM
-                (0x8000 ..= 0xffff), // PRG-ROM
-            ].into_iter().collect(),
+            address_maps: HashSet::new(),
         }
     }
 }

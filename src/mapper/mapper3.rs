@@ -30,10 +30,7 @@ impl Mapper3 {
             chr_bank: 0,
 
             mirror_mode: MirrorMode::from_hv01(mirror_mode),
-            address_maps: vec![
-                (0x0000 ..= 0x1fff), // CHR
-                (0x8000 ..= 0xffff), // PRG
-            ].into_iter().collect(),
+            address_maps: HashSet::new(),
         }
     }
 }

@@ -36,6 +36,7 @@ impl Memory for PPUData {
 
         let address = address % 0x4000;
         match address {
+            0x0000 ..= 0x1fff => self.mapper.borrow_mut().read(address),
             0x2000 ..= 0x3eff => {
                 let mirrored_address = self.nametable_mirror_address(address);
                 self.nametables[mirrored_address]
@@ -70,6 +71,7 @@ impl Memory for PPUData {
 
         let address = address % 0x4000;
         match address {
+            0x0000 ..= 0x1fff => self.mapper.borrow_mut().write(address, val),
             0x2000 ..= 0x3eff => {
                 debug!("writing 0x{:02X} to nametable 0x{:04X}", val, address);
                 let mirrored_address = self.nametable_mirror_address(address);

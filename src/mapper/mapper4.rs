@@ -46,11 +46,7 @@ impl Mapper4 {
             prg_ram: [0; 0x2000],
 
             mirror_mode: MirrorMode::from_hv01(mirror_mode),
-            address_maps: vec![
-                (0x0000 ..= 0x1fff), // CHR-ROM
-                (0x6000 ..= 0x7fff), // PRG-RAM
-                (0x8000 ..= 0xffff), // PRG-ROM
-            ].into_iter().collect(),
+            address_maps: HashSet::new(),
             
             n_prg_banks: n_banks,
 

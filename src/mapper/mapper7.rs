@@ -30,11 +30,7 @@ impl Mapper7 {
             chr_rom: vrom,
             prg_rom: rom,
             mirror_mode: MirrorMode::from_hv01(mirror_mode),
-            address_maps: vec![
-                (0x0000 ..= 0x1fff), // CHR-ROM
-                (0x6000 ..= 0x7fff), // PRG-RAM
-                (0x8000 ..= 0xffff), // PRG-ROM
-            ].into_iter().collect(),
+            address_maps: HashSet::new(),
 
             prg_bank: 0,
         }

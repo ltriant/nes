@@ -77,7 +77,7 @@ pub trait Mapper {
     // The mirroring mode to use
     fn mirror_mode(&self) -> &MirrorMode { &MirrorMode::Vertical }
 
-    // The CPU and PPU address ranges that this cartridge maps
+    // Any extra CPU and PPU address ranges that this cartridge maps
     fn address_maps(&self) -> &HashSet<std::ops::RangeInclusive<u16>>;
 
     // Memory read/write

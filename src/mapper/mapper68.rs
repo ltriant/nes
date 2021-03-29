@@ -66,10 +66,7 @@ impl Mapper68 {
             chr_nt_bank0: 0,
             chr_nt_bank1: 0,
 
-            address_maps: vec![
-                (0x0000 ..= 0x1fff),  // CHR
-                (0x8000 ..= 0xffff)   // PRG-ROM
-            ].into_iter().collect(),
+            address_maps: HashSet::new(),
 
             mirror_mode: MirrorMode::from_vh01(mirror_mode),
         }

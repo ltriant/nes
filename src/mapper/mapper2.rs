@@ -39,10 +39,7 @@ impl Mapper2 {
             prg_bank2: n_banks as u8 - 1,
 
             mirror_mode: MirrorMode::from_hv01(mirror_mode),
-            address_maps: vec![
-                (0x0000 ..= 0x1fff), // CHR-ROM
-                (0x8000 ..= 0xffff), // PRG-ROM
-            ].into_iter().collect(),
+            address_maps: HashSet::new(),
         }
     }
 }
@@ -89,7 +86,7 @@ impl Mapper for Mapper2 {
             0x6000 ..=  0x7fff => { self.prg_ram[address as usize & 0x1fff] = val },
 
             // PRG-ROM
-            0x8000 ..= 0xffff => { self.prg_bank1 = val & (self.n_banks as u8 - 1) },
+            0x8000 ..= 0xffff => { self.prg_bank1 = val % self.n_banks as u8 },
 
             _ => { },
         }
